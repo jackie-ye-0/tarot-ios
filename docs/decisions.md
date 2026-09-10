@@ -1,6 +1,6 @@
 # Initial plan and decision record
 
-Date: 10 September 2026. Status: approved environment scope; implementation verification in progress.
+Date: 10 September 2026. Status: approved environment scope implemented and locally verified, including one independent Codex acceptance exercise. Future product choices remain unresolved.
 
 ## Approved
 

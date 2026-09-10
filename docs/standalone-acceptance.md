@@ -1,6 +1,6 @@
 # Independent standalone Codex acceptance
 
-Status: **pending**. This protocol is not a completed session. Full Xcode and an available iPhone simulator are required. Coordinate scheduling with whoever owns the Mac; no supervisor software is required to run it.
+Status: **executed once successfully**; see `verification.md` for observed evidence and limits. The protocol below remains the repeatable acceptance scenario. Full Xcode and an available iPhone simulator are required. Coordinate scheduling with whoever owns the Mac; no supervisor software is required to run it.
 
 ## Prepare an isolated fixture
 
