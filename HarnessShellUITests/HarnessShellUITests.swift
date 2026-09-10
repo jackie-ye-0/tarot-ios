@@ -10,11 +10,11 @@ final class HarnessShellUITests: XCTestCase {
         app.launch()
         let count = app.staticTexts["smoke-count"]
         XCTAssertTrue(count.waitForExistence(timeout: 5))
-        XCTAssertEqual(count.label, "0")
+        XCTAssertEqual(count.label, "Count, 0")
         app.buttons["smoke-increment"].tap()
-        XCTAssertEqual(count.label, "1")
+        XCTAssertEqual(count.label, "Count, 1")
         app.buttons["smoke-increment"].tap()
-        XCTAssertEqual(count.label, "2")
+        XCTAssertEqual(count.label, "Count, 2")
         let screenshot = XCTAttachment(screenshot: app.screenshot())
         screenshot.name = "Passing counter interaction"
         screenshot.lifetime = .keepAlways
@@ -25,9 +25,9 @@ final class HarnessShellUITests: XCTestCase {
         let app = XCUIApplication()
         app.launch()
         app.buttons["smoke-increment"].tap()
-        XCTAssertEqual(app.staticTexts["smoke-count"].label, "1")
+        XCTAssertEqual(app.staticTexts["smoke-count"].label, "Count, 1")
         app.terminate()
         app.launch()
-        XCTAssertEqual(app.staticTexts["smoke-count"].label, "0")
+        XCTAssertEqual(app.staticTexts["smoke-count"].label, "Count, 0")
     }
 }
