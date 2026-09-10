@@ -1,0 +1,9 @@
+#!/bin/sh
+# Resolve from the script location, including when the checkout path has spaces.
+set -eu
+if ! command -v python3 >/dev/null 2>&1; then
+    echo 'Python 3 is required. Install/select it yourself; this command installs nothing.' >&2
+    exit 2
+fi
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+exec python3 "$SCRIPT_DIR/harness.py" "$@"
