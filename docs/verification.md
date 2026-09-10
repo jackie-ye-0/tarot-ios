@@ -2,7 +2,7 @@
 
 As of 10 September 2026: **partial verification; the iOS environment is not yet established as usable**.
 
-Branch: `fm/ios-tarot-harness-setup`. Source baseline before implementation: `139e0e85f686442ba8ffccd7943107944aef3aaa`. The implementation checkpoint and subsequent handoff head are recorded below when committed. Evidence folders are local and ignored; they are not included in a clone or this PR.
+Branch: `fm/ios-tarot-harness-setup`. Source baseline before implementation: `139e0e85f686442ba8ffccd7943107944aef3aaa`. Implementation checkpoint: `a5498a409089f4ca7d8a05d942694faa4e660b19`. Later documentation-only commits may follow this source checkpoint; the local `.harness/handoff.json` records the exact current handoff head. Evidence folders are local and ignored; they are not included in a clone or this PR.
 
 ## Observed
 
@@ -23,3 +23,7 @@ Branch: `fm/ios-tarot-harness-setup`. Source baseline before implementation: `13
 6. An actual independent standalone Codex session plus separate reviewer rerun, as specified in `standalone-acceptance.md`.
 
 No screenshots, iOS test results or independent client compliance are claimed from the fake-tool tests. No CI, branch protection or remote gate has been established or verified. Other clients, physical iPhone testing and App Store delivery are outside this setup.
+
+## Prepared acceptance fixture
+
+A tracked-files-only disposable repository was prepared at `.harness/acceptance/standalone codex/` from implementation checkpoint `a5498a409089f4ca7d8a05d942694faa4e660b19`. Baseline fixture head: `afbd33dfdb7e0d28593d9d78e8c71bb08348729f`; deliberate counter-defect head: `888ff05393d55fd8018f34b8af8c25018ec44a07`. Only the disposable counter changes to increment by two; normal tests/code remain intact. Preparation metadata is `.harness/acceptance/preparation.json`. No real failing iOS invocation or independent session has run yet.
