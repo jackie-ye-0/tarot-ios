@@ -2,7 +2,7 @@
 
 A native Swift/SwiftUI technical shell and local feedback loop for a future iOS tarot app. The screen increments an in-memory count; it has no tarot or AI features. Codex is the initial client under verification. Firstmate is optional and not needed by any repository command.
 
-**Status:** command verification is available; real Xcode build, simulator/UI tests, screenshot inspection and independent Codex acceptance are pending. See [verification report](docs/verification.md) for actual evidence rather than inferring readiness from this scaffold.
+**Status:** native build/launch, 16 command-contract tests, four real XCTest tests and passing-test screenshot inspection are verified. Independent standalone Codex acceptance is pending. See [verification report](docs/verification.md) for actual evidence rather than inferring readiness from this scaffold.
 
 ## Setup
 

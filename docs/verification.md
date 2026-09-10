@@ -1,37 +1,52 @@
 # Verification report
 
-As of 10 September 2026: **partial verification; the iOS environment is not yet established as usable**.
+10 September 2026. **Native build, launch and passing-test evidence verified; independent standalone Codex acceptance is pending.**
 
-Branch: `fm/ios-tarot-harness-setup`. Source baseline before implementation: `139e0e85f686442ba8ffccd7943107944aef3aaa`. Implementation checkpoint: `a5498a409089f4ca7d8a05d942694faa4e660b19`. Later documentation-only commits may follow this source checkpoint; the local `.harness/handoff.json` records the exact current handoff head. Evidence folders are local and ignored; they are not included in a clone or this PR.
+Branch: `fm/ios-tarot-harness-setup`. Verified code/test baseline: `4ddff9918660bfc597b886e21ea4e0735e093692`. Documentation-only commits may follow; `.harness/handoff.json` records the exact local handoff head. Evidence is local and gitignored, so these run folders are not present in a fresh clone.
 
-## Observed
+## Toolchain and device
 
-- Isolation: physical working directory equals Git top level in the assigned disposable worktree. Started with no tracked project files.
-- Initial tool inventory: selected developer directory is `/Library/Developer/CommandLineTools`; full Xcode and `simctl` were unavailable. The machine owner is installing official Xcode; this task changed no machine settings or software installation.
-- `python3 -m unittest discover -s tests -v`: 15 command-contract tests passed on the final scaffold rerun (initial run: 14). Final raw output is `.harness/command-contract-validation.log`. They run actual wrapper processes against fake tools, including paths with spaces, simulator selection, original exit status 65, missing Xcode, missing devices, zero/skipped tests, malformed result JSON and missing/export-failed attachments. These are not iOS test results.
-- `./scripts/harness check`: command-contract suite passed; then the real prerequisite probe failed with exit 1 because full Xcode was unavailable. Retained run: `.harness/runs/20260910T040825.990277Z-check-039b1269/`. Inspect `command-tests.log`, `xcode-version.log`, `summary.json` and `summary.txt` there. The non-zero status propagated through the shell wrapper. `./scripts/harness evidence` accurately reported the failed run.
-- `plutil -lint HarnessShell.xcodeproj/project.pbxproj`: passed. Shared scheme XML parsed with Python's XML parser. These are syntax checks, not Xcode compilation.
-- `git diff --check`: passed at the initial scaffold checkpoint.
+- macOS 26.6.2, Apple silicon.
+- Xcode 26.6, build 17F113, selected per command with `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer`.
+- iPhone 17, iOS 26.5 (23F77), runtime `com.apple.CoreSimulator.SimRuntime.iOS-26-5`.
+- Device UDID: `032425A0-021B-4E46-BA9E-9FBD868237C1`.
 
-## Pending real verification
+The machine owner installed Xcode/platforms and completed licence/administrator setup. This task changed no machine settings or installed software. Installed `xcodebuild`, `simctl launch` and `xcresulttool` help/schema were inspected; the project targets/shared scheme were confirmed by real `xcodebuild -list`.
 
-1. Completed: installed `xcodebuild`, `simctl launch` and `xcresulttool` summary/export help review. Remaining items below are still pending.
-2. Successful prerequisite discovery, native build and simulator install/launch.
-3. Four real XCTest tests, including visible counter interaction and reset on relaunch.
-4. Deliberate assertion failure in a disposable validation copy, non-zero wrapper status, then a restored passing run.
-5. Retained `.xcresult`, actual test counts, toolchain/device metadata, exported passing-test screenshot and visual inspection.
-6. An actual independent standalone Codex session plus separate reviewer rerun, as specified in `standalone-acceptance.md`.
+## Observed verification
 
-No screenshots, iOS test results or independent client compliance are claimed from the fake-tool tests. No CI, branch protection or remote gate has been established or verified. Other clients, physical iPhone testing and App Store delivery are outside this setup.
+All paths below are relative to the repository root.
 
-## Prepared acceptance fixture
+| Check | Observed result | Retained evidence |
+| --- | --- | --- |
+| Command contracts | 16 passed; fake tools test wrapper behaviour, including paths with spaces and failures | Passing check's `command-tests.log` below |
+| Prerequisites | Passed after platform installation | `.harness/runs/20260910T041617.014318Z-doctor-1a10bc3e/` |
+| Build, boot, install, launch | Exit 0; native app build succeeded | `.harness/runs/20260910T041631.516963Z-launch-7c495e1d/` |
+| Full `harness check` baseline | Exit 0; 4 XCTest tests passed, 0 failed/skipped/expected failures | `.harness/runs/20260910T042042.245465Z-check-c5b02d08/` |
+| Project syntax | `plutil` and shared-scheme XML parse passed | Also superseded by real Xcode build |
+| Whitespace | `git diff --check` passed | Local command output |
 
-A tracked-files-only disposable repository was prepared at `.harness/acceptance/standalone codex/` from implementation checkpoint `a5498a409089f4ca7d8a05d942694faa4e660b19`. Baseline fixture head: `afbd33dfdb7e0d28593d9d78e8c71bb08348729f`; deliberate counter-defect head: `888ff05393d55fd8018f34b8af8c25018ec44a07`. Only the disposable counter changes to increment by two; normal tests/code remain intact. Preparation metadata is `.harness/acceptance/preparation.json`. No real failing iOS invocation or independent session has run yet.
+The full passing check includes two counter unit tests and two UI tests: real button taps, exact displayed counts, and reset on app relaunch. `Tests.xcresult`, `test-summary.log`, `metadata.json`, raw logs, command arguments and summaries are retained in its run directory.
 
-## Xcode available, platform download pending
+Passing-test screenshot: `.harness/runs/20260910T042042.245465Z-check-c5b02d08/attachments/E98B0630-222E-407B-A138-C55E3BDBFA25.png`. It was opened and visually inspected: the title, explanatory text, count **2** and increment button are readable without clipping/overlap on iPhone 17. The screenshot was exported from the successful interaction test's `.keepAlways` attachment. The separate immediate launch capture shows startup and is not used as UI verification.
 
-Using per-command `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer`, Xcode reports **26.6 (17F113)**. Real `xcodebuild -list` returned zero and recognised the app, unit-test and UI-test targets plus the shared scheme. Installed command help and the test-summary JSON schema were inspected; they confirm the runner command forms and count fields. Logs are retained in `.harness/preruntime-20260910T0420/`.
+## Real failures and corrections
 
-A generic iOS Simulator build returned **70 before compilation**: Xcode reported that the iOS 26.5 platform was not installed. The machine owner has started the platform downloads. No build, simulator or independent-client pass is claimed. The exploratory raw build omitted a result-bundle path, so Xcode reported a temporary error bundle; the wrapper now explicitly selects a repo-local result bundle for build/launch as well as tests. Subsequent replay remains pending platform availability.
+- Before installation, `harness check` propagated exit 1 after its command tests because full Xcode was unavailable: `.harness/runs/20260910T040825.990277Z-check-039b1269/`.
+- During platform download, the generic simulator build stopped before compilation with exit 70. Installed help/schema and logs are under `.harness/preruntime-20260910T0420/`. The harness explicitly selects a repo-local build/test result bundle; the exploratory raw build had omitted that option and Xcode selected a temporary error bundle.
+- First real baseline: exit 65, two unit passes and two UI assertion failures, because SwiftUI exposed `Count, 0` while the tests expected `0`. Evidence: `.harness/runs/20260910T041807.474988Z-check-54267f85/`. The exact semantic-label assertions were corrected without changing app behaviour or reducing checks; the subsequent four-test baseline passed. See `friction.md` for the replay and guidance changes.
 
-After those tooling changes, **16 command-contract tests passed**; retained log: `.harness/preruntime-20260910T0420/command-tests.log`. This supersedes the earlier 15-test scaffold run.
+## Standalone acceptance handoff
+
+Protocol: `standalone-acceptance.md`. A tracked-files-only disposable repository is at `.harness/acceptance/standalone codex/`; it has its own Git history and no supervisor brief or conversation copied into it. Its only source difference from the verified baseline is the deliberate `count += 2` defect.
+
+- Source baseline: `4ddff9918660bfc597b886e21ea4e0735e093692`.
+- Prepared defect head: `161986ab8cb95dcc04a7c87947ab816b449f36fe`.
+- Preparation metadata: `.harness/acceptance/preparation.json`.
+- Real deliberate-defect invocation: exit **65**, four tests executed, **1 passed / 3 failed**, no skips or expected failures. Evidence: `.harness/acceptance/standalone codex/.harness/runs/20260910T042229.113276Z-test-46119a17/`. The result summary reports `2` versus expected `1` and `4` versus `2` in the unit test, plus `Count, 2` versus `Count, 1` in both UI tests. These are assertion failures, not prerequisite or compilation failures. Simulator use paused for the independent session immediately after this run.
+
+A fresh standalone Codex repair session and a separate reviewer rerun are still pending. They must be observed before claiming independent-client acceptance. No fake-tool results or instruction files establish client compliance.
+
+## Limits
+
+No CI/branch-protection enforcement, other client acceptance, physical iPhone testing, broad accessibility audit or App Store delivery is claimed. Only the iPhone 17/iOS 26.5 environment above has been verified. Product features, personal data, live AI calls and provider quality evaluation remain outside scope. Apple tools may use their normal system simulator/cache locations; harness-controlled build output, bundles and logs are kept under `.harness/`.
