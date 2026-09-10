@@ -73,12 +73,12 @@ def prerequisites(run, requested):
 
 
 def build_args(action, run, device):
-    return ['xcodebuild', action, '-project', str(ROOT / 'HarnessShell.xcodeproj'), '-scheme', 'HarnessShell', '-configuration', 'Debug', '-destination', f'platform=iOS Simulator,id={device["udid"]}', '-derivedDataPath', str(run / 'DerivedData'), 'CODE_SIGNING_ALLOWED=NO']
+    return ['xcodebuild', action, '-project', str(ROOT / 'HarnessShell.xcodeproj'), '-scheme', 'HarnessShell', '-configuration', 'Debug', '-destination', f'platform=iOS Simulator,id={device["udid"]}', '-derivedDataPath', str(run / 'DerivedData'), '-resultBundlePath', str(run / ('Tests.xcresult' if action == 'test' else 'Build.xcresult')), 'CODE_SIGNING_ALLOWED=NO']
 
 
 def test_ios(run, device, summary):
     bundle = run / 'Tests.xcresult'
-    args = build_args('test', run, device) + ['-resultBundlePath', str(bundle), '-parallel-testing-enabled', 'NO']
+    args = build_args('test', run, device) + ['-parallel-testing-enabled', 'NO']
     code, _ = execute(args, run, 'test', True)
     summary['xcodebuild_exit'] = code
     # Extract diagnostics even after a failing test invocation.
@@ -95,9 +95,10 @@ def test_ios(run, device, summary):
         passed = counts.get('passedTests')
         failed = counts.get('failedTests')
         skipped = counts.get('skippedTests')
+        expected_failures = counts.get('expectedFailures')
         # Four meaningful tests are the initial baseline. Do not lower it to hide failures.
-        if not all(isinstance(n, int) for n in (total, passed, failed, skipped)) or total < 4 or passed != total or failed or skipped:
-            raise Failure(f'Test verification incomplete: total={total}, passed={passed}, failed={failed}, skipped={skipped}; require at least 4, all passing.')
+        if not all(isinstance(n, int) for n in (total, passed, failed, skipped, expected_failures)) or total < 4 or passed != total or failed or skipped or expected_failures or counts.get('result') != 'Passed':
+            raise Failure(f'Test verification incomplete: total={total}, passed={passed}, failed={failed}, skipped={skipped}, expected failures={expected_failures}, result={counts.get("result")}; require at least 4, all passing.')
         if not images:
             raise Failure('No retained test screenshot was exported; inspect attachment-export.log and keepAlways attachment lifetime.')
     except Failure as error:
@@ -187,7 +188,7 @@ def main():
     if 'device' in summary:
         lines.append(f'Device: {device["name"]} / {device["runtime"]} / {device["udid"]}')
     if 'tests' in summary:
-        lines.append('Tests: ' + ', '.join(f'{key}={summary["tests"].get(key, "unknown")}' for key in ['totalTestCount', 'passedTests', 'failedTests', 'skippedTests']))
+        lines.append('Tests: ' + ', '.join(f'{key}={summary["tests"].get(key, "unknown")}' for key in ['totalTestCount', 'passedTests', 'failedTests', 'skippedTests', 'expectedFailures']))
     if 'screenshots' in summary:
         lines.append('Screenshots: ' + ', '.join(summary['screenshots']))
     if 'error' in summary:

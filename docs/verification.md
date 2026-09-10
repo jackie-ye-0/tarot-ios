@@ -15,7 +15,7 @@ Branch: `fm/ios-tarot-harness-setup`. Source baseline before implementation: `13
 
 ## Pending real verification
 
-1. Installed `xcodebuild`, `simctl` and `xcresulttool` help review, including the modern test-summary and attachment-export commands.
+1. Completed: installed `xcodebuild`, `simctl launch` and `xcresulttool` summary/export help review. Remaining items below are still pending.
 2. Successful prerequisite discovery, native build and simulator install/launch.
 3. Four real XCTest tests, including visible counter interaction and reset on relaunch.
 4. Deliberate assertion failure in a disposable validation copy, non-zero wrapper status, then a restored passing run.
@@ -27,3 +27,11 @@ No screenshots, iOS test results or independent client compliance are claimed fr
 ## Prepared acceptance fixture
 
 A tracked-files-only disposable repository was prepared at `.harness/acceptance/standalone codex/` from implementation checkpoint `a5498a409089f4ca7d8a05d942694faa4e660b19`. Baseline fixture head: `afbd33dfdb7e0d28593d9d78e8c71bb08348729f`; deliberate counter-defect head: `888ff05393d55fd8018f34b8af8c25018ec44a07`. Only the disposable counter changes to increment by two; normal tests/code remain intact. Preparation metadata is `.harness/acceptance/preparation.json`. No real failing iOS invocation or independent session has run yet.
+
+## Xcode available, platform download pending
+
+Using per-command `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer`, Xcode reports **26.6 (17F113)**. Real `xcodebuild -list` returned zero and recognised the app, unit-test and UI-test targets plus the shared scheme. Installed command help and the test-summary JSON schema were inspected; they confirm the runner command forms and count fields. Logs are retained in `.harness/preruntime-20260910T0420/`.
+
+A generic iOS Simulator build returned **70 before compilation**: Xcode reported that the iOS 26.5 platform was not installed. The machine owner has started the platform downloads. No build, simulator or independent-client pass is claimed. The exploratory raw build omitted a result-bundle path, so Xcode reported a temporary error bundle; the wrapper now explicitly selects a repo-local result bundle for build/launch as well as tests. Subsequent replay remains pending platform availability.
+
+After those tooling changes, **16 command-contract tests passed**; retained log: `.harness/preruntime-20260910T0420/command-tests.log`. This supersedes the earlier 15-test scaffold run.

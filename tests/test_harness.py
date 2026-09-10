@@ -41,7 +41,7 @@ elif args[:4] == ['xcresulttool', 'get', 'test-results', 'summary']:
     total = 0 if case == 'zero-tests' else 4
     failed = 1 if case == 'failed-tests' else 0
     skipped = 1 if case == 'skipped-tests' else 0
-    print(json.dumps({'totalTestCount':total, 'passedTests':total-failed-skipped, 'failedTests':failed, 'skippedTests':skipped}))
+    print(json.dumps({'totalTestCount':total, 'passedTests':total-failed-skipped, 'failedTests':failed, 'skippedTests':skipped, 'expectedFailures':1 if case == 'expected-failure' else 0, 'result':'Failed' if case in ('failed-tests', 'failed-result') else 'Passed'}))
 elif args[:3] == ['xcresulttool', 'export', 'attachments']:
     if case == 'export-fails': sys.exit(74)
     folder = pathlib.Path(args[args.index('--output-path')+1]); folder.mkdir()
@@ -124,6 +124,13 @@ class HarnessCommandTests(unittest.TestCase):
                 self.assertNotEqual(result.returncode, 0)
                 self.assertEqual(summary['status'], 'failed')
                 self.assertIn('error', summary)
+
+    def test_failed_result_or_expected_failure_rejected(self):
+        for case in ('expected-failure', 'failed-result'):
+            with self.subTest(case=case):
+                result, summary = self.invoke(case=case)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertEqual(summary['status'], 'failed')
 
     def test_missing_xcode_has_actionable_message(self):
         result, summary = self.invoke('doctor', 'missing-xcode')
