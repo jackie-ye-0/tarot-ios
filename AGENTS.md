@@ -4,6 +4,7 @@ This is an iOS harness setup with a disposable SwiftUI technical shell. Product 
 
 - Start with [README](README.md) for prerequisites and commands, then [architecture](docs/architecture.md) when changing code or tooling.
 - Read [harness principles](docs/harness.md) before changing agent guidance, development tooling, verification/evidence or the harness improvement process.
+- Engineering skills: see [issue tracker](docs/agents/issue-tracker.md), [triage labels](docs/agents/triage-labels.md) and [domain docs](docs/agents/domain.md) for repository conventions.
 - Run `./scripts/harness doctor` before iOS work. Use per-command `DEVELOPER_DIR` if needed. Never auto-install tools or change machine settings.
 - Run `./scripts/harness check` after changes; inspect `./scripts/harness evidence` and the exported test screenshot. Non-zero, zero-test, skipped-test and missing-evidence runs do not establish verification. Report unavailable prerequisites precisely.
 - For command changes, first run `python3 -m unittest discover -s tests -v`. These fake-tool tests do not verify iOS.
