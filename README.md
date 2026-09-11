@@ -40,6 +40,7 @@ The launch command uses `simctl`; open the Simulator app yourself to watch the d
 
 ## Structure and limitations
 
+- [Project documents](docs/README.md): research, PRDs and harness guidance in one place.
 - [Architecture](docs/architecture.md): targets, commands and evidence boundary.
 - [Decisions and scope](docs/decisions.md): approved setup and unresolved product choices.
 - [Workflow](docs/workflow.md): daily loop, harness evolution and future synthetic AI tests.
