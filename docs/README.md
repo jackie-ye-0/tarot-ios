@@ -4,6 +4,7 @@ Keep research, product requirements and harness guidance here so they travel wit
 
 ## Research
 
+- [User psychology and journeys](research/user-psychology-and-journeys.md): research prepared on 12 September 2026 covering audience evidence, motivations, category-specific journeys and reasons to return. Includes hypotheses to validate, not approved product requirements.
 - [Market opportunity assessment](research/market-opportunity.md): fortune-telling iOS market research prepared on 9 September 2026. Imported unchanged from the original research document. Its linked companion documents, `competitor-audit.md` and `demand-demographics.md`, have not yet been imported; those relative links will not resolve until they are added alongside it.
 
 Add future research to `docs/research/`, using descriptive, lower-case hyphenated filenames. Include the research date and sources; findings are evidence and hypotheses, not approved product requirements.
