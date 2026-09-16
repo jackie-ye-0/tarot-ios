@@ -1,0 +1,722 @@
+<title>Tarot V1 Final</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gabarito:wght@400;500;600;700&family=Hanken+Grotesk:wght@300;400;500;600&display=swap&family=Archivo:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --ground: #e8e9ea;
+    --surface: #ffffff;
+    --surface-2: #f3f4f5;
+    --ink: #1b1c1e;
+    --ink-2: #45484c;
+    --muted: #6b6f74;
+    --faint: #9aa0a6;
+    --rule: #d4d6d8;
+    --accent: #8d4e37;
+    --accent-soft: #f0e2dc;
+    --live: #2f6f4f;
+    --live-soft: #dfeae3;
+    --warn: #8a5a1a;
+    --warn-soft: #f4e7d2;
+    --shadow: 0 1px 2px rgba(24,26,28,.06), 0 12px 32px rgba(24,26,28,.10);
+    --maxw: 1180px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #16181a;
+      --surface: #1f2225;
+      --surface-2: #272b2f;
+      --ink: #eceef0;
+      --ink-2: #c6cacd;
+      --muted: #9aa0a6;
+      --faint: #71777d;
+      --rule: #2f3438;
+      --accent: #d08a6b;
+      --accent-soft: #35281f;
+      --live: #7fc39c;
+      --live-soft: #1e2b24;
+      --warn: #d9a95f;
+      --warn-soft: #2d2618;
+      --shadow: 0 1px 2px rgba(0,0,0,.5), 0 16px 40px rgba(0,0,0,.45);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #16181a;
+    --surface: #1f2225;
+    --surface-2: #272b2f;
+    --ink: #eceef0;
+    --ink-2: #c6cacd;
+    --muted: #9aa0a6;
+    --faint: #71777d;
+    --rule: #2f3438;
+    --accent: #d08a6b;
+    --accent-soft: #35281f;
+    --live: #7fc39c;
+    --live-soft: #1e2b24;
+    --warn: #d9a95f;
+    --warn-soft: #2d2618;
+    --shadow: 0 1px 2px rgba(0,0,0,.5), 0 16px 40px rgba(0,0,0,.45);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--ground); color: var(--ink);
+    font-family: "IBM Plex Sans", system-ui, -apple-system, sans-serif;
+    font-size: 15px; line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:hover { color: var(--ink); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 28px; }
+
+  header.top {
+    border-bottom: 1px solid var(--rule);
+    background: var(--surface);
+  }
+  .masthead { padding: 44px 0 34px; display: flex; flex-wrap: wrap; gap: 32px; align-items: flex-end; justify-content: space-between; }
+  .mast-l { display: flex; flex-direction: column; gap: 10px; max-width: 60ch; }
+  .eyebrow {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 11px; letter-spacing: .13em; text-transform: uppercase; color: var(--accent);
+  }
+  h1 {
+    font-family: "Archivo", system-ui, sans-serif; font-weight: 700;
+    font-size: clamp(30px, 4.4vw, 46px); line-height: 1.02; letter-spacing: -.028em;
+    margin: 0; text-wrap: balance;
+  }
+  .lede { margin: 4px 0 0; color: var(--ink-2); font-size: 16.5px; max-width: 56ch; }
+  .facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px 26px; }
+  .fact { display: flex; gap: 12px; padding: 5px 0; border-bottom: 1px solid var(--rule); }
+  .fact dt {
+    font-family: "IBM Plex Mono", monospace; font-size: 10.5px; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--faint); width: 82px; flex: none; padding-top: 3px;
+  }
+  .fact dd { margin: 0; font-size: 13.5px; color: var(--ink-2); font-weight: 500; }
+
+  nav.toc { border-top: 1px solid var(--rule); }
+  .toc-in { display: flex; flex-wrap: wrap; gap: 0 4px; padding: 12px 0; }
+  .toc-in a {
+    font-family: "IBM Plex Mono", monospace; font-size: 11.5px; letter-spacing: .04em;
+    color: var(--muted); text-decoration: none; padding: 6px 10px; border-radius: 4px;
+  }
+  .toc-in a:hover { background: var(--surface-2); color: var(--ink); }
+  .toc-in a b { color: var(--faint); font-weight: 400; margin-right: 6px; }
+
+  .group { padding: 62px 0 8px; }
+  .group-head { display: flex; flex-direction: column; gap: 7px; padding-bottom: 8px; border-bottom: 2px solid var(--ink); margin-bottom: 4px; }
+  .group-head h2 {
+    font-family: "Archivo", system-ui, sans-serif; font-weight: 600; font-size: 24px;
+    letter-spacing: -.02em; margin: 0;
+  }
+  .group-head p { margin: 0; color: var(--muted); font-size: 14px; max-width: 62ch; }
+
+  .screenrow { display: grid; grid-template-columns: 390px minmax(0, 1fr); gap: 46px; padding: 42px 0; border-bottom: 1px solid var(--rule); align-items: start; }
+  .screenrow:last-child { border-bottom: 0; }
+
+  .dev { display: flex; flex-direction: column; gap: 12px; position: sticky; top: 20px; }
+  .devframe {
+    width: 390px; border-radius: 22px; overflow: hidden; background: var(--surface);
+    box-shadow: var(--shadow); border: 1px solid var(--rule);
+  }
+  .dcroot { display: block; font-size: 16px; line-height: normal; text-align: left; }
+  .devfoot {
+    display: flex; justify-content: space-between; align-items: center; gap: 10px;
+    font-family: "IBM Plex Mono", monospace; font-size: 10.5px; color: var(--faint); letter-spacing: .05em;
+  }
+
+  .spec { display: flex; flex-direction: column; gap: 14px; max-width: 58ch; padding-top: 2px; }
+  .spec-top { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .snum {
+    font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--accent);
+    letter-spacing: .06em; font-weight: 500;
+  }
+  .spec h3 {
+    font-family: "Archivo", system-ui, sans-serif; font-weight: 600; font-size: 21px;
+    letter-spacing: -.018em; margin: 0; text-wrap: balance;
+  }
+  .spec-top .chip {
+    font-family: "IBM Plex Mono", monospace; font-size: 10px; letter-spacing: .09em;
+    text-transform: uppercase; padding: 3px 8px; border-radius: 3px; font-weight: 500; white-space: nowrap;
+  }
+  .spec-top .chip.live { background: var(--live-soft); color: var(--live); }
+  .spec-top .chip.flag { background: var(--warn-soft); color: var(--warn); }
+  .note p { margin: 0 0 11px; color: var(--ink-2); font-size: 14.5px; }
+  .note p:last-child { margin-bottom: 0; }
+  .note p.kicker {
+    font-family: "IBM Plex Mono", monospace; font-size: 11px; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--faint);
+  }
+  .note code {
+    font-family: "IBM Plex Mono", monospace; font-size: 12.5px;
+    background: var(--surface-2); padding: 1px 5px; border-radius: 3px; color: var(--ink);
+  }
+  .note strong { font-weight: 600; color: var(--ink); }
+
+  .variants { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding-top: 2px; }
+  .variants .vlabel {
+    font-family: "IBM Plex Mono", monospace; font-size: 10px; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--faint); margin-right: 2px;
+  }
+  .variants button {
+    font: inherit; font-size: 12.5px; padding: 6px 12px; border-radius: 20px; cursor: pointer;
+    border: 1px solid var(--rule); background: var(--surface); color: var(--ink-2);
+  }
+  .variants button:hover { border-color: var(--accent); color: var(--ink); }
+  .variants button[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--surface); }
+
+  footer.foot { border-top: 1px solid var(--rule); background: var(--surface); margin-top: 66px; }
+  .foot-in { padding: 46px 0 60px; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 38px; }
+  .foot h4 {
+    font-family: "IBM Plex Mono", monospace; font-size: 10.5px; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--faint); margin: 0 0 12px; font-weight: 500;
+  }
+  .foot ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
+  .foot li { font-size: 13.5px; color: var(--ink-2); }
+  .sw { display: flex; align-items: center; gap: 9px; font-size: 13px; color: var(--ink-2); }
+  .sw i { width: 15px; height: 15px; border-radius: 4px; flex: none; border: 1px solid rgba(0,0,0,.14); }
+  .sw code { font-family: "IBM Plex Mono", monospace; font-size: 11.5px; color: var(--faint); margin-left: auto; }
+
+  @media (max-width: 900px) {
+    .screenrow { grid-template-columns: minmax(0, 1fr); gap: 26px; }
+    .dev { position: static; }
+    .devframe { max-width: 390px; }
+    .facts { grid-template-columns: minmax(0, 1fr); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
+  }
+</style>
+
+<style>
+#s01 .dcroot { margin: 0; font-family: "Hanken Grotesk", system-ui, sans-serif; }#s01 a { color: #b0654a; }#s01 a:hover { color: #8d4e37; }
+  
+#s02 .dcroot { margin: 0; font-family: "Hanken Grotesk", system-ui, sans-serif; }#s02 a { color: #b0654a; }#s02 a:hover { color: #8d4e37; }#s02 .pill { cursor: pointer; transition: background 0.15s ease; }#s02 .pill:hover { background: rgba(255,255,255,0.92); }#s02 .areaOpt { cursor: pointer; transition: background 0.15s ease, opacity 0.15s ease; }
+  
+#s03 .dcroot { margin: 0; font-family: "Hanken Grotesk", system-ui, sans-serif; }#s03 a { color: #b0654a; }#s03 a:hover { color: #8d4e37; }#s03 .slot { position: absolute; width: 96px; height: 146px; }#s03 .cardInner { width: 96px; height: 146px; border-radius: 48px 48px 8px 8px; background: #cf9d8c; box-shadow: -3px 4px 12px rgba(67,48,43,0.16); overflow: hidden; cursor: pointer; }#s03 .cardInner:hover { background: #c9927f; }
+
+    @keyframes washA_s03 {
+      0%   { transform: translate(var(--dx), 6px) rotate(var(--r0)) ; }
+      22%  { transform: translate(calc(var(--dx) * 0.55), -10px) rotate(var(--r1)); }
+      44%  { transform: translate(calc(var(--dx) * 0.75), 8px) rotate(var(--r0)); }
+      66%  { transform: translate(calc(var(--dx) * 0.3), -4px) rotate(var(--r1)); }
+      100% { transform: translate(0, 0) rotate(0deg); }
+    }
+    @keyframes washB_s03 {
+      0%   { transform: translate(var(--dx), 6px) rotate(var(--r1)); }
+      22%  { transform: translate(calc(var(--dx) * 0.6), -12px) rotate(var(--r0)); }
+      44%  { transform: translate(calc(var(--dx) * 0.7), 10px) rotate(var(--r1)); }
+      66%  { transform: translate(calc(var(--dx) * 0.25), -5px) rotate(var(--r0)); }
+      100% { transform: translate(0, 0) rotate(0deg); }
+    }#s03 .washA_s03 { animation: washA_s03 1.75s cubic-bezier(0.33, 0.9, 0.25, 1) both; }#s03 .washB_s03 { animation: washB_s03 1.75s cubic-bezier(0.33, 0.9, 0.25, 1) both; }
+
+    @keyframes capOut_s03 { 0%, 46% { opacity: 1; } 62%, 100% { opacity: 0; } }
+    @keyframes capIn_s03  { 0%, 52% { opacity: 0; } 74%, 100% { opacity: 1; } }#s03 .capOut_s03 { animation: capOut_s03 1.75s linear both; }#s03 .capIn_s03 { animation: capIn_s03 1.75s linear both; }
+
+    @keyframes liftUp_s03 { to { transform: translateY(-26px) scale(1.04); } }#s03 .lifted { animation: liftUp_s03 0.34s ease-out both; }#s03 .dimmed { opacity: 0.28; transition: opacity 0.3s ease; }#s03 .hiddenCap { opacity: 0; }
+  
+#s04 .dcroot { margin: 0; font-family: "Hanken Grotesk", system-ui, sans-serif; }#s04 a { color: #b0654a; }#s04 a:hover { color: #8d4e37; }#s04 .stage { perspective: 1500px; }#s04 .flipCard { position: relative; width: 214px; height: 314px; transform-style: preserve-3d; }#s04 .face { position: absolute; inset: 0; border-radius: 107px 107px 12px 12px; overflow: hidden; backface-visibility: hidden; -webkit-backface-visibility: hidden; }#s04 .faceBack { transform: rotateY(180deg); background: #cf9d8c; }#s04 .faceFront { background: #f8f0ea; box-shadow: 0 18px 40px rgba(67,48,43,0.16); }
+
+    @keyframes flipA_s04 { 0% { transform: rotateY(180deg) scale(0.9); } 100% { transform: rotateY(0deg) scale(1); } }
+    @keyframes flipB_s04 { 0% { transform: rotateY(180deg) scale(0.9); } 100% { transform: rotateY(0deg) scale(1); } }#s04 .flipA_s04 { animation: flipA_s04 1s cubic-bezier(0.32, 0.86, 0.24, 1) both; }#s04 .flipB_s04 { animation: flipB_s04 1s cubic-bezier(0.32, 0.86, 0.24, 1) both; }
+
+    @keyframes riseA_s04 { 0% { opacity: 0; transform: translateY(12px); } 100% { opacity: 1; transform: translateY(0); } }#s04 .rise1 { animation: riseA_s04 0.55s ease-out 0.86s both; }#s04 .rise2 { animation: riseA_s04 0.55s ease-out 1.04s both; }#s04 .rise3 { animation: riseA_s04 0.55s ease-out 1.24s both; }
+
+    @keyframes glowA_s04 { 0% { opacity: 0; transform: scale(0.7); } 100% { opacity: 1; transform: scale(1); } }#s04 .glow { animation: glowA_s04 1.5s ease-out both; }#s04 .tapArea { cursor: pointer; }
+  
+#s05 .dcroot { margin: 0; font-family: "Hanken Grotesk", system-ui, sans-serif; }#s05 a { color: #b0654a; }#s05 a:hover { color: #8d4e37; }#s05 .sugg { cursor: pointer; transition: background 0.16s ease; }#s05 .sugg:hover { background: rgba(255,255,255,0.9); }#s05 .cardTap { transition: transform 0.2s ease; }#s05 .cardTap:hover { transform: scale(1.03); }
+  
+#s06 .dcroot { margin: 0; font-family: "Hanken Grotesk", system-ui, sans-serif; }#s06 a { color: #b0654a; }#s06 a:hover { color: #8d4e37; }
+  
+#s07 .dcroot { margin: 0; font-family: "Hanken Grotesk", system-ui, sans-serif; }#s07 a { color: #b0654a; }#s07 a:hover { color: #8d4e37; }#s07 .chip { cursor: pointer; transition: background 0.15s ease; }#s07 .chip:hover { background: rgba(255,255,255,0.92); }#s07 .cta { cursor: pointer; }
+  
+#s08 .dcroot { margin: 0; font-family: "Hanken Grotesk", system-ui, sans-serif; }#s08 a { color: #b0654a; }#s08 a:hover { color: #8d4e37; }
+  
+#s09 .dcroot { margin: 0; font-family: "Hanken Grotesk", system-ui, sans-serif; }#s09 a { color: #b0654a; }#s09 a:hover { color: #8d4e37; }#s09 .slot { position: absolute; width: 84px; height: 126px; }#s09 .cardInner { width: 84px; height: 126px; border-radius: 42px 42px 7px 7px; background: #cf9d8c; box-shadow: -2px 3px 10px rgba(67,48,43,0.16); overflow: hidden; cursor: pointer; }#s09 .cardInner:hover { background: #c9927f; }#s09 .tapArea { cursor: pointer; }
+
+    @keyframes washA_s09 {
+      0%   { transform: translate(var(--dx), 6px) rotate(var(--r0)); }
+      26%  { transform: translate(calc(var(--dx) * 0.55), -9px) rotate(var(--r1)); }
+      52%  { transform: translate(calc(var(--dx) * 0.72), 7px) rotate(var(--r0)); }
+      74%  { transform: translate(calc(var(--dx) * 0.28), -4px) rotate(var(--r1)); }
+      100% { transform: translate(0, 0) rotate(0deg); }
+    }
+    @keyframes washB_s09 {
+      0%   { transform: translate(var(--dx), 6px) rotate(var(--r1)); }
+      26%  { transform: translate(calc(var(--dx) * 0.6), -11px) rotate(var(--r0)); }
+      52%  { transform: translate(calc(var(--dx) * 0.68), 9px) rotate(var(--r1)); }
+      74%  { transform: translate(calc(var(--dx) * 0.22), -5px) rotate(var(--r0)); }
+      100% { transform: translate(0, 0) rotate(0deg); }
+    }#s09 .washA_s09 { animation: washA_s09 1.4s cubic-bezier(0.33, 0.9, 0.25, 1) both; }#s09 .washB_s09 { animation: washB_s09 1.4s cubic-bezier(0.33, 0.9, 0.25, 1) both; }
+
+    @keyframes popIn_s09 { 0% { opacity: 0; transform: scale(0.86); } 100% { opacity: 1; transform: scale(1); } }#s09 .popIn_s09 { animation: popIn_s09 0.4s ease-out both; }
+  
+#s10 .dcroot { margin: 0; font-family: "Hanken Grotesk", system-ui, sans-serif; }#s10 a { color: #b0654a; }#s10 a:hover { color: #8d4e37; }
+  
+#s11 .dcroot { margin: 0; font-family: "Hanken Grotesk", system-ui, sans-serif; }#s11 a { color: #b0654a; }#s11 a:hover { color: #8d4e37; }
+  
+#s12 .dcroot { margin: 0; font-family: "Hanken Grotesk", system-ui, sans-serif; }#s12 a { color: #b0654a; }#s12 a:hover { color: #8d4e37; }#s12 .filt { cursor: pointer; }#s12 .row { transition: background 0.15s ease; }#s12 .row:hover { background: rgba(255,255,255,0.85); }
+  
+#s13 .dcroot { margin: 0; font-family: "Hanken Grotesk", system-ui, sans-serif; }#s13 a { color: #b0654a; }#s13 a:hover { color: #8d4e37; }
+  
+#s14 .dcroot { margin: 0; font-family: "Hanken Grotesk", system-ui, sans-serif; }#s14 a { color: #b0654a; }#s14 a:hover { color: #8d4e37; }
+  
+</style>
+
+
+<header class="top">
+  <div class="wrap">
+    <div class="masthead">
+      <div class="mast-l">
+        <div class="eyebrow">iOS · English · PRD V0.8 · Soft Dawn</div>
+        <h1>Tarot V1 Final</h1>
+        <p class="lede">Every screen in the first release, with the reasoning attached. A daily tarot ritual read through three areas — career, relationship, and how the people around you treat you.</p>
+      </div>
+      <dl class="facts">
+        <div class="fact"><dt>Screens</dt><dd>14, 7 interactive on this page</dd></div>
+        <div class="fact"><dt>Price</dt><dd>Free. Paywall built, flag off</dd></div>
+        <div class="fact"><dt>Metric</dt><dd>D7 / D30 retention</dd></div>
+        <div class="fact"><dt>Model calls</dt><dd>Deep readings only — never the daily card</dd></div>
+        <div class="fact"><dt>Content</dt><dd>1,404 units + 936 values to author</dd></div>
+        <div class="fact"><dt>Blockers</dt><dd>Card art licensing · authoring owner</dd></div>
+      </dl>
+    </div>
+  </div>
+  <nav class="toc"><div class="wrap"><div class="toc-in">
+
+<a href="#s01"><b>01</b>Onboarding — birthday</a>
+<a href="#s02"><b>02</b>Onboarding — about you</a>
+<a href="#s03"><b>03</b>Home — shuffle &amp; pick</a>
+<a href="#s04"><b>04</b>Card reveal</a>
+<a href="#s05"><b>05</b>Home — daily summary</a>
+<a href="#s06"><b>06</b>Area detail — Career</a>
+<a href="#s07"><b>07</b>Question composer</a>
+<a href="#s08"><b>08</b>Relationship input</a>
+<a href="#s09"><b>09</b>Three-card pick</a>
+<a href="#s10"><b>10</b>Reading detail</a>
+<a href="#s11"><b>11</b>Reading — library fallback</a>
+<a href="#s12"><b>12</b>History</a>
+<a href="#s13"><b>13</b>History — empty</a>
+<a href="#s14"><b>14</b>Paywall — not in V1</a>
+</div></div></nav></header>
+<main>
+
+<section class="group"><div class="wrap">
+  <div class="group-head"><h2>Onboarding</h2><p>Two screens. Only two of the six fields collected here are used by V1.</p></div>
+
+
+  <article class="screenrow" id="s01">
+    <div class="dev">
+      <div class="devframe" data-screen="s01"></div>
+      <div class="devfoot"><span>390 × 844 pt</span><span>OnboardingBirth</span></div>
+    </div>
+    <div class="spec">
+      <div class="spec-top"><span class="snum">01</span><h3>Onboarding — birthday</h3></div>
+      <div class="note"><p>Birthday first. Step 1 of 2.</p>
+<p>Still the step I&#x27;d cut: three fields, none used by V1. The §5.2 A/B test defers all three and is the top-priority experiment at launch.</p></div>
+      
+    </div>
+  </article>
+
+
+  <article class="screenrow" id="s02">
+    <div class="dev">
+      <div class="devframe" data-screen="s02"></div>
+      <div class="devfoot"><span>390 × 844 pt</span><span>OnboardingAbout</span></div>
+    </div>
+    <div class="spec">
+      <div class="spec-top"><span class="snum">02</span><h3>Onboarding — about you</h3><span class="chip live">live</span></div>
+      <div class="note"><p><strong>INTERACTIVE</strong> — toggle areas, tap pills.</p>
+<p>Areas pre-checked, so most people just hit Continue. Try removing two — the last one locks.</p>
+<p>Relationship status is optional; the hint changes to show what answering buys.</p></div>
+      
+    </div>
+  </article>
+
+</div></section>
+
+<section class="group"><div class="wrap">
+  <div class="group-head"><h2>The morning ritual</h2><p>Shuffle, pick, reveal, summary. All authored content — no model runs here.</p></div>
+
+
+  <article class="screenrow" id="s03">
+    <div class="dev">
+      <div class="devframe" data-screen="s03"></div>
+      <div class="devfoot"><span>390 × 844 pt</span><span>HomePick</span></div>
+    </div>
+    <div class="spec">
+      <div class="spec-top"><span class="snum">03</span><h3>Home — shuffle &amp; pick</h3><span class="chip live">live</span></div>
+      <div class="note"><p><strong>INTERACTIVE</strong> — watch the shuffle, then pick. &quot;Shuffle again&quot; replays it.</p>
+<p>CSS motion, not video: a video can&#x27;t respond to Reduce Motion, adds bundle weight, and can&#x27;t be interrupted by an early tap. Ship as Lottie or native.</p>
+<p>&quot;Shuffling changes the order, not your card&quot; is load-bearing copy — without it the replay reads as a reroll.</p></div>
+      <div class="variants" data-for="s03"><span class="vlabel">Accessibility</span><button type="button" data-prop="reduceMotion" data-val="toggle" aria-pressed="false">reduce motion</button></div>
+    </div>
+  </article>
+
+
+  <article class="screenrow" id="s04">
+    <div class="dev">
+      <div class="devframe" data-screen="s04"></div>
+      <div class="devfoot"><span>390 × 844 pt</span><span>CardReveal</span></div>
+    </div>
+    <div class="spec">
+      <div class="spec-top"><span class="snum">04</span><h3>Card reveal</h3><span class="chip live">live</span></div>
+      <div class="note"><p><strong>INTERACTIVE</strong>. The card flips in, then name and keywords rise behind it. &quot;Again&quot; rewatches.</p>
+<p>No interpretation text — putting the reading here collapses this screen and the summary back into one.</p>
+<p>Never auto-advances. Two tweaks: Reduce Motion, and Entry point (switch to &quot;reopened from summary&quot; for the card detail view).</p></div>
+      <div class="variants" data-for="s04"><span class="vlabel">Accessibility</span><button type="button" data-prop="reduceMotion" data-val="toggle" aria-pressed="false">reduce motion</button><span class="vlabel">Entry point</span><button type="button" data-prop="entry" data-val="after the pick" aria-pressed="true">after the pick</button><button type="button" data-prop="entry" data-val="reopened from summary" aria-pressed="false">reopened from summary</button></div>
+    </div>
+  </article>
+
+
+  <article class="screenrow" id="s05">
+    <div class="dev">
+      <div class="devframe" data-screen="s05"></div>
+      <div class="devfoot"><span>390 × 1040 pt</span><span>Main</span></div>
+    </div>
+    <div class="spec">
+      <div class="spec-top"><span class="snum">05</span><h3>Home — daily summary</h3><span class="chip live">live</span></div>
+      <div class="note"><p><strong>INTERACTIVE</strong> (tweak) — home for the rest of the day.</p>
+<p>Card art is tappable to reopen screen 4.</p>
+<p>Scores panel is its own block. &quot;How today sits&quot; = how the day looks; &quot;What to do about it&quot; = what to do.</p>
+<p>Extras above the fold, where the screenshot happens.</p>
+<p>Scrolls.</p></div>
+      <div class="variants" data-for="s05"><span class="vlabel">Active areas</span><button type="button" data-prop="activeAreas" data-val="all three" aria-pressed="true">all three</button><button type="button" data-prop="activeAreas" data-val="social hidden" aria-pressed="false">social hidden</button><button type="button" data-prop="activeAreas" data-val="career only" aria-pressed="false">career only</button></div>
+    </div>
+  </article>
+
+</div></section>
+
+<section class="group"><div class="wrap">
+  <div class="group-head"><h2>Going deeper</h2><p>The only path that calls the model. Identical in all three areas.</p></div>
+
+
+  <article class="screenrow" id="s06">
+    <div class="dev">
+      <div class="devframe" data-screen="s06"></div>
+      <div class="devfoot"><span>390 × 844 pt</span><span>AreaCareer</span></div>
+    </div>
+    <div class="spec">
+      <div class="spec-top"><span class="snum">06</span><h3>Area detail — Career</h3></div>
+      <div class="note"><p>Where a suggestion row lands. Career is advisory — &quot;state a number, don&#x27;t hint at one&quot;.</p>
+<p>Nothing sold here.</p></div>
+      
+    </div>
+  </article>
+
+
+  <article class="screenrow" id="s07">
+    <div class="dev">
+      <div class="devframe" data-screen="s07"></div>
+      <div class="devfoot"><span>390 × 844 pt</span><span>Composer</span></div>
+    </div>
+    <div class="spec">
+      <div class="spec-top"><span class="snum">07</span><h3>Question composer</h3><span class="chip live">live</span></div>
+      <div class="note"><p><strong>INTERACTIVE</strong> — tap a chip, then &quot;Draw for this question&quot;.</p>
+<p>Submitting no longer generates anything. It hands off to the three-card pick, previewing the three empty positions so the user knows what they&#x27;re in for before they start.</p>
+<p>If the paywall ever turns on, the gate goes HERE — before the picks. Asking someone to draw three cards and then charging them would be a bait.</p></div>
+      
+    </div>
+  </article>
+
+
+  <article class="screenrow" id="s08">
+    <div class="dev">
+      <div class="devframe" data-screen="s08"></div>
+      <div class="devfoot"><span>390 × 844 pt</span><span>RelationshipInput</span></div>
+    </div>
+    <div class="spec">
+      <div class="spec-top"><span class="snum">08</span><h3>Relationship input</h3></div>
+      <div class="note"><p>Reached only from inside the Relationship area. Also feeds the three-card pick, with You / Them / The Connection as the positions.</p>
+<p>&quot;No birth details needed&quot; up front — the friction that kills synastry in V2.</p></div>
+      
+    </div>
+  </article>
+
+
+  <article class="screenrow" id="s09">
+    <div class="dev">
+      <div class="devframe" data-screen="s09"></div>
+      <div class="devfoot"><span>390 × 844 pt</span><span>ThreeCardPick</span></div>
+    </div>
+    <div class="spec">
+      <div class="spec-top"><span class="snum">09</span><h3>Three-card pick</h3><span class="chip live">live</span></div>
+      <div class="note"><p><strong>INTERACTIVE</strong>. Pick three times, one per position. Shuffle as often as you like between picks. &quot;Start the spread over&quot; resets.</p>
+<p>The Reading type tweak above the artboard covers all four variants: Career, Relationship, Relationship · someone specific, and Social. Every deep reading in every area uses this same screen — only the question, the accent and the position labels change.</p>
+<p>The named-person variant is the one that differs structurally: You / Them / The Connection instead of Situation / Action / Outcome.</p>
+<p>The three slots show from the start, so the user always knows how many draws remain. The question stays on screen throughout — three rounds is long enough to forget what you asked.</p>
+<p>Unlike the daily card, these picks GENUINELY determine the cards (§4.2.11). A placed card locks — same integrity rule as the daily no-redraw.</p>
+<p><strong>WATCH THIS ONE</strong>: three picks now sit between peak intent and the answer. <code>spread_abandoned{area, picks_made}</code> is the metric; if it clusters at 1–2, a &quot;draw all three for me&quot; shortcut is the fix (§9).</p></div>
+      <div class="variants" data-for="s09"><span class="vlabel">Reading type</span><button type="button" data-prop="area" data-val="career" aria-pressed="true">career</button><button type="button" data-prop="area" data-val="relationship" aria-pressed="false">relationship</button><button type="button" data-prop="area" data-val="relationship · someone specific" aria-pressed="false">relationship · someone specific</button><button type="button" data-prop="area" data-val="social" aria-pressed="false">social</button><span class="vlabel">Accessibility</span><button type="button" data-prop="reduceMotion" data-val="toggle" aria-pressed="false">reduce motion</button></div>
+    </div>
+  </article>
+
+
+  <article class="screenrow" id="s10">
+    <div class="dev">
+      <div class="devframe" data-screen="s10"></div>
+      <div class="devfoot"><span>390 × 1010 pt</span><span>ReadingDetail</span></div>
+    </div>
+    <div class="spec">
+      <div class="spec-top"><span class="snum">10</span><h3>Reading detail</h3></div>
+      <div class="note"><p>The deep reading — the only place the LLM runs. Screens 3–5 are authored content, so the daily ritual costs nothing to serve.</p>
+<p>Ends on a question, not a verdict. Scrolls.</p></div>
+      
+    </div>
+  </article>
+
+</div></section>
+
+<section class="group"><div class="wrap">
+  <div class="group-head"><h2>States and flags</h2><p>The screens that only appear when something goes wrong, is empty, or is switched on later.</p></div>
+
+
+  <article class="screenrow" id="s11">
+    <div class="dev">
+      <div class="devframe" data-screen="s11"></div>
+      <div class="devfoot"><span>390 × 844 pt</span><span>ReadingFallback</span></div>
+    </div>
+    <div class="spec">
+      <div class="spec-top"><span class="snum">11</span><h3>Reading — library fallback</h3></div>
+      <div class="note"><p>§6.2 when the AI layer is unreachable: library meanings, plainly labelled, question not counted against the user.</p>
+<p>A real reading, just shorter — never an error screen.</p>
+<p>Still open: honest enough, or too apologetic?</p></div>
+      
+    </div>
+  </article>
+
+
+  <article class="screenrow" id="s12">
+    <div class="dev">
+      <div class="devframe" data-screen="s12"></div>
+      <div class="devfoot"><span>390 × 900 pt</span><span>History</span></div>
+    </div>
+    <div class="spec">
+      <div class="spec-top"><span class="snum">12</span><h3>History</h3><span class="chip live">live</span></div>
+      <div class="note"><p><strong>INTERACTIVE</strong> — tap the area filters.</p>
+<p>Calendar shows drawn vs missed days: streaks without gamifying them.</p></div>
+      
+    </div>
+  </article>
+
+
+  <article class="screenrow" id="s13">
+    <div class="dev">
+      <div class="devframe" data-screen="s13"></div>
+      <div class="devfoot"><span>390 × 844 pt</span><span>HistoryEmpty</span></div>
+    </div>
+    <div class="spec">
+      <div class="spec-top"><span class="snum">13</span><h3>History — empty</h3></div>
+      <div class="note"><p>Names the payoff that takes a week to arrive, rather than apologising for being empty.</p></div>
+      
+    </div>
+  </article>
+
+
+  <article class="screenrow" id="s14">
+    <div class="dev">
+      <div class="devframe" data-screen="s14"></div>
+      <div class="devfoot"><span>390 × 844 pt</span><span>Paywall</span></div>
+    </div>
+    <div class="spec">
+      <div class="spec-top"><span class="snum">14</span><h3>Paywall — not in V1</h3><span class="chip flag">not in v1</span></div>
+      <div class="note"><p><strong>NOT REACHABLE IN V1</strong>.</p>
+<p>Behind a disabled flag so monetization switches on in V1.5 with no App Store release.</p>
+<p>The three-card daily draw is the obvious thing it would unlock — sold as &quot;a deeper read&quot;, never &quot;more accurate&quot; (§8).</p></div>
+      
+    </div>
+  </article>
+
+</div></section>
+
+</main>
+<footer class="foot"><div class="wrap"><div class="foot-in">
+  <div>
+    <h4>Palette — Soft Dawn</h4>
+    <ul>
+      <li class="sw"><i style="background:#f2e6df"></i>Ground<code>#f2e6df</code></li>
+      <li class="sw"><i style="background:#43302b"></i>Ink<code>#43302b</code></li>
+      <li class="sw"><i style="background:#6f8ca2"></i>Career<code>#6f8ca2</code></li>
+      <li class="sw"><i style="background:#b0654a"></i>Relationship<code>#b0654a</code></li>
+      <li class="sw"><i style="background:#7d8f6a"></i>Social<code>#7d8f6a</code></li>
+      <li class="sw"><i style="background:#f5cf6b"></i>Card gold<code>#f5cf6b</code></li>
+    </ul>
+  </div>
+  <div>
+    <h4>Type</h4>
+    <ul>
+      <li><strong>Gabarito</strong> — display, 600</li>
+      <li><strong>Hanken Grotesk</strong> — body, 300–500</li>
+      <li>Card art is placeholder. Licensing unresolved.</li>
+    </ul>
+  </div>
+  <div>
+    <h4>Rules that shape these screens</h4>
+    <ul>
+      <li>One card a day, locked. No redraw, at any price.</li>
+      <li>Daily card is authored content — zero model calls.</li>
+      <li>Deep-reading picks genuinely determine the cards.</li>
+      <li>Reflection, never prediction. No lucky numbers.</li>
+      <li>Crisis language breaks the reading frame entirely.</li>
+      <li>Nothing sold anywhere in V1.</li>
+    </ul>
+  </div>
+  <div>
+    <h4>Still open</h4>
+    <ul>
+      <li>Per-area spread positions, or one shared triple</li>
+      <li>Whether the fallback copy is too apologetic</li>
+      <li>Card art licensing · content authoring owner</li>
+      <li>Question-text retention policy</li>
+      <li>Subscription price, before the flag turns on</li>
+    </ul>
+  </div>
+</div></div></footer>
+
+
+<script>
+(function () {
+  "use strict";
+  var SCREENS = [{"sid": "s01", "markup": "<div style=\"position: relative; width: 390px; height: 844px; box-sizing: border-box; background: #f2e6df; color: #43302b; padding: 54px 22px 30px; display: flex; flex-direction: column; overflow: hidden;\">\n\n  <svg style=\"position: absolute; inset: 0; width: 390px; height: 844px; opacity: 0.3; pointer-events: none;\" aria-hidden=\"true\">\n    <filter id=\"grainBirth\"><feTurbulence type=\"fractalNoise\" baseFrequency=\"0.85\" numOctaves=\"3\"></feTurbulence></filter>\n    <rect width=\"390\" height=\"844\" filter=\"url(#grainBirth)\"></rect>\n  </svg>\n\n  <div style=\"position: relative; display: flex; gap: 5px; margin-bottom: 36px;\">\n    <div style=\"height: 3px; border-radius: 2px; background: #b0654a; flex-grow: 1;\"></div>\n    <div style=\"height: 3px; border-radius: 2px; background: #e0c9be; flex-grow: 1;\"></div>\n  </div>\n\n  <div style=\"position: relative; display: flex; flex-direction: column; gap: 9px; margin-bottom: 26px;\">\n    <div style=\"font-family: 'Gabarito', sans-serif; font-size: 30px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.14;\">When were<br>you born?</div>\n    <div style=\"font-size: 14.5px; line-height: 1.5; color: #7a5d52;\">This unlocks your full birth chart when astrology arrives. Your cards work without it.</div>\n  </div>\n\n  <div style=\"position: relative; display: flex; flex-direction: column; gap: 15px;\">\n\n    <div style=\"display: flex; flex-direction: column; gap: 7px;\">\n      <div style=\"font-size: 12px; font-weight: 600; color: #6f564c;\">Date of birth</div>\n      <div style=\"height: 52px; border-radius: 15px; background: rgba(255,255,255,0.72); display: flex; align-items: center; justify-content: space-between; padding: 0 16px;\">\n        <div style=\"font-size: 15.5px; color: #43302b;\">14 March 1996</div>\n        <svg width=\"19\" height=\"19\" viewBox=\"0 0 20 20\" fill=\"none\" stroke=\"#a98b7e\" stroke-width=\"1.5\" stroke-linecap=\"round\"><rect x=\"3\" y=\"4.5\" width=\"14\" height=\"12.5\" rx=\"2.5\"></rect><path d=\"M3 8.5h14M7 4.5V2.5M13 4.5V2.5\"></path></svg>\n      </div>\n    </div>\n\n    <div style=\"display: flex; flex-direction: column; gap: 7px;\">\n      <div style=\"display: flex; justify-content: space-between; align-items: baseline;\">\n        <div style=\"font-size: 12px; font-weight: 600; color: #6f564c;\">Time of birth</div>\n        <div style=\"font-size: 12px; color: #9c7c70;\">Optional</div>\n      </div>\n      <div style=\"height: 52px; border-radius: 15px; background: rgba(255,255,255,0.72); display: flex; align-items: center; justify-content: space-between; padding: 0 16px;\">\n        <div style=\"font-size: 15.5px; color: #a98b7e;\">Select a time</div>\n        <svg width=\"19\" height=\"19\" viewBox=\"0 0 20 20\" fill=\"none\" stroke=\"#a98b7e\" stroke-width=\"1.5\" stroke-linecap=\"round\"><circle cx=\"10\" cy=\"10\" r=\"7.2\"></circle><path d=\"M10 6v4.2l2.8 1.8\"></path></svg>\n      </div>\n      <div style=\"align-self: flex-start; padding: 8px 15px; border-radius: 22px; background: rgba(255,255,255,0.5); box-shadow: inset 0 0 0 1.4px #cdb3a8; font-size: 13px; font-weight: 500; color: #6f564c; min-height: 20px; display: flex; align-items: center;\">I don't know my birth time</div>\n    </div>\n\n    <div style=\"display: flex; flex-direction: column; gap: 7px;\">\n      <div style=\"display: flex; justify-content: space-between; align-items: baseline;\">\n        <div style=\"font-size: 12px; font-weight: 600; color: #6f564c;\">Place of birth</div>\n        <div style=\"font-size: 12px; color: #9c7c70;\">Optional</div>\n      </div>\n      <div style=\"height: 52px; border-radius: 15px; background: rgba(255,255,255,0.72); display: flex; align-items: center; gap: 10px; padding: 0 16px;\">\n        <svg width=\"18\" height=\"18\" viewBox=\"0 0 20 20\" fill=\"none\" stroke=\"#a98b7e\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"9\" cy=\"9\" r=\"5.8\"></circle><path d=\"M13.4 13.4L17 17\"></path></svg>\n        <div style=\"font-size: 15.5px; color: #a98b7e;\">City or town</div>\n      </div>\n    </div>\n\n  </div>\n\n  <div style=\"position: relative; margin-top: auto; display: flex; flex-direction: column; gap: 14px;\">\n    <div style=\"display: flex; gap: 9px; background: rgba(255,255,255,0.42); border-radius: 14px; padding: 12px 13px;\">\n      <svg width=\"16\" height=\"16\" viewBox=\"0 0 20 20\" fill=\"none\" stroke=\"#8c6a5f\" stroke-width=\"1.5\" stroke-linecap=\"round\" style=\"flex-shrink: 0; margin-top: 1px;\"><circle cx=\"10\" cy=\"10\" r=\"7.4\"></circle><path d=\"M10 9v4.6M10 6.4v0.1\"></path></svg>\n      <div style=\"font-size: 12px; line-height: 1.5; color: #7a5d52;\">Birth details are private, stored encrypted, and never shared. You can delete them any time.</div>\n    </div>\n    <div style=\"height: 52px; border-radius: 26px; background: #43302b; color: #f8f0ea; display: flex; align-items: center; justify-content: center; font-family: 'Gabarito', sans-serif; font-size: 16px; font-weight: 600;\">Continue</div>\n  </div>\n\n</div>", "props": "{}", "logic": ""}, {"sid": "s02", "markup": "<div style=\"position: relative; width: 390px; height: 844px; box-sizing: border-box; background: #f2e6df; color: #43302b; padding: 54px 22px 30px; display: flex; flex-direction: column; overflow: hidden;\">\n\n  <svg style=\"position: absolute; inset: 0; width: 390px; height: 844px; opacity: 0.3; pointer-events: none;\" aria-hidden=\"true\">\n    <filter id=\"grainAbout\"><feTurbulence type=\"fractalNoise\" baseFrequency=\"0.85\" numOctaves=\"3\"></feTurbulence></filter>\n    <rect width=\"390\" height=\"844\" filter=\"url(#grainAbout)\"></rect>\n  </svg>\n\n  <div style=\"position: relative; display: flex; gap: 5px; margin-bottom: 30px;\">\n    <div style=\"height: 3px; border-radius: 2px; background: #b0654a; flex-grow: 1;\"></div>\n    <div style=\"height: 3px; border-radius: 2px; background: #b0654a; flex-grow: 1;\"></div>\n  </div>\n\n  <div style=\"position: relative; display: flex; flex-direction: column; gap: 8px; margin-bottom: 26px;\">\n    <div style=\"font-family: 'Gabarito', sans-serif; font-size: 28px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.14;\">A little about you</div>\n    <div style=\"font-size: 14px; line-height: 1.5; color: #7a5d52;\">All of this is optional \u2014 tap Continue and we'll start you with everything on.</div>\n  </div>\n\n  <div style=\"position: relative; display: flex; flex-direction: column; gap: 9px; margin-bottom: 24px;\">\n    <div style=\"font-size: 12.5px; font-weight: 600; color: #43302b;\">Which of these matter to you?</div>\n    <div style=\"display: flex; flex-direction: column; gap: 7px;\">\n      <sc-for list=\"{{areas}}\" as=\"a\" hint-placeholder-count=\"3\">\n        <div class=\"areaOpt\" onClick=\"{{a.toggle}}\" style=\"display: flex; align-items: center; gap: 12px; background: {{a.bg}}; border-radius: 15px; padding: 12px 14px; opacity: {{a.opacity}}; min-height: 44px; box-sizing: border-box;\">\n          <div style=\"width: 22px; height: 22px; border-radius: 7px; background: {{a.boxFill}}; box-shadow: inset 0 0 0 1.7px {{a.boxBorder}}; flex-shrink: 0; display: flex; align-items: center; justify-content: center;\">\n            <sc-if value=\"{{a.on}}\" hint-placeholder-val=\"{{true}}\">\n              <svg width=\"13\" height=\"13\" viewBox=\"0 0 20 20\" fill=\"none\" stroke=\"#f8f0ea\" stroke-width=\"2.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 10.5l4 4 8-9\"></path></svg>\n            </sc-if>\n          </div>\n          <div style=\"flex-grow: 1; display: flex; flex-direction: column; gap: 1px;\">\n            <div style=\"font-family: 'Gabarito', sans-serif; font-size: 15px; font-weight: 600;\">{{a.name}}</div>\n            <div style=\"font-size: 11.5px; color: #8c6a5f;\">{{a.desc}}</div>\n          </div>\n        </div>\n      </sc-for>\n    </div>\n    <div style=\"font-size: 11.5px; line-height: 1.45; color: #9c7c70;\">{{areaHint}}</div>\n  </div>\n\n  <div style=\"position: relative; display: flex; flex-direction: column; gap: 9px; margin-bottom: 22px;\">\n    <div style=\"display: flex; align-items: baseline; gap: 8px;\">\n      <div style=\"font-size: 12.5px; font-weight: 600; color: #43302b;\">Where are you, relationship-wise?</div>\n      <div style=\"font-size: 11px; color: #9c7c70;\">Optional</div>\n    </div>\n    <div style=\"display: flex; flex-wrap: wrap; gap: 7px;\">\n      <sc-for list=\"{{statuses}}\" as=\"s\" hint-placeholder-count=\"4\">\n        <div class=\"pill\" onClick=\"{{s.pick}}\" style=\"padding: 10px 14px; border-radius: 21px; background: {{s.bg}}; color: {{s.color}}; box-shadow: {{s.ring}}; font-size: 13px; font-weight: {{s.weight}}; min-height: 24px; display: flex; align-items: center;\">{{s.label}}</div>\n      </sc-for>\n    </div>\n    <div style=\"font-size: 11.5px; line-height: 1.45; color: #9c7c70;\">{{statusHint}}</div>\n  </div>\n\n  <div style=\"position: relative; display: flex; flex-direction: column; gap: 9px;\">\n    <div style=\"display: flex; align-items: baseline; gap: 8px;\">\n      <div style=\"font-size: 12.5px; font-weight: 600; color: #43302b;\">How should we refer to you?</div>\n      <div style=\"font-size: 11px; color: #9c7c70;\">Optional</div>\n    </div>\n    <div style=\"display: flex; flex-wrap: wrap; gap: 7px;\">\n      <sc-for list=\"{{genders}}\" as=\"g\" hint-placeholder-count=\"4\">\n        <div class=\"pill\" onClick=\"{{g.pick}}\" style=\"padding: 10px 14px; border-radius: 21px; background: {{g.bg}}; color: {{g.color}}; box-shadow: {{g.ring}}; font-size: 13px; font-weight: {{g.weight}}; min-height: 24px; display: flex; align-items: center;\">{{g.label}}</div>\n      </sc-for>\n    </div>\n  </div>\n\n  <div style=\"position: relative; margin-top: auto; display: flex; flex-direction: column; gap: 11px;\">\n    <div style=\"display: flex; gap: 9px; align-items: flex-start;\">\n      <svg width=\"14\" height=\"14\" viewBox=\"0 0 20 20\" fill=\"none\" stroke=\"#a98b7e\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"flex-shrink: 0; margin-top: 2px;\"><rect x=\"4\" y=\"8.5\" width=\"12\" height=\"8\" rx=\"2\"></rect><path d=\"M7.5 8.5V6.5a2.5 2.5 0 015 0v2\"></path></svg>\n      <div style=\"font-size: 11.5px; line-height: 1.45; color: #9c7c70;\">Private, never shared, changeable in Settings.</div>\n    </div>\n    <div style=\"height: 52px; border-radius: 26px; background: #43302b; color: #f8f0ea; display: flex; align-items: center; justify-content: center; font-family: 'Gabarito', sans-serif; font-size: 16px; font-weight: 600;\">Continue</div>\n  </div>\n\n</div>", "props": "{}", "logic": "class Component extends DCLogic {\n  renderVals() {\n    const st = this.state || {};\n    const off = st.off || {};\n    const status = st.status || null;\n    const gender = st.gender || null;\n    const AREAS = [\n      { id: 'career', name: 'Career', desc: 'What to do about work', color: '#6f8ca2' },\n      { id: 'relationship', name: 'Relationship', desc: 'Where you and they are', color: '#b0654a' },\n      { id: 'social', name: 'Social', desc: 'How your people treat you', color: '#7d8f6a' }\n    ];\n    const onCount = AREAS.filter((a) => !off[a.id]).length;\n    const mkPills = (list, active, setter) => list.map((o) => ({\n      label: o.label,\n      bg: active === o.id ? '#43302b' : 'rgba(255,255,255,0.62)',\n      color: active === o.id ? '#f8f0ea' : '#5c473f',\n      ring: active === o.id ? 'none' : 'inset 0 0 0 1px rgba(67,48,43,0.07)',\n      weight: active === o.id ? '600' : '400',\n      pick: () => setter(o.id)\n    }));\n    const HINTS = {\n      single: 'Relationship readings will be about wanting, patterns and readiness.',\n      in_relationship: \"Relationship readings will be about honesty, reciprocity and what's unsaid.\",\n      complicated: 'Relationship readings will sit with the ambiguity rather than resolve it.',\n      prefer_not: 'Relationship readings will assume nothing about your situation.'\n    };\n    return {\n      areas: AREAS.map((a) => {\n        const on = !off[a.id];\n        const isLast = on && onCount === 1;\n        return {\n          name: a.name,\n          desc: a.desc,\n          on: on,\n          bg: on ? 'rgba(255,255,255,0.66)' : 'rgba(255,255,255,0.3)',\n          opacity: on ? '1' : '0.55',\n          boxFill: on ? a.color : 'transparent',\n          boxBorder: on ? a.color : '#cdb3a8',\n          toggle: () => {\n            if (isLast) return;\n            const next = Object.assign({}, off);\n            if (on) { next[a.id] = true; } else { delete next[a.id]; }\n            this.setState({ off: next });\n          }\n        };\n      }),\n      areaHint: onCount === 3\n        ? 'All on. Remove any you would rather not see each morning.'\n        : (onCount === 1\n            ? 'One has to stay on \u2014 this is the last one.'\n            : 'Hidden areas stay hidden until you turn them back on in Settings.'),\n      statuses: mkPills([\n        { id: 'single', label: 'Single' },\n        { id: 'in_relationship', label: 'In a relationship' },\n        { id: 'complicated', label: \"It's complicated\" },\n        { id: 'prefer_not', label: 'Prefer not to say' }\n      ], status, (id) => this.setState({ status: id })),\n      statusHint: status ? HINTS[status] : 'Skip it and relationship readings stay general \u2014 answering makes them specific.',\n      genders: mkPills([\n        { id: 'woman', label: 'Woman' },\n        { id: 'man', label: 'Man' },\n        { id: 'non_binary', label: 'Non-binary' },\n        { id: 'prefer_not', label: 'Prefer not to say' }\n      ], gender, (id) => this.setState({ gender: id }))\n    };\n  }\n}"}, {"sid": "s03", "markup": "<div style=\"position: relative; width: 390px; height: 844px; box-sizing: border-box; background: #f2e6df; color: #43302b; padding: 54px 22px 30px; display: flex; flex-direction: column; overflow: hidden;\">\n\n  <svg style=\"position: absolute; inset: 0; width: 390px; height: 844px; opacity: 0.3; pointer-events: none;\" aria-hidden=\"true\">\n    <filter id=\"grainPick\"><feTurbulence type=\"fractalNoise\" baseFrequency=\"0.85\" numOctaves=\"3\"></feTurbulence></filter>\n    <rect width=\"390\" height=\"844\" filter=\"url(#grainPick)\"></rect>\n  </svg>\n\n  <div style=\"position: relative; display: flex; justify-content: space-between; align-items: center;\">\n    <div style=\"font-size: 12.5px; font-weight: 500; color: #8c6a5f;\">Tuesday, 9 September</div>\n    <div style=\"width: 44px; height: 44px; display: flex; align-items: center; justify-content: flex-end;\">\n      <svg width=\"21\" height=\"21\" viewBox=\"0 0 20 20\" fill=\"none\" stroke=\"#8c6a5f\" stroke-width=\"1.4\" stroke-linecap=\"round\"><rect x=\"3\" y=\"3.5\" width=\"14\" height=\"13\" rx=\"3\"></rect><path d=\"M3 7.5h14M7 11h3\"></path></svg>\n    </div>\n  </div>\n\n  <div style=\"position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-grow: 1; gap: 46px;\">\n\n    <div style=\"position: relative; height: 76px; width: 300px;\">\n      <div class=\"{{capOutClass}}\" style=\"position: absolute; inset: 0; display: flex; flex-direction: column; gap: 7px; align-items: center; text-align: center;\">\n        <div style=\"font-family: 'Gabarito', sans-serif; font-size: 24px; font-weight: 600; letter-spacing: -0.015em;\">Washing the cards</div>\n        <div style=\"font-size: 14px; color: #7a5d52;\">Give it a moment</div>\n      </div>\n      <div class=\"{{capInClass}}\" style=\"position: absolute; inset: 0; display: flex; flex-direction: column; gap: 7px; align-items: center; text-align: center;\">\n        <div style=\"font-family: 'Gabarito', sans-serif; font-size: 24px; font-weight: 600; letter-spacing: -0.015em;\">Pick the one that<br>pulls at you</div>\n      </div>\n    </div>\n\n    <div style=\"position: relative; width: 346px; height: 200px;\">\n      <sc-for list=\"{{fan}}\" as=\"f\" hint-placeholder-count=\"5\">\n        <div class=\"slot\" style=\"left: {{f.left}}; top: {{f.top}}; transform: rotate({{f.rot}}); z-index: {{f.z}};\">\n          <div class=\"{{f.cls}}\" style=\"--dx: {{f.dx}}; --r0: {{f.r0}}; --r1: {{f.r1}};\">\n            <div class=\"cardInner {{f.state}}\" onClick=\"{{f.pick}}\">\n              <svg width=\"96\" height=\"146\" viewBox=\"0 0 96 146\" fill=\"none\" style=\"display: block;\">\n                <circle cx=\"48\" cy=\"66\" r=\"24\" fill=\"none\" stroke=\"#f8f0ea\" stroke-width=\"1.1\" opacity=\"0.72\"></circle>\n                <circle cx=\"48\" cy=\"66\" r=\"15\" fill=\"none\" stroke=\"#f8f0ea\" stroke-width=\"1.1\" opacity=\"0.46\"></circle>\n                <circle cx=\"48\" cy=\"66\" r=\"4.5\" fill=\"#f8f0ea\" opacity=\"0.88\"></circle>\n                <circle cx=\"48\" cy=\"30\" r=\"1.6\" fill=\"#f8f0ea\" opacity=\"0.62\"></circle>\n                <circle cx=\"48\" cy=\"112\" r=\"1.6\" fill=\"#f8f0ea\" opacity=\"0.62\"></circle>\n                <circle cx=\"24\" cy=\"48\" r=\"1.2\" fill=\"#f8f0ea\" opacity=\"0.5\"></circle>\n                <circle cx=\"72\" cy=\"48\" r=\"1.2\" fill=\"#f8f0ea\" opacity=\"0.5\"></circle>\n              </svg>\n            </div>\n          </div>\n        </div>\n      </sc-for>\n    </div>\n\n  </div>\n\n  <div style=\"position: relative; display: flex; flex-direction: column; gap: 14px; align-items: center;\">\n    <sc-if value=\"{{unpicked}}\" hint-placeholder-val=\"{{true}}\">\n      <div onClick=\"{{reshuffle}}\" style=\"display: flex; align-items: center; gap: 8px; padding: 12px 18px; border-radius: 24px; background: rgba(255,255,255,0.6); cursor: pointer; min-height: 22px;\">\n        <svg width=\"16\" height=\"16\" viewBox=\"0 0 20 20\" fill=\"none\" stroke=\"#7a5d52\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M16 10a6 6 0 11-2-4.5M16 3.5V6h-2.5\"></path></svg>\n        <div style=\"font-size: 13.5px; font-weight: 500; color: #7a5d52;\">Shuffle again</div>\n      </div>\n      <div style=\"font-size: 11.5px; color: #a98b7e; text-align: center; line-height: 1.45; max-width: 280px;\">Shuffling changes the order, not your card. One card a day.</div>\n    </sc-if>\n    <sc-if value=\"{{picked}}\" hint-placeholder-val=\"{{false}}\">\n      <div style=\"display: flex; flex-direction: column; gap: 12px; align-items: center; width: 100%;\">\n        <div style=\"font-size: 13.5px; color: #7a5d52;\">Card {{pickedPos}} of five</div>\n        <div style=\"width: 100%; height: 52px; border-radius: 26px; background: #43302b; color: #f8f0ea; display: flex; align-items: center; justify-content: center; gap: 8px; font-family: 'Gabarito', sans-serif; font-size: 16px; font-weight: 600;\">\n          <span>Turn it over</span>\n          <svg width=\"17\" height=\"17\" viewBox=\"0 0 20 20\" fill=\"none\" stroke=\"#f8f0ea\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 10h11M11 6l4 4-4 4\"></path></svg>\n        </div>\n      </div>\n    </sc-if>\n  </div>\n\n</div>", "props": "{\"reduceMotion\":{\"editor\":\"boolean\",\"default\":false,\"section\":\"Accessibility\"}}", "logic": "class Component extends DCLogic {\n  renderVals() {\n    const st = this.state || {};\n    const reduce = this.props.reduceMotion === true;\n    const round = st.round || 0;\n    const picked = typeof st.pos === 'number';\n    const useB = round % 2 === 1;\n    const wash = reduce ? '' : (useB ? 'washB' : 'washA');\n    const dxs = ['128px', '64px', '0px', '-64px', '-128px'];\n    const r0s = ['-22deg', '-11deg', '4deg', '13deg', '24deg'];\n    const r1s = ['16deg', '9deg', '-6deg', '-12deg', '-20deg'];\n    const rots = ['-15deg', '-7.5deg', '0deg', '7.5deg', '15deg'];\n    const tops = ['24px', '7px', '0px', '7px', '24px'];\n    const fan = [];\n    for (let i = 0; i < 5; i++) {\n      const isPicked = st.pos === i + 1;\n      fan.push({\n        left: (i * 62) + 'px',\n        top: tops[i],\n        rot: rots[i],\n        z: String(isPicked ? 20 : i + 1),\n        dx: dxs[i],\n        r0: r0s[i],\n        r1: r1s[i],\n        cls: wash,\n        state: picked ? (isPicked ? 'lifted' : 'dimmed') : '',\n        pick: () => this.setState({ pos: i + 1 })\n      });\n    }\n    return {\n      fan: fan,\n      capOutClass: reduce ? 'hiddenCap' : 'capOut',\n      capInClass: reduce ? '' : 'capIn',\n      unpicked: !picked,\n      picked: picked,\n      pickedPos: st.pos,\n      reshuffle: () => this.setState({ round: round + 1, pos: null })\n    };\n  }\n}"}, {"sid": "s04", "markup": "<div style=\"position: relative; width: 390px; height: 844px; box-sizing: border-box; background: #f2e6df; color: #43302b; padding: 54px 22px 30px; display: flex; flex-direction: column; align-items: center; overflow: hidden;\">\n\n  <svg style=\"position: absolute; inset: 0; width: 390px; height: 844px; opacity: 0.3; pointer-events: none;\" aria-hidden=\"true\">\n    <filter id=\"grainRev\"><feTurbulence type=\"fractalNoise\" baseFrequency=\"0.85\" numOctaves=\"3\"></feTurbulence></filter>\n    <rect width=\"390\" height=\"844\" filter=\"url(#grainRev)\"></rect>\n  </svg>\n\n  <div class=\"{{glowClass}}\" style=\"position: absolute; top: 92px; left: 45px; width: 300px; height: 300px; border-radius: 50%; background: radial-gradient(circle, rgba(245,207,107,0.34) 0%, rgba(245,207,107,0) 68%); pointer-events: none;\"></div>\n\n  <div style=\"position: relative; width: 100%; display: flex; justify-content: space-between; align-items: center; min-height: 32px;\">\n    <div style=\"font-size: 12.5px; font-weight: 500; color: #8c6a5f;\">{{topLabel}}</div>\n    <div class=\"tapArea\" onClick=\"{{replay}}\" style=\"display: flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: 20px; background: rgba(255,255,255,0.5);\">\n      <svg width=\"14\" height=\"14\" viewBox=\"0 0 20 20\" fill=\"none\" stroke=\"#7a5d52\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M16 10a6 6 0 11-2-4.5M16 3.5V6h-2.5\"></path></svg>\n      <div style=\"font-size: 12px; font-weight: 500; color: #7a5d52;\">Again</div>\n    </div>\n  </div>\n\n  <div class=\"stage\" style=\"position: relative; margin-top: 42px;\">\n    <div class=\"flipCard {{flipClass}}\">\n      <div class=\"face faceBack\">\n        <svg width=\"214\" height=\"314\" viewBox=\"0 0 214 314\" fill=\"none\" style=\"display: block;\">\n          <circle cx=\"107\" cy=\"142\" r=\"52\" fill=\"none\" stroke=\"#f8f0ea\" stroke-width=\"1.4\" opacity=\"0.7\"></circle>\n          <circle cx=\"107\" cy=\"142\" r=\"32\" fill=\"none\" stroke=\"#f8f0ea\" stroke-width=\"1.4\" opacity=\"0.45\"></circle>\n          <circle cx=\"107\" cy=\"142\" r=\"9\" fill=\"#f8f0ea\" opacity=\"0.88\"></circle>\n        </svg>\n      </div>\n      <div class=\"face faceFront\">\n        <svg width=\"214\" height=\"314\" viewBox=\"0 0 214 314\" fill=\"none\" style=\"display: block;\">\n          <circle cx=\"107\" cy=\"118\" r=\"58\" fill=\"#f5cf6b\"></circle>\n          <circle cx=\"107\" cy=\"118\" r=\"58\" fill=\"none\" stroke=\"#43302b\" stroke-width=\"1.2\"></circle>\n          <path d=\"M107 32 L112 96 L107 118 L102 96 Z\" fill=\"#43302b\" opacity=\"0.62\"></path>\n          <path d=\"M193 118 L129 123 L107 118 L129 113 Z\" fill=\"#43302b\" opacity=\"0.62\"></path>\n          <path d=\"M21 118 L85 123 L107 118 L85 113 Z\" fill=\"#43302b\" opacity=\"0.62\"></path>\n          <path d=\"M107 204 L112 140 L107 118 L102 140 Z\" fill=\"#43302b\" opacity=\"0.62\"></path>\n          <path d=\"M46 57 L96 107 L107 118 L86 97 Z\" fill=\"#43302b\" opacity=\"0.34\"></path>\n          <path d=\"M168 57 L118 107 L107 118 L128 97 Z\" fill=\"#43302b\" opacity=\"0.34\"></path>\n          <path d=\"M0 226q53 -32 107 0t107 0v88H0Z\" fill=\"#8fa8ba\" opacity=\"0.88\"></path>\n          <path d=\"M0 252q53 -28 107 0t107 0v62H0Z\" fill=\"#6f8ca2\" opacity=\"0.78\"></path>\n          <path d=\"M0 278q53 -22 107 0t107 0v36H0Z\" fill=\"#5b7791\" opacity=\"0.6\"></path>\n          <circle cx=\"46\" cy=\"196\" r=\"2.6\" fill=\"#43302b\" opacity=\"0.4\"></circle>\n          <circle cx=\"168\" cy=\"196\" r=\"2.6\" fill=\"#43302b\" opacity=\"0.4\"></circle>\n        </svg>\n      </div>\n    </div>\n  </div>\n\n  <div class=\"{{rise1}}\" style=\"position: relative; margin-top: 30px; text-align: center;\">\n    <div style=\"font-family: 'Gabarito', sans-serif; font-size: 42px; font-weight: 600; letter-spacing: -0.025em; line-height: 1.02;\">The Star</div>\n  </div>\n\n  <div class=\"{{rise2}}\" style=\"position: relative; margin-top: 12px; display: flex; align-items: center; gap: 9px;\">\n    <div style=\"padding: 4px 12px; border-radius: 20px; background: #dfb7a4; font-size: 11.5px; font-weight: 600; color: #5c3f36;\">Upright</div>\n    <div style=\"font-size: 11.5px; color: #8c6a5f;\">Major Arcana XVII</div>\n  </div>\n\n  <div class=\"{{rise3}}\" style=\"position: relative; margin-top: 18px; font-size: 12px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #9c7c70; text-align: center; line-height: 1.7;\">Hope \u00b7 Clarity<br>Renewal \u00b7 Honesty</div>\n\n  <div class=\"{{rise3}}\" style=\"position: relative; margin-top: auto; width: 100%; display: flex; flex-direction: column; gap: 13px; align-items: center;\">\n    <div class=\"tapArea\" style=\"width: 100%; height: 52px; border-radius: 26px; background: #43302b; color: #f8f0ea; display: flex; align-items: center; justify-content: center; gap: 8px; font-family: 'Gabarito', sans-serif; font-size: 16px; font-weight: 600;\">\n      <span>See what it means today</span>\n      <svg width=\"17\" height=\"17\" viewBox=\"0 0 20 20\" fill=\"none\" stroke=\"#f8f0ea\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 10h11M11 6l4 4-4 4\"></path></svg>\n    </div>\n    <div style=\"display: flex; align-items: center; gap: 7px; min-height: 22px;\">\n      <svg width=\"15\" height=\"15\" viewBox=\"0 0 20 20\" fill=\"none\" stroke=\"#a98b7e\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M10 13V3.5M6.5 7L10 3.5 13.5 7M4 12.5v3a1 1 0 001 1h10a1 1 0 001-1v-3\"></path></svg>\n      <div style=\"font-size: 13px; color: #8c6a5f;\">Share your card</div>\n    </div>\n  </div>\n\n</div>", "props": "{\"reduceMotion\":{\"editor\":\"boolean\",\"default\":false,\"section\":\"Accessibility\"},\"entry\":{\"editor\":\"enum\",\"options\":[\"after the pick\",\"reopened from summary\"],\"default\":\"after the pick\",\"section\":\"Entry point\"}}", "logic": "class Component extends DCLogic {\n  renderVals() {\n    const reduce = this.props.reduceMotion === true;\n    const entry = this.props.entry ?? 'after the pick';\n    const round = (this.state && this.state.round) || 0;\n    return {\n      flipClass: reduce ? '' : (round % 2 === 1 ? 'flipB' : 'flipA'),\n      rise1: reduce ? '' : 'rise1',\n      rise2: reduce ? '' : 'rise2',\n      rise3: reduce ? '' : 'rise3',\n      glowClass: reduce ? '' : 'glow',\n      topLabel: entry === 'after the pick' ? 'You picked card 3 of five' : 'Tuesday, 9 September',\n      replay: () => this.setState({ round: round + 1 })\n    };\n  }\n}"}, {"sid": "s05", "markup": "<div style=\"position: relative; width: 390px; height: 1040px; box-sizing: border-box; background: #f2e6df; color: #43302b; padding: 54px 22px 30px; display: flex; flex-direction: column; gap: 16px; overflow: hidden;\">\n\n  <svg style=\"position: absolute; inset: 0; width: 390px; height: 1040px; opacity: 0.3; pointer-events: none;\" aria-hidden=\"true\">\n    <filter id=\"grainSum\"><feTurbulence type=\"fractalNoise\" baseFrequency=\"0.85\" numOctaves=\"3\"></feTurbulence></filter>\n    <rect width=\"390\" height=\"1040\" filter=\"url(#grainSum)\"></rect>\n  </svg>\n\n  <div style=\"position: relative; display: flex; justify-content: space-between; align-items: center;\">\n    <div style=\"font-size: 12.5px; font-weight: 500; color: #8c6a5f;\">Tuesday, 9 September</div>\n    <div style=\"width: 44px; height: 44px; display: flex; align-items: center; justify-content: flex-end;\">\n      <svg width=\"21\" height=\"21\" viewBox=\"0 0 20 20\" fill=\"none\" stroke=\"#8c6a5f\" stroke-width=\"1.4\" stroke-linecap=\"round\"><rect x=\"3\" y=\"3.5\" width=\"14\" height=\"13\" rx=\"3\"></rect><path d=\"M3 7.5h14M7 11h3\"></path></svg>\n    </div>\n  </div>\n\n  <div style=\"position: relative; display: flex; gap: 15px; align-items: center;\">\n    <div class=\"cardTap\" style=\"position: relative; width: 118px; height: 172px; flex-shrink: 0; cursor: pointer;\">\n      <div style=\"position: absolute; left: 7px; top: 8px; width: 111px; height: 164px; border-radius: 56px 56px 10px 10px; background: #dfb7a4;\"></div>\n      <div style=\"position: absolute; left: 0; top: 0; width: 111px; height: 164px; border-radius: 56px 56px 10px 10px; background: #f8f0ea; overflow: hidden;\">\n        <svg width=\"111\" height=\"164\" viewBox=\"0 0 111 164\" fill=\"none\">\n          <circle cx=\"55\" cy=\"62\" r=\"31\" fill=\"#f5cf6b\"></circle>\n          <circle cx=\"55\" cy=\"62\" r=\"31\" fill=\"none\" stroke=\"#43302b\" stroke-width=\"1\"></circle>\n          <path d=\"M55 20 L58 50 L55 62 L52 50 Z\" fill=\"#43302b\" opacity=\"0.66\"></path>\n          <path d=\"M97 62 L67 65 L55 62 L67 59 Z\" fill=\"#43302b\" opacity=\"0.66\"></path>\n          <path d=\"M13 62 L43 65 L55 62 L43 59 Z\" fill=\"#43302b\" opacity=\"0.66\"></path>\n          <path d=\"M55 104 L58 74 L55 62 L52 74 Z\" fill=\"#43302b\" opacity=\"0.66\"></path>\n          <path d=\"M0 122q28 -18 55 0t56 0v42H0Z\" fill=\"#8fa8ba\" opacity=\"0.85\"></path>\n          <path d=\"M0 138q28 -15 55 0t56 0v26H0Z\" fill=\"#6f8ca2\" opacity=\"0.72\"></path>\n        </svg>\n      </div>\n    </div>\n    <div style=\"display: flex; flex-direction: column; gap: 7px;\">\n      <div style=\"font-family: 'Gabarito', sans-serif; font-size: 30px; font-weight: 600; letter-spacing: -0.015em; line-height: 1.04;\">The<br>Star</div>\n      <div style=\"display: inline-flex; align-self: flex-start; padding: 3px 11px; border-radius: 20px; background: #dfb7a4; font-size: 11px; font-weight: 500; color: #5c3f36;\">Upright</div>\n      <div style=\"font-size: 11px; color: #8c6a5f;\">Major Arcana XVII</div>\n      <div style=\"font-size: 11px; color: #a98b7e;\">You picked card {{pickedPos}}</div>\n      <div style=\"display: flex; align-items: center; gap: 5px; margin-top: 2px;\">\n        <svg width=\"13\" height=\"13\" viewBox=\"0 0 20 20\" fill=\"none\" stroke=\"#a98b7e\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M8 3.5H4.5A1 1 0 003.5 4.5V8M12 3.5h3.5a1 1 0 011 1V8M8 16.5H4.5a1 1 0 01-1-1V12M12 16.5h3.5a1 1 0 001-1V12\"></path></svg>\n        <div style=\"font-size: 11px; color: #a98b7e;\">Tap card to enlarge</div>\n      </div>\n    </div>\n  </div>\n\n  <div style=\"position: relative; font-size: 14.5px; line-height: 1.55; color: #5c473f; text-wrap: pretty;\">After a stretch of holding things together, something in you is ready to say plainly what you want. The Star doesn't promise the path is clear \u2014 it suggests you already know the direction.</div>\n\n  <div style=\"position: relative; background: rgba(255,255,255,0.55); border-radius: 18px; padding: 15px 16px; display: flex; flex-direction: column; gap: 13px;\">\n    <div style=\"font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #9c7c70;\">Today, carry with you</div>\n    <div style=\"display: flex;\">\n      <div style=\"flex: 1; display: flex; flex-direction: column; align-items: center; gap: 7px;\">\n        <div style=\"width: 26px; height: 26px; border-radius: 50%; background: #7d8f6a; box-shadow: inset 0 0 0 1px rgba(67,48,43,0.14);\"></div>\n        <div style=\"font-size: 9.5px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: #9c7c70;\">Colour</div>\n        <div style=\"font-size: 12.5px; font-weight: 500; text-align: center; line-height: 1.3;\">Sage</div>\n      </div>\n      <div style=\"width: 1px; background: rgba(67,48,43,0.1); margin: 2px 0;\"></div>\n      <div style=\"flex: 1; display: flex; flex-direction: column; align-items: center; gap: 7px;\">\n        <svg width=\"26\" height=\"26\" viewBox=\"0 0 20 20\" fill=\"none\" stroke=\"#8c6a5f\" stroke-width=\"1.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M6 3.5h8l1.4 5.4a5.5 5.5 0 11-10.8 0z\"></path><path d=\"M6.4 8.9h7.2\"></path></svg>\n        <div style=\"font-size: 9.5px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: #9c7c70;\">Object</div>\n        <div style=\"font-size: 12.5px; font-weight: 500; text-align: center; line-height: 1.3;\">Something<br>glass</div>\n      </div>\n      <div style=\"width: 1px; background: rgba(67,48,43,0.1); margin: 2px 0;\"></div>\n      <div style=\"flex: 1; display: flex; flex-direction: column; align-items: center; gap: 7px;\">\n        <svg width=\"26\" height=\"26\" viewBox=\"0 0 20 20\" fill=\"none\" stroke=\"#8c6a5f\" stroke-width=\"1.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"10\" cy=\"10\" r=\"7.2\"></circle><path d=\"M10 6v4.2l2.8 1.8\"></path></svg>\n        <div style=\"font-size: 9.5px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: #9c7c70;\">Hour</div>\n        <div style=\"font-size: 12.5px; font-weight: 500; text-align: center; line-height: 1.3;\">Before<br>sunset</div>\n      </div>\n    </div>\n  </div>\n\n  <div style=\"position: relative; background: rgba(255,255,255,0.55); border-radius: 18px; padding: 15px 16px; display: flex; flex-direction: column; gap: 12px;\">\n    <div style=\"display: flex; justify-content: space-between; align-items: baseline;\">\n      <div style=\"font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #9c7c70;\">How today sits</div>\n      <div style=\"font-size: 11px; color: #a98b7e;\">{{avgLabel}}</div>\n    </div>\n    <div style=\"display: flex; flex-direction: column; gap: 10px;\">\n      <sc-for list=\"{{scores}}\" as=\"s\" hint-placeholder-count=\"3\">\n        <div style=\"display: flex; align-items: center; gap: 11px;\">\n          <div style=\"width: 84px; font-size: 12.5px; font-weight: 500; color: #5c473f;\">{{s.name}}</div>\n          <div style=\"flex-grow: 1; height: 8px; border-radius: 4px; background: #e4d3cb;\"><div style=\"width: {{s.pct}}; height: 8px; border-radius: 4px; background: {{s.color}};\"></div></div>\n          <div style=\"font-family: 'Gabarito', sans-serif; font-size: 15px; font-weight: 600; width: 24px; text-align: right;\">{{s.value}}</div>\n        </div>\n      </sc-for>\n    </div>\n  </div>\n\n  <div style=\"position: relative; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #9c7c70; margin-top: 2px;\">What to do about it</div>\n\n  <div style=\"position: relative; display: flex; flex-direction: column; gap: 8px;\">\n    <sc-for list=\"{{suggestions}}\" as=\"a\" hint-placeholder-count=\"3\">\n      <div class=\"sugg\" style=\"display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.66); border-radius: 16px; padding: 13px 14px; min-height: 46px;\">\n        <div style=\"width: 34px; height: 34px; border-radius: 11px; background: {{a.tint}}; flex-shrink: 0; display: flex; align-items: center; justify-content: center;\">\n          <div style=\"width: 9px; height: 9px; border-radius: 50%; background: {{a.color}};\"></div>\n        </div>\n        <div style=\"flex-grow: 1; display: flex; flex-direction: column; gap: 2px;\">\n          <div style=\"font-family: 'Gabarito', sans-serif; font-size: 15px; font-weight: 600;\">{{a.name}}</div>\n          <div style=\"font-size: 12px; line-height: 1.4; color: #7a5d52;\">{{a.line}}</div>\n        </div>\n        <svg width=\"17\" height=\"17\" viewBox=\"0 0 20 20\" fill=\"none\" stroke=\"#a98b7e\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"flex-shrink: 0;\"><path d=\"M7.5 4.5l6 5.5-6 5.5\"></path></svg>\n      </div>\n    </sc-for>\n  </div>\n\n  <div style=\"position: relative; margin-top: auto; display: flex; flex-direction: column; gap: 12px;\">\n    <div style=\"display: flex; align-items: center; justify-content: center; gap: 8px; height: 48px; border-radius: 24px; background: rgba(255,255,255,0.5); font-size: 14px; font-weight: 500; color: #5c473f;\">\n      <svg width=\"17\" height=\"17\" viewBox=\"0 0 20 20\" fill=\"none\" stroke=\"#7a5d52\" stroke-width=\"1.5\" stroke-linecap=\"round\"><rect x=\"3\" y=\"4\" width=\"14\" height=\"13\" rx=\"3\"></rect><path d=\"M3 8h14M7 11.5h6M7 14h4\"></path></svg>\n      <span>Your past readings</span>\n    </div>\n    <div style=\"font-size: 10.5px; color: #a98b7e; text-align: center; line-height: 1.45;\">For reflection, not prediction.</div>\n  </div>\n\n</div>", "props": "{\"activeAreas\":{\"editor\":\"enum\",\"options\":[\"all three\",\"social hidden\",\"career only\"],\"default\":\"all three\",\"section\":\"Active areas\"}}", "logic": "class Component extends DCLogic {\n  renderVals() {\n    const sel = this.props.activeAreas ?? 'all three';\n    const ACTIVE = {\n      'all three': ['career', 'relationship', 'social'],\n      'social hidden': ['career', 'relationship'],\n      'career only': ['career']\n    };\n    const keys = ACTIVE[sel] || ACTIVE['all three'];\n    const COLOR = { career: '#6f8ca2', relationship: '#b0654a', social: '#7d8f6a' };\n    const TINT = { career: '#dbe4ea', relationship: '#ecd6cc', social: '#dde3d6' };\n    const LABEL = { career: 'Career', relationship: 'Relationship', social: 'Social' };\n    const VALUES = { career: 64, relationship: 78, social: 81 };\n    const LINES = {\n      career: \"Say the number out loud to someone before you say it to your manager.\",\n      relationship: \"The thing you haven't raised is already being felt. Raise it badly today.\",\n      social: \"Someone close would show up differently if you asked them to.\"\n    };\n    let total = 0;\n    keys.forEach((k) => { total += VALUES[k]; });\n    const avg = Math.round(total / keys.length);\n    return {\n      pickedPos: 3,\n      avgLabel: avg + ' overall',\n      scores: keys.map((k) => ({\n        name: LABEL[k],\n        value: VALUES[k],\n        pct: VALUES[k] + '%',\n        color: COLOR[k]\n      })),\n      suggestions: keys.map((k) => ({\n        name: LABEL[k],\n        color: COLOR[k],\n        tint: TINT[k],\n        line: LINES[k]\n      }))\n    };\n  }\n}"}, {"sid": "s06", "markup": "<div style=\"position: relative; width: 390px; height: 844px; box-sizing: border-box; background: #f2e6df; color: #43302b; padding: 54px 22px 30px; display: flex; flex-direction: column; overflow: hidden;\">\n\n  <svg style=\"position: absolute; inset: 0; width: 390px; height: 844px; opacity: 0.3; pointer-events: none;\" aria-hidden=\"true\">\n    <filter id=\"grainArea\"><feTurbulence type=\"fractalNoise\" baseFrequency=\"0.85\" numOctaves=\"3\"></feTurbulence></filter>\n    <rect width=\"390\" height=\"844\" filter=\"url(#grainArea)\"></rect>\n  </svg>\n\n  <div style=\"position: relative; display: flex; align-items: center; gap: 10px; margin-bottom: 22px; min-height: 44px;\">\n    <svg width=\"22\" height=\"22\" viewBox=\"0 0 20 20\" fill=\"none\" stroke=\"#8c6a5f\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 4.5L6.5 10l5.5 5.5\"></path></svg>\n    <div style=\"font-size: 13px; font-weight: 500; color: #8c6a5f;\">Today</div>\n  </div>\n\n  <div style=\"position: relative; display: flex; align-items: flex-start; gap: 13px; margin-bottom: 20px;\">\n    <div style=\"width: 46px; height: 46px; border-radius: 14px; background: #dbe4ea; display: flex; align-items: center; justify-content: center; flex-shrink: 0;\">\n      <svg width=\"23\" height=\"23\" viewBox=\"0 0 20 20\" fill=\"none\" stroke=\"#4f6c81\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"2.5\" y=\"6\" width=\"15\" height=\"10.5\" rx=\"2\"></rect><path d=\"M7 6V4.5A1.5 1.5 0 018.5 3h3A1.5 1.5 0 0113 4.5V6M2.5 10.5h15\"></path></svg>\n    </div>\n    <div style=\"display: flex; flex-direction: column; gap: 4px; flex-grow: 1;\">\n      <div style=\"font-family: 'Gabarito', sans-serif; font-size: 27px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.1;\">Career</div>\n      <div style=\"display: flex; align-items: center; gap: 8px;\">\n        <div style=\"width: 92px; height: 7px; border-radius: 4px; background: #e4d3cb;\"><div style=\"width: 64%; height: 7px; border-radius: 4px; background: #6f8ca2;\"></div></div>\n        <div style=\"font-family: 'Gabarito', sans-serif; font-size: 13px; font-weight: 600; color: #4f6c81;\">64 today</div>\n      </div>\n    </div>\n  </div>\n\n  <div style=\"position: relative; background: rgba(255,255,255,0.56); border-radius: 19px; padding: 16px 17px; display: flex; flex-direction: column; gap: 10px; margin-bottom: 22px;\">\n    <div style=\"display: flex; align-items: center; gap: 9px;\">\n      <div style=\"width: 30px; height: 44px; border-radius: 15px 15px 4px 4px; background: #f8f0ea; display: flex; align-items: center; justify-content: center; flex-shrink: 0;\">\n        <svg width=\"24\" height=\"34\" viewBox=\"0 0 24 34\" fill=\"none\"><circle cx=\"12\" cy=\"13\" r=\"7\" fill=\"#f5cf6b\"></circle><circle cx=\"12\" cy=\"13\" r=\"7\" fill=\"none\" stroke=\"#43302b\" stroke-width=\"0.8\"></circle><path d=\"M0 25q6 -4 12 0t12 0v9H0Z\" fill=\"#6f8ca2\" opacity=\"0.75\"></path></svg>\n      </div>\n      <div style=\"font-size: 12.5px; font-weight: 600; color: #6f564c;\">What The Star suggests for work</div>\n    </div>\n    <div style=\"font-size: 14.5px; line-height: 1.56; color: #5c473f; text-wrap: pretty;\">Practical read: this is a day for stating a number, not for hinting at one. If there's a conversation you've been circling for weeks, the Star says the preparation is done \u2014 you're waiting on permission you were never going to be given.</div>\n  </div>\n\n  <div style=\"position: relative; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #9c7c70; margin-bottom: 11px;\">Ask about</div>\n\n  <div style=\"position: relative; display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px;\">\n    <div style=\"padding: 11px 15px; border-radius: 22px; background: rgba(255,255,255,0.66); font-size: 13.5px; color: #5c473f;\">A decision I keep circling</div>\n    <div style=\"padding: 11px 15px; border-radius: 22px; background: rgba(255,255,255,0.66); font-size: 13.5px; color: #5c473f;\">Asking for more</div>\n    <div style=\"padding: 11px 15px; border-radius: 22px; background: rgba(255,255,255,0.66); font-size: 13.5px; color: #5c473f;\">Whether to move on</div>\n    <div style=\"padding: 11px 15px; border-radius: 22px; background: rgba(255,255,255,0.66); font-size: 13.5px; color: #5c473f;\">Someone I work with</div>\n  </div>\n\n  <div style=\"position: relative; display: flex; flex-direction: column; gap: 9px;\">\n    <div style=\"font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #9c7c70;\">Your last career reading</div>\n    <div style=\"display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.5); border-radius: 15px; padding: 12px 14px;\">\n      <div style=\"width: 5px; height: 30px; border-radius: 3px; background: #6f8ca2; flex-shrink: 0;\"></div>\n      <div style=\"flex-grow: 1; display: flex; flex-direction: column; gap: 1px;\">\n        <div style=\"font-size: 13.5px; font-weight: 500;\">\"Should I say something in Thursday's review?\"</div>\n        <div style=\"font-size: 11.5px; color: #8c6a5f;\">4 days ago</div>\n      </div>\n      <svg width=\"17\" height=\"17\" viewBox=\"0 0 20 20\" fill=\"none\" stroke=\"#a98b7e\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M7.5 4.5l6 5.5-6 5.5\"></path></svg>\n    </div>\n  </div>\n\n  <div style=\"position: relative; margin-top: auto; height: 52px; border-radius: 26px; background: #43302b; color: #f8f0ea; display: flex; align-items: center; justify-content: center; gap: 8px; font-family: 'Gabarito', sans-serif; font-size: 16px; font-weight: 600;\">\n    <span>Ask about your career</span>\n    <svg width=\"17\" height=\"17\" viewBox=\"0 0 20 20\" fill=\"none\" stroke=\"#f8f0ea\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 10h11M11 6l4 4-4 4\"></path></svg>\n  </div>\n\n</div>", "props": "{}", "logic": ""}, {"sid": "s07", "markup": "<div style=\"position: relative; width: 390px; height: 844px; box-sizing: border-box; background: #f2e6df; color: #43302b; padding: 54px 22px 30px; display: flex; flex-direction: column; overflow: hidden;\">\n\n  <svg style=\"position: absolute; inset: 0; width: 390px; height: 844px; opacity: 0.3; pointer-events: none;\" aria-hidden=\"true\">\n    <filter id=\"grainComp\"><feTurbulence type=\"fractalNoise\" baseFrequency=\"0.85\" numOctaves=\"3\"></feTurbulence></filter>\n    <rect width=\"390\" height=\"844\" filter=\"url(#grainComp)\"></rect>\n  </svg>\n\n  <div style=\"position: relative; display: flex; align-items: center; gap: 10px; margin-bottom: 24px; min-height: 44px;\">\n    <svg width=\"22\" height=\"22\" viewBox=\"0 0 20 20\" fill=\"none\" stroke=\"#8c6a5f\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 4.5L6.5 10l5.5 5.5\"></path></svg>\n    <div style=\"display: flex; align-items: center; gap: 7px; padding: 6px 13px; border-radius: 20px; background: #dbe4ea;\">\n      <div style=\"width: 7px; height: 7px; border-radius: 50%; background: #6f8ca2;\"></div>\n      <div style=\"font-size: 12.5px; font-weight: 600; color: #4f6c81;\">About your career</div>\n      <svg width=\"13\" height=\"13\" viewBox=\"0 0 20 20\" fill=\"none\" stroke=\"#4f6c81\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 8l5 5 5-5\"></path></svg>\n    </div>\n  </div>\n\n  <div style=\"position: relative; font-family: 'Gabarito', sans-serif; font-size: 27px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.14; margin-bottom: 18px;\">What do you<br>want to ask?</div>\n\n  <div style=\"position: relative; border-radius: 19px; background: rgba(255,255,255,0.74); padding: 16px 17px; min-height: 118px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: {{fieldRing}};\">\n    <div style=\"font-size: 16px; line-height: 1.5; color: {{textColor}}; text-wrap: pretty;\">{{question}}</div>\n    <div style=\"display: flex; justify-content: flex-end; font-size: 11.5px; color: #a98b7e;\">{{counter}}</div>\n  </div>\n\n  <div style=\"position: relative; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #9c7c70; margin: 22px 0 11px;\">Or start from one of these</div>\n\n  <div style=\"position: relative; display: flex; flex-wrap: wrap; gap: 8px;\">\n    <sc-for list=\"{{chips}}\" as=\"c\" hint-placeholder-count=\"4\">\n      <div class=\"chip\" onClick=\"{{c.pick}}\" style=\"padding: 11px 15px; border-radius: 22px; background: {{c.bg}}; box-shadow: {{c.ring}}; font-size: 13.5px; color: #5c473f;\">{{c.text}}</div>\n    </sc-for>\n  </div>\n\n  <div style=\"position: relative; margin-top: auto; display: flex; flex-direction: column; gap: 13px;\">\n    <div style=\"display: flex; align-items: center; gap: 9px; font-size: 12px; color: #8c6a5f;\">\n      <svg width=\"15\" height=\"15\" viewBox=\"0 0 20 20\" fill=\"none\" stroke=\"#a98b7e\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"flex-shrink: 0;\"><path d=\"M10 2.5l2.3 4.8 5.2.7-3.8 3.6.9 5.2-4.6-2.5-4.6 2.5.9-5.2L2.5 8l5.2-.7z\"></path></svg>\n      <div>A three-card spread \u2014 situation, action, outcome</div>\n    </div>\n    <div class=\"cta\" onClick=\"{{submit}}\" style=\"height: 52px; border-radius: 26px; background: {{ctaBg}}; color: {{ctaColor}}; display: flex; align-items: center; justify-content: center; font-family: 'Gabarito', sans-serif; font-size: 16px; font-weight: 600;\">Draw for this question</div>\n  </div>\n\n  <sc-if value=\"{{showDrawing}}\" hint-placeholder-val=\"{{false}}\">\n    <div style=\"position: absolute; inset: 0; background: rgba(67,48,43,0.42); display: flex; align-items: flex-end;\">\n      <div style=\"width: 390px; background: #f8f0ea; border-radius: 26px 26px 0 0; padding: 24px 22px 30px; display: flex; flex-direction: column; gap: 16px;\">\n        <div style=\"width: 42px; height: 4px; border-radius: 3px; background: #dfcdc4; align-self: center;\"></div>\n        <div style=\"font-family: 'Gabarito', sans-serif; font-size: 22px; font-weight: 600; letter-spacing: -0.015em; line-height: 1.2;\">Now draw your three cards</div>\n        <div style=\"font-size: 14px; line-height: 1.5; color: #7a5d52;\">One for where things stand, one for what to do, one for where it leads. Shuffle as much as you like.</div>\n        <div style=\"display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px;\">\n          <div style=\"display: flex; flex-direction: column; gap: 6px; align-items: center;\">\n            <div style=\"width: 100%; height: 74px; border-radius: 26px 26px 6px 6px; background: rgba(207,157,140,0.24); display: flex; align-items: center; justify-content: center; font-family: 'Gabarito', sans-serif; font-size: 17px; font-weight: 600; color: #b58a79;\">1</div>\n            <div style=\"font-size: 9.5px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: #9c7c70;\">Situation</div>\n          </div>\n          <div style=\"display: flex; flex-direction: column; gap: 6px; align-items: center;\">\n            <div style=\"width: 100%; height: 74px; border-radius: 26px 26px 6px 6px; background: rgba(207,157,140,0.24); display: flex; align-items: center; justify-content: center; font-family: 'Gabarito', sans-serif; font-size: 17px; font-weight: 600; color: #b58a79;\">2</div>\n            <div style=\"font-size: 9.5px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: #9c7c70;\">Action</div>\n          </div>\n          <div style=\"display: flex; flex-direction: column; gap: 6px; align-items: center;\">\n            <div style=\"width: 100%; height: 74px; border-radius: 26px 26px 6px 6px; background: rgba(207,157,140,0.24); display: flex; align-items: center; justify-content: center; font-family: 'Gabarito', sans-serif; font-size: 17px; font-weight: 600; color: #b58a79;\">3</div>\n            <div style=\"font-size: 9.5px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: #9c7c70;\">Outcome</div>\n          </div>\n        </div>\n        <div class=\"cta\" style=\"height: 52px; border-radius: 26px; background: #43302b; color: #f8f0ea; display: flex; align-items: center; justify-content: center; gap: 8px; font-family: 'Gabarito', sans-serif; font-size: 16px; font-weight: 600;\">\n          <span>Shuffle the deck</span>\n          <svg width=\"17\" height=\"17\" viewBox=\"0 0 20 20\" fill=\"none\" stroke=\"#f8f0ea\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 10h11M11 6l4 4-4 4\"></path></svg>\n        </div>\n        <div class=\"cta\" onClick=\"{{reset}}\" style=\"font-size: 13px; color: #9c7c70; text-align: center; min-height: 20px;\">Change my question</div>\n      </div>\n    </div>\n  </sc-if>\n\n</div>", "props": "{}", "logic": "class Component extends DCLogic {\n  renderVals() {\n    const st = this.state || {};\n    const typed = st.question || '';\n    const CHIPS = [\n      'A decision I keep circling',\n      'Asking for more',\n      'Whether to move on',\n      'Someone I work with'\n    ];\n    const PROMPTS = {\n      'A decision I keep circling': \"There's a role I keep almost applying for and then talking myself out of.\",\n      'Asking for more': \"I've been doing the work of the next level for a year. Do I ask now or wait?\",\n      'Whether to move on': \"I'm not unhappy exactly, but I've stopped learning anything. Is that enough reason to go?\",\n      'Someone I work with': \"My manager says the right things and then nothing changes. How should I read that?\"\n    };\n    const has = typed.length > 0;\n    return {\n      question: has ? typed : 'Type your question, or tap one below\u2026',\n      textColor: has ? '#43302b' : '#a98b7e',\n      counter: typed.length + ' / 300',\n      fieldRing: has ? 'inset 0 0 0 1.6px #6f8ca2' : 'none',\n      chips: CHIPS.map((t) => ({\n        text: t,\n        bg: PROMPTS[t] === typed ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.66)',\n        ring: PROMPTS[t] === typed ? 'inset 0 0 0 1.6px #6f8ca2' : 'none',\n        pick: () => this.setState({ question: PROMPTS[t] })\n      })),\n      ctaBg: has ? '#43302b' : '#dfcdc4',\n      ctaColor: has ? '#f8f0ea' : '#a98b7e',\n      submit: () => { if (has) this.setState({ drawing: true }); },\n      showDrawing: st.drawing === true,\n      reset: () => this.setState({ drawing: false })\n    };\n  }\n}"}, {"sid": "s08", "markup": "<div style=\"position: relative; width: 390px; height: 844px; box-sizing: border-box; background: #f2e6df; color: #43302b; padding: 54px 22px 30px; display: flex; flex-direction: column; overflow: hidden;\">\n\n  <svg style=\"position: absolute; inset: 0; width: 390px; height: 844px; opacity: 0.3; pointer-events: none;\" aria-hidden=\"true\">\n    <filter id=\"grainRel\"><feTurbulence type=\"fractalNoise\" baseFrequency=\"0.85\" numOctaves=\"3\"></feTurbulence></filter>\n    <rect width=\"390\" height=\"844\" filter=\"url(#grainRel)\"></rect>\n  </svg>\n\n  <div style=\"position: relative; display: flex; align-items: center; gap: 10px; margin-bottom: 22px; min-height: 44px;\">\n    <svg width=\"22\" height=\"22\" viewBox=\"0 0 20 20\" fill=\"none\" stroke=\"#8c6a5f\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 4.5L6.5 10l5.5 5.5\"></path></svg>\n    <div style=\"display: flex; align-items: center; gap: 7px; padding: 6px 13px; border-radius: 20px; background: #ecd6cc;\">\n      <div style=\"width: 7px; height: 7px; border-radius: 50%; background: #b0654a;\"></div>\n      <div style=\"font-size: 12.5px; font-weight: 600; color: #8d4e37;\">Relationship</div>\n    </div>\n  </div>\n\n  <div style=\"position: relative; display: flex; flex-direction: column; gap: 9px; margin-bottom: 26px;\">\n    <div style=\"font-family: 'Gabarito', sans-serif; font-size: 27px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.14;\">Who are you<br>thinking about?</div>\n    <div style=\"font-size: 14.5px; line-height: 1.5; color: #7a5d52;\">Just a name is enough \u2014 no birth details needed for this one.</div>\n  </div>\n\n  <div style=\"position: relative; display: flex; flex-direction: column; gap: 20px;\">\n\n    <div style=\"display: flex; flex-direction: column; gap: 7px;\">\n      <div style=\"font-size: 12px; font-weight: 600; color: #6f564c;\">Name or however you think of them</div>\n      <div style=\"height: 52px; border-radius: 15px; background: rgba(255,255,255,0.74); display: flex; align-items: center; padding: 0 16px; box-shadow: inset 0 0 0 1.6px #b0654a;\">\n        <div style=\"font-size: 16px; color: #43302b;\">Sam</div>\n        <div style=\"width: 1.6px; height: 20px; background: #b0654a; margin-left: 2px;\"></div>\n      </div>\n    </div>\n\n    <div style=\"display: flex; flex-direction: column; gap: 10px;\">\n      <div style=\"font-size: 12px; font-weight: 600; color: #6f564c;\">What are they to you?</div>\n      <div style=\"display: flex; flex-wrap: wrap; gap: 8px;\">\n        <div style=\"padding: 11px 16px; border-radius: 22px; background: #43302b; color: #f8f0ea; font-size: 13.5px; font-weight: 500;\">Partner</div>\n        <div style=\"padding: 11px 16px; border-radius: 22px; background: rgba(255,255,255,0.66); font-size: 13.5px; color: #5c473f;\">Crush</div>\n        <div style=\"padding: 11px 16px; border-radius: 22px; background: rgba(255,255,255,0.66); font-size: 13.5px; color: #5c473f;\">Ex</div>\n        <div style=\"padding: 11px 16px; border-radius: 22px; background: rgba(255,255,255,0.66); font-size: 13.5px; color: #5c473f;\">Friend</div>\n        <div style=\"padding: 11px 16px; border-radius: 22px; background: rgba(255,255,255,0.66); font-size: 13.5px; color: #5c473f;\">Family</div>\n        <div style=\"padding: 11px 16px; border-radius: 22px; background: rgba(255,255,255,0.66); font-size: 13.5px; color: #5c473f;\">Colleague</div>\n      </div>\n    </div>\n\n    <div style=\"display: flex; flex-direction: column; gap: 7px;\">\n      <div style=\"display: flex; justify-content: space-between; align-items: baseline;\">\n        <div style=\"font-size: 12px; font-weight: 600; color: #6f564c;\">Anything specific?</div>\n        <div style=\"font-size: 12px; color: #9c7c70;\">Optional</div>\n      </div>\n      <div style=\"min-height: 84px; border-radius: 15px; background: rgba(255,255,255,0.74); padding: 15px 16px;\">\n        <div style=\"font-size: 15px; line-height: 1.5; color: #a98b7e;\">Something you keep turning over about the two of you\u2026</div>\n      </div>\n    </div>\n\n  </div>\n\n  <div style=\"position: relative; margin-top: auto; display: flex; flex-direction: column; gap: 13px;\">\n    <div style=\"display: flex; gap: 10px; background: rgba(255,255,255,0.42); border-radius: 15px; padding: 14px 15px;\">\n      <svg width=\"16\" height=\"16\" viewBox=\"0 0 20 20\" fill=\"none\" stroke=\"#8c6a5f\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"flex-shrink: 0; margin-top: 1px;\"><circle cx=\"10\" cy=\"10\" r=\"7.4\"></circle><path d=\"M10 9v4.6M10 6.4v0.1\"></path></svg>\n      <div style=\"font-size: 12px; line-height: 1.5; color: #7a5d52;\">Three cards: you, them, and the connection between you. It reads the shape of the thing, not their private thoughts.</div>\n    </div>\n    <div style=\"height: 52px; border-radius: 26px; background: #43302b; color: #f8f0ea; display: flex; align-items: center; justify-content: center; font-family: 'Gabarito', sans-serif; font-size: 16px; font-weight: 600;\">Draw for you and Sam</div>\n  </div>\n\n</div>", "props": "{}", "logic": ""}, {"sid": "s09", "markup": "<div style=\"position: relative; width: 390px; height: 844px; box-sizing: border-box; background: #f2e6df; color: #43302b; padding: 54px 22px 30px; display: flex; flex-direction: column; overflow: hidden;\">\n\n  <svg style=\"position: absolute; inset: 0; width: 390px; height: 844px; opacity: 0.3; pointer-events: none;\" aria-hidden=\"true\">\n    <filter id=\"grain3\"><feTurbulence type=\"fractalNoise\" baseFrequency=\"0.85\" numOctaves=\"3\"></feTurbulence></filter>\n    <rect width=\"390\" height=\"844\" filter=\"url(#grain3)\"></rect>\n  </svg>\n\n  <div style=\"position: relative; display: flex; align-items: center; gap: 10px; min-height: 32px; margin-bottom: 12px;\">\n    <svg width=\"22\" height=\"22\" viewBox=\"0 0 20 20\" fill=\"none\" stroke=\"#8c6a5f\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 4.5L6.5 10l5.5 5.5\"></path></svg>\n    <div style=\"display: flex; align-items: center; gap: 7px; padding: 5px 12px; border-radius: 20px; background: {{areaTint}};\">\n      <div style=\"width: 7px; height: 7px; border-radius: 50%; background: {{areaColor}};\"></div>\n      <div style=\"font-size: 12px; font-weight: 600; color: {{areaInk}};\">{{areaLabel}}</div>\n    </div>\n  </div>\n\n  <div style=\"position: relative; background: rgba(255,255,255,0.5); border-radius: 15px; padding: 12px 14px; margin-bottom: 20px;\">\n    <div style=\"font-size: 13.5px; line-height: 1.45; font-weight: 500; color: #5c473f; text-wrap: pretty;\">{{question}}</div>\n  </div>\n\n  <div style=\"position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; margin-bottom: 18px;\">\n    <sc-for list=\"{{slots}}\" as=\"s\" hint-placeholder-count=\"3\">\n      <div style=\"display: flex; flex-direction: column; gap: 7px; align-items: center;\">\n        <div style=\"width: 100%; height: 122px; border-radius: 40px 40px 8px 8px; background: {{s.bg}}; box-shadow: {{s.ring}}; overflow: hidden; display: flex; align-items: center; justify-content: center;\">\n          <sc-if value=\"{{s.filled}}\" hint-placeholder-val=\"{{false}}\">\n            <div class=\"popIn\" style=\"width: 100%; height: 122px; display: flex; align-items: center; justify-content: center;\">\n              <svg width=\"96\" height=\"122\" viewBox=\"0 0 96 122\" fill=\"none\" style=\"display: block;\">\n                <circle cx=\"48\" cy=\"46\" r=\"20\" fill=\"{{s.artA}}\"></circle>\n                <circle cx=\"48\" cy=\"46\" r=\"20\" fill=\"none\" stroke=\"#43302b\" stroke-width=\"0.8\"></circle>\n                <path d=\"M0 82q24 -13 48 0t48 0v40H0Z\" fill=\"{{s.artB}}\" opacity=\"0.8\"></path>\n              </svg>\n            </div>\n          </sc-if>\n          <sc-if value=\"{{s.empty}}\" hint-placeholder-val=\"{{true}}\">\n            <div style=\"font-family: 'Gabarito', sans-serif; font-size: 22px; font-weight: 600; color: {{s.numColor}};\">{{s.num}}</div>\n          </sc-if>\n        </div>\n        <div style=\"font-size: 9.5px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: {{s.labelColor}};\">{{s.label}}</div>\n        <div style=\"font-size: 10.5px; color: #8c6a5f; text-align: center; line-height: 1.3; min-height: 13px;\">{{s.cardName}}</div>\n      </div>\n    </sc-for>\n  </div>\n\n  <div style=\"position: relative; text-align: center; margin-bottom: 14px;\">\n    <div style=\"font-family: 'Gabarito', sans-serif; font-size: 19px; font-weight: 600; letter-spacing: -0.01em;\">{{prompt}}</div>\n    <div style=\"font-size: 12.5px; color: #8c6a5f; margin-top: 4px;\">{{subPrompt}}</div>\n  </div>\n\n  <sc-if value=\"{{picking}}\" hint-placeholder-val=\"{{true}}\">\n    <div style=\"position: relative; width: 346px; height: 176px; margin: 0 auto;\">\n      <sc-for list=\"{{fan}}\" as=\"f\" hint-placeholder-count=\"5\">\n        <div class=\"slot\" style=\"left: {{f.left}}; top: {{f.top}}; transform: rotate({{f.rot}}); z-index: {{f.z}};\">\n          <div class=\"{{f.cls}}\" style=\"--dx: {{f.dx}}; --r0: {{f.r0}}; --r1: {{f.r1}};\">\n            <div class=\"cardInner\" onClick=\"{{f.pick}}\">\n              <svg width=\"84\" height=\"126\" viewBox=\"0 0 84 126\" fill=\"none\" style=\"display: block;\">\n                <circle cx=\"42\" cy=\"58\" r=\"21\" fill=\"none\" stroke=\"#f8f0ea\" stroke-width=\"1\" opacity=\"0.7\"></circle>\n                <circle cx=\"42\" cy=\"58\" r=\"13\" fill=\"none\" stroke=\"#f8f0ea\" stroke-width=\"1\" opacity=\"0.44\"></circle>\n                <circle cx=\"42\" cy=\"58\" r=\"4\" fill=\"#f8f0ea\" opacity=\"0.86\"></circle>\n                <circle cx=\"42\" cy=\"26\" r=\"1.4\" fill=\"#f8f0ea\" opacity=\"0.6\"></circle>\n                <circle cx=\"42\" cy=\"98\" r=\"1.4\" fill=\"#f8f0ea\" opacity=\"0.6\"></circle>\n              </svg>\n            </div>\n          </div>\n        </div>\n      </sc-for>\n    </div>\n  </sc-if>\n\n  <div style=\"position: relative; margin-top: auto; display: flex; flex-direction: column; gap: 12px; align-items: center;\">\n    <sc-if value=\"{{picking}}\" hint-placeholder-val=\"{{true}}\">\n      <div style=\"display: flex; flex-direction: column; gap: 10px; align-items: center;\">\n        <div class=\"tapArea\" onClick=\"{{reshuffle}}\" style=\"display: flex; align-items: center; gap: 8px; padding: 12px 18px; border-radius: 24px; background: rgba(255,255,255,0.62); min-height: 22px;\">\n          <svg width=\"16\" height=\"16\" viewBox=\"0 0 20 20\" fill=\"none\" stroke=\"#7a5d52\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M16 10a6 6 0 11-2-4.5M16 3.5V6h-2.5\"></path></svg>\n          <div style=\"font-size: 13.5px; font-weight: 500; color: #7a5d52;\">Shuffle again</div>\n        </div>\n        <div style=\"font-size: 11.5px; color: #a98b7e; text-align: center; line-height: 1.45; max-width: 290px;\">Shuffle as often as you like. Once a card is placed it stays \u2014 and no card repeats in a spread.</div>\n      </div>\n    </sc-if>\n    <sc-if value=\"{{done}}\" hint-placeholder-val=\"{{false}}\">\n      <div style=\"display: flex; flex-direction: column; gap: 11px; align-items: center; width: 100%;\">\n        <div class=\"tapArea\" style=\"width: 100%; height: 52px; border-radius: 26px; background: #43302b; color: #f8f0ea; display: flex; align-items: center; justify-content: center; gap: 8px; font-family: 'Gabarito', sans-serif; font-size: 16px; font-weight: 600;\">\n          <span>Read my three cards</span>\n          <svg width=\"17\" height=\"17\" viewBox=\"0 0 20 20\" fill=\"none\" stroke=\"#f8f0ea\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 10h11M11 6l4 4-4 4\"></path></svg>\n        </div>\n        <div class=\"tapArea\" onClick=\"{{restart}}\" style=\"font-size: 12.5px; color: #9c7c70; min-height: 20px;\">Start the spread over</div>\n      </div>\n    </sc-if>\n  </div>\n\n</div>", "props": "{\"area\":{\"editor\":\"enum\",\"options\":[\"career\",\"relationship\",\"relationship \\u00b7 someone specific\",\"social\"],\"default\":\"career\",\"section\":\"Reading type\"},\"reduceMotion\":{\"editor\":\"boolean\",\"default\":false,\"section\":\"Accessibility\"}}", "logic": "class Component extends DCLogic {\n  renderVals() {\n    const st = this.state || {};\n    const reduce = this.props.reduceMotion === true;\n    const count = st.count || 0;\n    const shuffles = st.shuffles || 0;\n    const sel = this.props.area ?? 'career';\n    const AREAS = {\n      career: {\n        label: 'Career', color: '#6f8ca2', tint: '#dbe4ea', ink: '#4f6c81',\n        q: '\"I\\u2019ve been doing the work of the next level for a year. Do I ask now or wait?\"',\n        pos: ['Situation', 'Action', 'Outcome'],\n        sub: ['Where things actually stand', 'What the cards suggest you do', 'Where that leads']\n      },\n      relationship: {\n        label: 'Relationship', color: '#b0654a', tint: '#ecd6cc', ink: '#8d4e37',\n        q: '\"There\\u2019s a conversation I keep deciding to have and then not having. What am I actually avoiding?\"',\n        pos: ['Situation', 'Action', 'Outcome'],\n        sub: ['Where things actually stand', 'What the cards suggest you do', 'Where that leads']\n      },\n      'relationship \u00b7 someone specific': {\n        label: 'Relationship \\u00b7 Sam', color: '#b0654a', tint: '#ecd6cc', ink: '#8d4e37',\n        q: '\"Things have been fine on the surface with Sam for months. Is that fine, or is it quiet?\"',\n        pos: ['You', 'Them', 'The Connection'],\n        sub: ['What you bring to it', 'Where they actually are', 'What sits between you']\n      },\n      social: {\n        label: 'Social', color: '#7d8f6a', tint: '#dde3d6', ink: '#5f7050',\n        q: '\"I do a lot for my friends and I\\u2019m not sure it comes back. Am I imagining that?\"',\n        pos: ['Situation', 'Action', 'Outcome'],\n        sub: ['Where things actually stand', 'What the cards suggest you do', 'Where that leads']\n      }\n    };\n    const AREA = AREAS[sel] || AREAS.career;\n    const ART = [\n      { name: 'Seven of Pentacles', artA: '#e8c4b4', artB: '#c9a9b8' },\n      { name: 'The Star', artA: '#f5cf6b', artB: '#8fa8ba' },\n      { name: 'Three of Wands', artA: '#dde3d6', artB: '#a8b89c' }\n    ];\n    const POS = AREA.pos.map((label, i) => ({\n      label: label, name: ART[i].name, artA: ART[i].artA, artB: ART[i].artB\n    }));\n    const slots = POS.map((p, i) => {\n      const filled = i < count;\n      const current = i === count;\n      return {\n        label: p.label,\n        num: String(i + 1),\n        filled: filled,\n        empty: !filled,\n        cardName: filled ? p.name : '',\n        artA: p.artA,\n        artB: p.artB,\n        bg: filled ? '#f8f0ea' : 'rgba(255,255,255,0.34)',\n        ring: current ? 'inset 0 0 0 2px ' + AREA.color : 'none',\n        numColor: current ? AREA.color : '#d3bcb2',\n        labelColor: filled ? '#5c473f' : (current ? AREA.ink : '#a98b7e')\n      };\n    });\n    const useB = (count + shuffles) % 2 === 1;\n    const wash = reduce ? '' : (useB ? 'washB' : 'washA');\n    const dxs = ['118px', '58px', '0px', '-58px', '-118px'];\n    const r0s = ['-20deg', '-10deg', '4deg', '12deg', '22deg'];\n    const r1s = ['15deg', '8deg', '-6deg', '-11deg', '-18deg'];\n    const rots = ['-13deg', '-6.5deg', '0deg', '6.5deg', '13deg'];\n    const tops = ['20px', '6px', '0px', '6px', '20px'];\n    const fan = [];\n    for (let i = 0; i < 5; i++) {\n      fan.push({\n        left: (i * 56) + 'px',\n        top: tops[i],\n        rot: rots[i],\n        z: String(i + 1),\n        dx: dxs[i],\n        r0: r0s[i],\n        r1: r1s[i],\n        cls: wash,\n        pick: () => { if (count < 3) this.setState({ count: count + 1 }); }\n      });\n    }\n    const PROMPTS = AREA.pos.map((label, i) => ({\n      p: 'Pick a card for ' + label,\n      s: AREA.sub[i]\n    }));\n    return {\n      areaLabel: AREA.label,\n      areaColor: AREA.color,\n      areaTint: AREA.tint,\n      areaInk: AREA.ink,\n      question: AREA.q,\n      slots: slots,\n      fan: fan,\n      picking: count < 3,\n      done: count >= 3,\n      prompt: count < 3 ? PROMPTS[count].p : 'Your spread is complete',\n      subPrompt: count < 3 ? (PROMPTS[count].s + '  \u00b7  draw ' + (count + 1) + ' of 3') : 'Three cards, drawn by you',\n      reshuffle: () => this.setState({ shuffles: shuffles + 1 }),\n      restart: () => this.setState({ count: 0, shuffles: shuffles + 1 })\n    };\n  }\n}"}, {"sid": "s10", "markup": "<div style=\"position: relative; width: 390px; height: 1010px; box-sizing: border-box; background: #f2e6df; color: #43302b; padding: 54px 22px 30px; display: flex; flex-direction: column; overflow: hidden;\">\n\n  <svg style=\"position: absolute; inset: 0; width: 390px; height: 1010px; opacity: 0.3; pointer-events: none;\" aria-hidden=\"true\">\n    <filter id=\"grainRead\"><feTurbulence type=\"fractalNoise\" baseFrequency=\"0.85\" numOctaves=\"3\"></feTurbulence></filter>\n    <rect width=\"390\" height=\"1010\" filter=\"url(#grainRead)\"></rect>\n  </svg>\n\n  <div style=\"position: relative; display: flex; justify-content: space-between; align-items: center; min-height: 44px; margin-bottom: 16px;\">\n    <svg width=\"22\" height=\"22\" viewBox=\"0 0 20 20\" fill=\"none\" stroke=\"#8c6a5f\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 4.5L6.5 10l5.5 5.5\"></path></svg>\n    <div style=\"display: flex; gap: 16px; align-items: center;\">\n      <svg width=\"19\" height=\"19\" viewBox=\"0 0 20 20\" fill=\"none\" stroke=\"#8c6a5f\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 3.5h10v13l-5-3.5-5 3.5z\"></path></svg>\n      <svg width=\"19\" height=\"19\" viewBox=\"0 0 20 20\" fill=\"none\" stroke=\"#8c6a5f\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M10 13V3.5M6.5 7L10 3.5 13.5 7M4 12.5v3a1 1 0 001 1h10a1 1 0 001-1v-3\"></path></svg>\n    </div>\n  </div>\n\n  <div style=\"position: relative; display: flex; align-items: center; gap: 7px; padding: 6px 13px; border-radius: 20px; background: #dbe4ea; align-self: flex-start; margin-bottom: 13px;\">\n    <div style=\"width: 7px; height: 7px; border-radius: 50%; background: #6f8ca2;\"></div>\n    <div style=\"font-size: 12px; font-weight: 600; color: #4f6c81;\">Career \u00b7 9 September</div>\n  </div>\n\n  <div style=\"position: relative; font-size: 16px; line-height: 1.45; font-weight: 500; color: #43302b; margin-bottom: 20px; text-wrap: pretty;\">\"I've been doing the work of the next level for a year. Do I ask now or wait?\"</div>\n\n  <div style=\"position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; margin-bottom: 22px;\">\n    <div style=\"display: flex; flex-direction: column; gap: 7px; align-items: center;\">\n      <div style=\"width: 100%; height: 148px; border-radius: 50px 50px 9px 9px; background: #f8f0ea; overflow: hidden; position: relative;\">\n        <svg width=\"106\" height=\"148\" viewBox=\"0 0 106 148\" fill=\"none\" style=\"display: block;\">\n          <circle cx=\"53\" cy=\"56\" r=\"24\" fill=\"#e8c4b4\"></circle>\n          <path d=\"M53 32v48M35 56h36\" stroke=\"#43302b\" stroke-width=\"1\" opacity=\"0.6\"></path>\n          <path d=\"M0 106q26 -14 53 0t53 0v42H0Z\" fill=\"#c9a9b8\" opacity=\"0.7\"></path>\n        </svg>\n      </div>\n      <div style=\"font-size: 10.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #9c7c70;\">Situation</div>\n      <div style=\"font-size: 11.5px; text-align: center; line-height: 1.35; color: #5c473f;\">Seven of<br>Pentacles</div>\n    </div>\n    <div style=\"display: flex; flex-direction: column; gap: 7px; align-items: center;\">\n      <div style=\"width: 100%; height: 148px; border-radius: 50px 50px 9px 9px; background: #f8f0ea; overflow: hidden; position: relative;\">\n        <svg width=\"106\" height=\"148\" viewBox=\"0 0 106 148\" fill=\"none\" style=\"display: block;\">\n          <circle cx=\"53\" cy=\"52\" r=\"22\" fill=\"#f5cf6b\"></circle>\n          <circle cx=\"53\" cy=\"52\" r=\"22\" fill=\"none\" stroke=\"#43302b\" stroke-width=\"0.9\"></circle>\n          <path d=\"M53 20v14M75 52h14M17 52h14M53 70v14\" stroke=\"#43302b\" stroke-width=\"1\" opacity=\"0.55\"></path>\n          <path d=\"M0 104q26 -15 53 0t53 0v44H0Z\" fill=\"#8fa8ba\" opacity=\"0.8\"></path>\n        </svg>\n      </div>\n      <div style=\"font-size: 10.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #9c7c70;\">Action</div>\n      <div style=\"font-size: 11.5px; text-align: center; line-height: 1.35; color: #5c473f;\">The Star<br>&nbsp;</div>\n    </div>\n    <div style=\"display: flex; flex-direction: column; gap: 7px; align-items: center;\">\n      <div style=\"width: 100%; height: 148px; border-radius: 50px 50px 9px 9px; background: #f8f0ea; overflow: hidden; position: relative;\">\n        <svg width=\"106\" height=\"148\" viewBox=\"0 0 106 148\" fill=\"none\" style=\"display: block;\">\n          <rect x=\"34\" y=\"34\" width=\"38\" height=\"52\" rx=\"4\" fill=\"#dde3d6\" stroke=\"#43302b\" stroke-width=\"0.9\"></rect>\n          <path d=\"M42 50h22M42 60h22M42 70h14\" stroke=\"#43302b\" stroke-width=\"1\" opacity=\"0.5\"></path>\n          <path d=\"M0 108q26 -12 53 0t53 0v40H0Z\" fill=\"#a8b89c\" opacity=\"0.7\"></path>\n        </svg>\n      </div>\n      <div style=\"font-size: 10.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #9c7c70;\">Outcome</div>\n      <div style=\"font-size: 11.5px; text-align: center; line-height: 1.35; color: #5c473f;\">Three of<br>Wands</div>\n    </div>\n  </div>\n\n  <div style=\"position: relative; display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px;\">\n    <div style=\"font-size: 15.5px; line-height: 1.62; color: #43302b; text-wrap: pretty;\">A year of doing the work without the title is exactly what the <strong style=\"font-weight: 600;\">Seven of Pentacles</strong> describes \u2014 the long, unglamorous stretch where you can no longer tell whether you're being patient or being overlooked.</div>\n    <div style=\"font-size: 15.5px; line-height: 1.62; color: #43302b; text-wrap: pretty;\">The <strong style=\"font-weight: 600;\">Star</strong> in the action position doesn't tell you to wait for the right moment. It suggests the waiting itself has become the problem. You've been treating the ask as something that needs permission, when it needs preparation instead \u2014 a specific number, a specific date, and the evidence you already have.</div>\n    <div style=\"font-size: 15.5px; line-height: 1.62; color: #43302b; text-wrap: pretty;\">The <strong style=\"font-weight: 600;\">Three of Wands</strong> looks outward. Whatever the answer is, asking changes your position: either you get it, or you learn something true about where you are \u2014 and both of those are more useful than another year of almost.</div>\n  </div>\n\n  <div style=\"position: relative; display: flex; flex-direction: column; gap: 11px; background: rgba(255,255,255,0.5); border-radius: 19px; padding: 16px 17px; margin-bottom: 16px;\">\n    <div style=\"font-size: 13.5px; font-weight: 600; color: #5c473f;\">Something to sit with</div>\n    <div style=\"font-size: 14.5px; line-height: 1.55; color: #5c473f;\">If you knew the answer would be no, would you still want to have asked?</div>\n  </div>\n\n  <div style=\"position: relative; display: flex; gap: 10px; align-items: center; margin-bottom: 14px;\">\n    <div style=\"font-size: 12.5px; color: #8c6a5f;\">Did this land?</div>\n    <div style=\"display: flex; gap: 7px;\">\n      <div style=\"padding: 8px 14px; border-radius: 20px; background: rgba(255,255,255,0.66); font-size: 12.5px; color: #5c473f; min-height: 22px; display: flex; align-items: center;\">Yes</div>\n      <div style=\"padding: 8px 14px; border-radius: 20px; background: rgba(255,255,255,0.66); font-size: 12.5px; color: #5c473f; min-height: 22px; display: flex; align-items: center;\">Not really</div>\n    </div>\n  </div>\n\n  <div style=\"position: relative; margin-top: auto; display: flex; flex-direction: column; gap: 11px;\">\n    <div style=\"height: 50px; border-radius: 25px; background: rgba(255,255,255,0.7); color: #43302b; display: flex; align-items: center; justify-content: center; gap: 8px; font-family: 'Gabarito', sans-serif; font-size: 15px; font-weight: 600;\">\n      <svg width=\"17\" height=\"17\" viewBox=\"0 0 20 20\" fill=\"none\" stroke=\"#43302b\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 15.5V5a1.5 1.5 0 011.5-1.5h9A1.5 1.5 0 0116 5v10.5M7 7h6M7 10.5h6\"></path></svg>\n      <span>Add a note</span>\n    </div>\n    <div style=\"font-size: 10.5px; color: #a98b7e; text-align: center; line-height: 1.45;\">Readings are for reflection, not prediction.</div>\n  </div>\n\n</div>", "props": "{}", "logic": ""}, {"sid": "s11", "markup": "<div style=\"position: relative; width: 390px; height: 844px; box-sizing: border-box; background: #f2e6df; color: #43302b; padding: 54px 22px 30px; display: flex; flex-direction: column; overflow: hidden;\">\n\n  <svg style=\"position: absolute; inset: 0; width: 390px; height: 844px; opacity: 0.3; pointer-events: none;\" aria-hidden=\"true\">\n    <filter id=\"grainFall\"><feTurbulence type=\"fractalNoise\" baseFrequency=\"0.85\" numOctaves=\"3\"></feTurbulence></filter>\n    <rect width=\"390\" height=\"844\" filter=\"url(#grainFall)\"></rect>\n  </svg>\n\n  <div style=\"position: relative; display: flex; align-items: center; gap: 10px; margin-bottom: 18px; min-height: 44px;\">\n    <svg width=\"22\" height=\"22\" viewBox=\"0 0 20 20\" fill=\"none\" stroke=\"#8c6a5f\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 4.5L6.5 10l5.5 5.5\"></path></svg>\n    <div style=\"display: flex; align-items: center; gap: 7px; padding: 6px 13px; border-radius: 20px; background: #dbe4ea;\">\n      <div style=\"width: 7px; height: 7px; border-radius: 50%; background: #6f8ca2;\"></div>\n      <div style=\"font-size: 12.5px; font-weight: 600; color: #4f6c81;\">Career \u00b7 9 September</div>\n    </div>\n  </div>\n\n  <div style=\"position: relative; display: flex; gap: 11px; background: #ecdcd0; border-radius: 17px; padding: 15px 16px; margin-bottom: 22px;\">\n    <svg width=\"18\" height=\"18\" viewBox=\"0 0 20 20\" fill=\"none\" stroke=\"#a3703f\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"flex-shrink: 0; margin-top: 1px;\"><path d=\"M10 3.2l7 12.6H3z\"></path><path d=\"M10 8.4v3.4M10 14v0.1\"></path></svg>\n    <div style=\"display: flex; flex-direction: column; gap: 4px;\">\n      <div style=\"font-size: 13.5px; font-weight: 600; color: #7d5527;\">A shorter reading than usual</div>\n      <div style=\"font-size: 12.5px; line-height: 1.5; color: #8a6440;\">We couldn't reach the part that writes the personal version, so this is the traditional meaning of your cards. Your question wasn't used \u2014 and it wasn't counted against you.</div>\n    </div>\n  </div>\n\n  <div style=\"position: relative; font-size: 15px; line-height: 1.45; font-weight: 500; color: #7a5d52; margin-bottom: 20px; text-wrap: pretty;\">\"I've been doing the work of the next level for a year. Do I ask now or wait?\"</div>\n\n  <div style=\"position: relative; display: flex; flex-direction: column; gap: 16px;\">\n\n    <div style=\"display: flex; gap: 14px; align-items: flex-start;\">\n      <div style=\"width: 62px; height: 88px; border-radius: 30px 30px 6px 6px; background: #f8f0ea; flex-shrink: 0; overflow: hidden;\">\n        <svg width=\"62\" height=\"88\" viewBox=\"0 0 62 88\" fill=\"none\"><circle cx=\"31\" cy=\"33\" r=\"14\" fill=\"#e8c4b4\"></circle><path d=\"M0 62q15 -8 31 0t31 0v26H0Z\" fill=\"#c9a9b8\" opacity=\"0.7\"></path></svg>\n      </div>\n      <div style=\"display: flex; flex-direction: column; gap: 5px;\">\n        <div style=\"font-size: 10.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #9c7c70;\">Situation</div>\n        <div style=\"font-family: 'Gabarito', sans-serif; font-size: 17px; font-weight: 600;\">Seven of Pentacles</div>\n        <div style=\"font-size: 13.5px; line-height: 1.5; color: #5c473f;\">A pause to assess work already underway. Patience that may or may not still be serving you.</div>\n      </div>\n    </div>\n\n    <div style=\"display: flex; gap: 14px; align-items: flex-start;\">\n      <div style=\"width: 62px; height: 88px; border-radius: 30px 30px 6px 6px; background: #f8f0ea; flex-shrink: 0; overflow: hidden;\">\n        <svg width=\"62\" height=\"88\" viewBox=\"0 0 62 88\" fill=\"none\"><circle cx=\"31\" cy=\"31\" r=\"13\" fill=\"#f5cf6b\"></circle><circle cx=\"31\" cy=\"31\" r=\"13\" fill=\"none\" stroke=\"#43302b\" stroke-width=\"0.8\"></circle><path d=\"M0 60q15 -9 31 0t31 0v28H0Z\" fill=\"#8fa8ba\" opacity=\"0.8\"></path></svg>\n      </div>\n      <div style=\"display: flex; flex-direction: column; gap: 5px;\">\n        <div style=\"font-size: 10.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #9c7c70;\">Action</div>\n        <div style=\"font-family: 'Gabarito', sans-serif; font-size: 17px; font-weight: 600;\">The Star</div>\n        <div style=\"font-size: 13.5px; line-height: 1.5; color: #5c473f;\">Renewed clarity after a difficult stretch. Naming what you want rather than waiting to be offered it.</div>\n      </div>\n    </div>\n\n    <div style=\"display: flex; gap: 14px; align-items: flex-start;\">\n      <div style=\"width: 62px; height: 88px; border-radius: 30px 30px 6px 6px; background: #f8f0ea; flex-shrink: 0; overflow: hidden;\">\n        <svg width=\"62\" height=\"88\" viewBox=\"0 0 62 88\" fill=\"none\"><rect x=\"20\" y=\"20\" width=\"22\" height=\"30\" rx=\"3\" fill=\"#dde3d6\" stroke=\"#43302b\" stroke-width=\"0.8\"></rect><path d=\"M0 64q15 -7 31 0t31 0v24H0Z\" fill=\"#a8b89c\" opacity=\"0.7\"></path></svg>\n      </div>\n      <div style=\"display: flex; flex-direction: column; gap: 5px;\">\n        <div style=\"font-size: 10.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #9c7c70;\">Outcome</div>\n        <div style=\"font-family: 'Gabarito', sans-serif; font-size: 17px; font-weight: 600;\">Three of Wands</div>\n        <div style=\"font-size: 13.5px; line-height: 1.5; color: #5c473f;\">Looking outward from a decision already made. Expansion that begins once you commit.</div>\n      </div>\n    </div>\n\n  </div>\n\n  <div style=\"position: relative; margin-top: auto; display: flex; flex-direction: column; gap: 11px;\">\n    <div style=\"height: 50px; border-radius: 25px; background: #43302b; color: #f8f0ea; display: flex; align-items: center; justify-content: center; gap: 8px; font-family: 'Gabarito', sans-serif; font-size: 15px; font-weight: 600;\">\n      <svg width=\"17\" height=\"17\" viewBox=\"0 0 20 20\" fill=\"none\" stroke=\"#f8f0ea\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M16 10a6 6 0 11-2-4.5M16 3.5V6h-2.5\"></path></svg>\n      <span>Try the personal reading again</span>\n    </div>\n    <div style=\"font-size: 10.5px; color: #a98b7e; text-align: center; line-height: 1.45;\">Readings are for reflection, not prediction.</div>\n  </div>\n\n</div>", "props": "{}", "logic": ""}, {"sid": "s12", "markup": "<div style=\"position: relative; width: 390px; height: 900px; box-sizing: border-box; background: #f2e6df; color: #43302b; padding: 54px 22px 30px; display: flex; flex-direction: column; overflow: hidden;\">\n\n  <svg style=\"position: absolute; inset: 0; width: 390px; height: 900px; opacity: 0.3; pointer-events: none;\" aria-hidden=\"true\">\n    <filter id=\"grainHist\"><feTurbulence type=\"fractalNoise\" baseFrequency=\"0.85\" numOctaves=\"3\"></feTurbulence></filter>\n    <rect width=\"390\" height=\"900\" filter=\"url(#grainHist)\"></rect>\n  </svg>\n\n  <div style=\"position: relative; font-family: 'Gabarito', sans-serif; font-size: 28px; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 18px;\">Your readings</div>\n\n  <div style=\"position: relative; background: rgba(255,255,255,0.5); border-radius: 19px; padding: 15px 16px 17px; margin-bottom: 20px;\">\n    <div style=\"display: flex; justify-content: space-between; align-items: center; margin-bottom: 13px;\">\n      <div style=\"font-size: 13px; font-weight: 600; color: #5c473f;\">September</div>\n      <div style=\"font-size: 11.5px; color: #8c6a5f;\">21 of 30 days drawn</div>\n    </div>\n    <div style=\"display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px;\">\n      <sc-for list=\"{{days}}\" as=\"d\" hint-placeholder-count=\"30\">\n        <div style=\"height: 27px; border-radius: 8px; background: {{d.bg}}; display: flex; align-items: center; justify-content: center; font-size: 10.5px; font-weight: {{d.weight}}; color: {{d.color}};\">{{d.n}}</div>\n      </sc-for>\n    </div>\n  </div>\n\n  <div style=\"position: relative; display: flex; gap: 7px; margin-bottom: 16px;\">\n    <sc-for list=\"{{filters}}\" as=\"f\" hint-placeholder-count=\"4\">\n      <div class=\"filt\" onClick=\"{{f.pick}}\" style=\"padding: 9px 14px; border-radius: 20px; background: {{f.bg}}; color: {{f.color}}; font-size: 12.5px; font-weight: {{f.weight}};\">{{f.label}}</div>\n    </sc-for>\n  </div>\n\n  <div style=\"position: relative; display: flex; flex-direction: column; gap: 9px;\">\n    <sc-for list=\"{{entries}}\" as=\"e\" hint-placeholder-count=\"5\">\n      <div class=\"row\" style=\"display: flex; gap: 12px; align-items: center; background: rgba(255,255,255,0.6); border-radius: 16px; padding: 13px 14px;\">\n        <div style=\"width: 34px; height: 48px; border-radius: 17px 17px 4px 4px; background: {{e.cardBg}}; flex-shrink: 0; display: flex; align-items: center; justify-content: center;\">\n          <div style=\"width: 13px; height: 13px; border-radius: 50%; background: {{e.dot}};\"></div>\n        </div>\n        <div style=\"flex-grow: 1; display: flex; flex-direction: column; gap: 3px;\">\n          <div style=\"font-size: 13.5px; font-weight: 500; line-height: 1.35; color: #43302b;\">{{e.title}}</div>\n          <div style=\"display: flex; align-items: center; gap: 7px;\">\n            <div style=\"font-size: 11px; font-weight: 600; color: {{e.dot}};\">{{e.area}}</div>\n            <div style=\"width: 3px; height: 3px; border-radius: 50%; background: #cdb3a8;\"></div>\n            <div style=\"font-size: 11px; color: #8c6a5f;\">{{e.when}}</div>\n          </div>\n        </div>\n        <svg width=\"16\" height=\"16\" viewBox=\"0 0 20 20\" fill=\"none\" stroke=\"#a98b7e\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M7.5 4.5l6 5.5-6 5.5\"></path></svg>\n      </div>\n    </sc-for>\n  </div>\n\n  <div style=\"position: relative; margin-top: auto; font-size: 12px; color: #a98b7e; text-align: center;\">{{footer}}</div>\n\n</div>", "props": "{}", "logic": "class Component extends DCLogic {\n  renderVals() {\n    const active = (this.state && this.state.filter) || 'all';\n    const COLOR = { career: '#6f8ca2', relationship: '#b0654a', social: '#7d8f6a' };\n    const TINT = { career: '#dbe4ea', relationship: '#ecd6cc', social: '#dde3d6' };\n    const LABEL = { career: 'Career', relationship: 'Relationship', social: 'Social' };\n    const all = [\n      { area: 'career', title: '\"Do I ask now or wait?\"', when: 'Today' },\n      { area: 'social', title: 'The Star \u00b7 daily card', when: 'Today' },\n      { area: 'relationship', title: 'You and Sam', when: 'Yesterday' },\n      { area: 'social', title: '\"An event I\u2019m dreading on Friday\"', when: '3 days ago' },\n      { area: 'career', title: '\"Should I say something in Thursday\u2019s review?\"', when: '4 days ago' },\n      { area: 'relationship', title: 'Nine of Cups \u00b7 daily card', when: '5 days ago' }\n    ];\n    const shown = active === 'all' ? all : all.filter((e) => e.area === active);\n    const drawnDays = [1,2,3,4,6,7,8,9,11,12,13,15,16,17,19,20,22,23,24,25,26];\n    const days = [];\n    for (let n = 1; n <= 30; n++) {\n      const hit = drawnDays.indexOf(n) !== -1;\n      const today = n === 9;\n      days.push({\n        n: n,\n        bg: today ? '#43302b' : (hit ? 'rgba(255,255,255,0.9)' : 'transparent'),\n        color: today ? '#f8f0ea' : (hit ? '#43302b' : '#c4a99e'),\n        weight: today ? '600' : (hit ? '500' : '400')\n      });\n    }\n    const keys = ['all', 'career', 'relationship', 'social'];\n    return {\n      days: days,\n      filters: keys.map((k) => ({\n        label: k === 'all' ? 'All' : LABEL[k],\n        bg: active === k ? '#43302b' : 'rgba(255,255,255,0.62)',\n        color: active === k ? '#f8f0ea' : '#5c473f',\n        weight: active === k ? '600' : '400',\n        pick: () => this.setState({ filter: k })\n      })),\n      entries: shown.map((e) => ({\n        title: e.title,\n        when: e.when,\n        area: LABEL[e.area],\n        dot: COLOR[e.area],\n        cardBg: TINT[e.area]\n      })),\n      footer: shown.length + (shown.length === 1 ? ' reading' : ' readings') + (active === 'all' ? ' \u00b7 everything you\u2019ve drawn' : ' in ' + LABEL[active])\n    };\n  }\n}"}, {"sid": "s13", "markup": "<div style=\"position: relative; width: 390px; height: 844px; box-sizing: border-box; background: #f2e6df; color: #43302b; padding: 54px 22px 30px; display: flex; flex-direction: column; overflow: hidden;\">\n\n  <svg style=\"position: absolute; inset: 0; width: 390px; height: 844px; opacity: 0.3; pointer-events: none;\" aria-hidden=\"true\">\n    <filter id=\"grainEmpty\"><feTurbulence type=\"fractalNoise\" baseFrequency=\"0.85\" numOctaves=\"3\"></feTurbulence></filter>\n    <rect width=\"390\" height=\"844\" filter=\"url(#grainEmpty)\"></rect>\n  </svg>\n\n  <div style=\"position: relative; font-family: 'Gabarito', sans-serif; font-size: 28px; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 18px;\">Your readings</div>\n\n  <div style=\"position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-grow: 1; gap: 24px; padding-bottom: 60px;\">\n\n    <svg width=\"188\" height=\"150\" viewBox=\"0 0 188 150\" fill=\"none\">\n      <rect x=\"18\" y=\"26\" width=\"46\" height=\"66\" rx=\"23\" fill=\"none\" stroke=\"#cdb3a8\" stroke-width=\"1.3\" stroke-dasharray=\"5 5\"></rect>\n      <rect x=\"71\" y=\"18\" width=\"46\" height=\"66\" rx=\"23\" fill=\"none\" stroke=\"#cdb3a8\" stroke-width=\"1.3\" stroke-dasharray=\"5 5\"></rect>\n      <rect x=\"124\" y=\"26\" width=\"46\" height=\"66\" rx=\"23\" fill=\"none\" stroke=\"#cdb3a8\" stroke-width=\"1.3\" stroke-dasharray=\"5 5\"></rect>\n      <path d=\"M40 116h108\" stroke=\"#dfc9be\" stroke-width=\"1.3\"></path>\n      <circle cx=\"94\" cy=\"51\" r=\"7\" fill=\"#e4d3cb\"></circle>\n      <path d=\"M94 34v6M94 62v6M77 51h6M105 51h6\" stroke=\"#dfc9be\" stroke-width=\"1.3\" stroke-linecap=\"round\"></path>\n    </svg>\n\n    <div style=\"display: flex; flex-direction: column; gap: 9px; align-items: center; text-align: center;\">\n      <div style=\"font-family: 'Gabarito', sans-serif; font-size: 21px; font-weight: 600;\">Nothing here yet</div>\n      <div style=\"font-size: 14.5px; line-height: 1.55; color: #7a5d52; max-width: 268px; text-wrap: pretty;\">Every card you draw and every reading you ask for is kept here. Come back in a week and you'll start to see your own patterns.</div>\n    </div>\n\n  </div>\n\n  <div style=\"position: relative; height: 52px; border-radius: 26px; background: #43302b; color: #f8f0ea; display: flex; align-items: center; justify-content: center; font-family: 'Gabarito', sans-serif; font-size: 16px; font-weight: 600;\">Draw today's card</div>\n\n</div>", "props": "{}", "logic": ""}, {"sid": "s14", "markup": "<div style=\"position: relative; width: 390px; height: 844px; box-sizing: border-box; background: #f2e6df; color: #43302b; padding: 54px 22px 30px; display: flex; flex-direction: column; overflow: hidden;\">\n\n  <svg style=\"position: absolute; inset: 0; width: 390px; height: 844px; opacity: 0.3; pointer-events: none;\" aria-hidden=\"true\">\n    <filter id=\"grainPay\"><feTurbulence type=\"fractalNoise\" baseFrequency=\"0.85\" numOctaves=\"3\"></feTurbulence></filter>\n    <rect width=\"390\" height=\"844\" filter=\"url(#grainPay)\"></rect>\n  </svg>\n\n  <div style=\"position: relative; display: flex; justify-content: flex-end; min-height: 44px; margin-bottom: 6px;\">\n    <svg width=\"22\" height=\"22\" viewBox=\"0 0 20 20\" fill=\"none\" stroke=\"#a98b7e\" stroke-width=\"1.8\" stroke-linecap=\"round\"><path d=\"M5.5 5.5l9 9M14.5 5.5l-9 9\"></path></svg>\n  </div>\n\n  <div style=\"position: relative; display: flex; justify-content: center; margin-bottom: 20px;\">\n    <svg width=\"150\" height=\"96\" viewBox=\"0 0 150 96\" fill=\"none\">\n      <g transform=\"rotate(-12 40 52)\"><rect x=\"16\" y=\"18\" width=\"48\" height=\"70\" rx=\"24\" fill=\"#dbe4ea\" stroke=\"#43302b\" stroke-width=\"1\"></rect></g>\n      <rect x=\"51\" y=\"12\" width=\"48\" height=\"72\" rx=\"24\" fill=\"#f8f0ea\" stroke=\"#43302b\" stroke-width=\"1\"></rect>\n      <circle cx=\"75\" cy=\"40\" r=\"12\" fill=\"#f5cf6b\" stroke=\"#43302b\" stroke-width=\"0.9\"></circle>\n      <path d=\"M51 62q12 -7 24 0t24 0v22H51Z\" fill=\"#6f8ca2\" opacity=\"0.7\"></path>\n      <g transform=\"rotate(12 110 52)\"><rect x=\"86\" y=\"18\" width=\"48\" height=\"70\" rx=\"24\" fill=\"#dde3d6\" stroke=\"#43302b\" stroke-width=\"1\"></rect></g>\n    </svg>\n  </div>\n\n  <div style=\"position: relative; display: flex; flex-direction: column; gap: 10px; margin-bottom: 22px;\">\n    <div style=\"font-family: 'Gabarito', sans-serif; font-size: 28px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.15;\">Go deeper, any<br>day you need to</div>\n    <div style=\"font-size: 14.5px; line-height: 1.52; color: #7a5d52;\">Your daily card and the three scores stay free \u2014 always. A subscription is for the days you want a real answer.</div>\n  </div>\n\n  <div style=\"position: relative; display: flex; flex-direction: column; gap: 11px; margin-bottom: 22px;\">\n    <div style=\"display: flex; gap: 11px; align-items: flex-start;\">\n      <svg width=\"19\" height=\"19\" viewBox=\"0 0 20 20\" fill=\"none\" stroke=\"#6f8ca2\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"flex-shrink: 0; margin-top: 1px;\"><path d=\"M4 10.5l4 4 8-9\"></path></svg>\n      <div style=\"font-size: 14.5px; line-height: 1.45; color: #5c473f;\">Unlimited readings in <strong style=\"font-weight: 600;\">Career, Relationship and Social</strong></div>\n    </div>\n    <div style=\"display: flex; gap: 11px; align-items: flex-start;\">\n      <svg width=\"19\" height=\"19\" viewBox=\"0 0 20 20\" fill=\"none\" stroke=\"#6f8ca2\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"flex-shrink: 0; margin-top: 1px;\"><path d=\"M4 10.5l4 4 8-9\"></path></svg>\n      <div style=\"font-size: 14.5px; line-height: 1.45; color: #5c473f;\">Readings about a specific person</div>\n    </div>\n    <div style=\"display: flex; gap: 11px; align-items: flex-start;\">\n      <svg width=\"19\" height=\"19\" viewBox=\"0 0 20 20\" fill=\"none\" stroke=\"#6f8ca2\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"flex-shrink: 0; margin-top: 1px;\"><path d=\"M4 10.5l4 4 8-9\"></path></svg>\n      <div style=\"font-size: 14.5px; line-height: 1.45; color: #5c473f;\">Everything you read stays yours, even if you cancel</div>\n    </div>\n  </div>\n\n  <div style=\"position: relative; border-radius: 19px; background: rgba(255,255,255,0.78); padding: 17px 18px; display: flex; justify-content: space-between; align-items: center; box-shadow: inset 0 0 0 2px #43302b;\">\n    <div style=\"display: flex; flex-direction: column; gap: 2px;\">\n      <div style=\"font-family: 'Gabarito', sans-serif; font-size: 16px; font-weight: 600;\">Monthly</div>\n      <div style=\"font-size: 12.5px; color: #8c6a5f;\">Cancel any time</div>\n    </div>\n    <div style=\"display: flex; align-items: baseline; gap: 3px;\">\n      <div style=\"font-family: 'Gabarito', sans-serif; font-size: 25px; font-weight: 700;\">$9.99</div>\n      <div style=\"font-size: 13px; color: #8c6a5f;\">/mo</div>\n    </div>\n  </div>\n\n  <div style=\"position: relative; margin-top: auto; display: flex; flex-direction: column; gap: 12px;\">\n    <div style=\"height: 52px; border-radius: 26px; background: #43302b; color: #f8f0ea; display: flex; align-items: center; justify-content: center; font-family: 'Gabarito', sans-serif; font-size: 16px; font-weight: 600;\">Subscribe</div>\n    <div style=\"display: flex; justify-content: center; gap: 18px; font-size: 12.5px; color: #8c6a5f; min-height: 22px; align-items: center;\">\n      <div>Restore purchases</div>\n      <div style=\"width: 1px; height: 11px; background: #d3bcb2;\"></div>\n      <div>Terms</div>\n      <div style=\"width: 1px; height: 11px; background: #d3bcb2;\"></div>\n      <div>Privacy</div>\n    </div>\n    <div style=\"font-size: 11px; line-height: 1.45; color: #a98b7e; text-align: center;\">$9.99 per month, renews automatically until cancelled. Manage in Settings. For entertainment and self-reflection.</div>\n  </div>\n\n</div>", "props": "{}", "logic": ""}];
+
+  function DCLogicFactory() {
+    function DCLogic(props) { this.props = props || {}; this.state = {}; }
+    DCLogic.prototype.setState = function (patch) {
+      for (var k in patch) if (Object.prototype.hasOwnProperty.call(patch, k)) this.state[k] = patch[k];
+      if (this._host) mount(this._host);
+    };
+    return DCLogic;
+  }
+  var DCLogic = DCLogicFactory();
+
+  function lookup(scope, path) {
+    if (path === "true") return true;
+    if (path === "false") return false;
+    var parts = path.split("."), v = scope;
+    for (var i = 0; i < parts.length; i++) {
+      if (v === null || v === undefined) return undefined;
+      v = v[parts[i]];
+    }
+    return v;
+  }
+
+  var HOLE = /\{\{\s*([^}\s]+)\s*\}\}/g;
+
+  function interp(str, scope) {
+    return str.replace(HOLE, function (_, p) {
+      var v = lookup(scope, p);
+      return v === undefined || v === null ? "" : String(v);
+    });
+  }
+
+  function render(node, scope, out) {
+    for (var i = 0; i < node.childNodes.length; i++) {
+      var c = node.childNodes[i];
+      if (c.nodeType === 3) {
+        out.appendChild(document.createTextNode(interp(c.nodeValue, scope)));
+        continue;
+      }
+      if (c.nodeType !== 1) continue;
+      var tag = c.tagName.toLowerCase();
+
+      if (tag === "sc-if") {
+        var expr = (c.getAttribute("value") || "").replace(HOLE, "$1");
+        if (lookup(scope, expr)) render(c, scope, out);
+        continue;
+      }
+      if (tag === "sc-for") {
+        var lp = (c.getAttribute("list") || "").replace(HOLE, "$1");
+        var as = c.getAttribute("as") || "item";
+        var arr = lookup(scope, lp) || [];
+        for (var j = 0; j < arr.length; j++) {
+          var s2 = Object.create(scope);
+          s2[as] = arr[j];
+          s2.$index = j;
+          render(c, s2, out);
+        }
+        continue;
+      }
+
+      var el = document.createElementNS(c.namespaceURI, c.tagName);
+      for (var a = 0; a < c.attributes.length; a++) {
+        var at = c.attributes[a], nm = at.name, val = at.value;
+        if (/^on[A-Z]/.test(nm) || /^on[a-z]+$/.test(nm) && HOLE.test(val)) {
+          HOLE.lastIndex = 0;
+          var fp = val.replace(HOLE, "$1");
+          var fn = lookup(scope, fp);
+          if (typeof fn === "function") {
+            el.addEventListener(nm.slice(2).toLowerCase(), function (f) {
+              return function (ev) { ev.preventDefault(); f(); };
+            }(fn));
+          }
+          continue;
+        }
+        HOLE.lastIndex = 0;
+        el.setAttribute(nm === "class" ? "class" : nm, interp(val, scope));
+      }
+      render(c, scope, el);
+      out.appendChild(el);
+    }
+  }
+
+  function mount(host) {
+    var def = host.__def;
+    var inst = host.__inst;
+    var vals = inst.renderVals ? inst.renderVals() : {};
+    var frag = document.createDocumentFragment();
+    render(def.tpl, vals, frag);
+    host.innerHTML = "";
+    var root = document.createElement("div");
+    root.className = "dcroot";
+    root.appendChild(frag);
+    host.appendChild(root);
+  }
+
+  for (var k = 0; k < SCREENS.length; k++) {
+    (function (def) {
+      var host = document.querySelector('[data-screen="' + def.sid + '"]');
+      if (!host) return;
+      var tpl = document.createElement("div");
+      tpl.innerHTML = def.markup;
+      def.tpl = tpl;
+
+      var Cls = null;
+      if (def.logic) {
+        try {
+          Cls = new Function("DCLogic", def.logic + "\nreturn Component;")(DCLogic);
+        } catch (e) { Cls = null; }
+      }
+      var props = {};
+      try {
+        var pj = JSON.parse(def.props || "{}");
+        for (var p in pj) if (pj[p] && "default" in pj[p]) props[p] = pj[p]["default"];
+      } catch (e) {}
+
+      var inst = Cls ? new Cls(props) : { props: props, renderVals: function () { return {}; } };
+      inst._host = host;
+      host.__def = def;
+      host.__inst = inst;
+      mount(host);
+
+      var bar = document.querySelector('.variants[data-for="' + def.sid + '"]');
+      if (!bar) return;
+      bar.addEventListener("click", function (ev) {
+        var b = ev.target.closest("button[data-prop]");
+        if (!b) return;
+        var name = b.getAttribute("data-prop"), val = b.getAttribute("data-val");
+        if (val === "toggle") {
+          var on = b.getAttribute("aria-pressed") !== "true";
+          b.setAttribute("aria-pressed", on ? "true" : "false");
+          inst.props[name] = on;
+        } else {
+          var sibs = bar.querySelectorAll('button[data-prop="' + name + '"]');
+          for (var i = 0; i < sibs.length; i++) sibs[i].setAttribute("aria-pressed", "false");
+          b.setAttribute("aria-pressed", "true");
+          inst.props[name] = val;
+        }
+        inst.state = {};
+        mount(host);
+      });
+    })(SCREENS[k]);
+  }
+})();
+</script>

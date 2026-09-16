@@ -11,7 +11,9 @@ Add future research to `docs/research/`, using descriptive, lower-case hyphenate
 
 ## Product requirements
 
-- [PRD folder](prds/README.md): home for product requirements documents. No PRD has been added yet.
+- [PRD folder](prds/README.md): home for product requirements documents.
+- [Divination app V1 PRD](prds/prd-divination-app-v1.md): user-supplied requirements, imported unchanged on 17 September 2026 for reference; implementation is not approved.
+- [Tarot V1 mock design](prds/assets/tarot-v1-final.html): accompanying user-supplied HTML mock-up, imported unchanged on 17 September 2026.
 
 ## Harness guidance
 
