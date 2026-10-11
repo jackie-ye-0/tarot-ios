@@ -16,6 +16,10 @@ Add future research to `docs/research/`, using descriptive, lower-case hyphenate
 - [Tarot V1 mock design](prds/assets/tarot-v1-final.html): accompanying user-supplied HTML mock-up, imported unchanged on 17 September 2026.
 - [Quiet reflection proposal](prds/quiet-reflection-proposal.md): draft audience hypothesis and two-screen visual concept; implementation is not approved.
 
+## Design
+
+- [Design manifest](design.md): colours, type, shapes, components, flow and wording rules adopted on 11 October 2026. Follow it for any design or UI work. It supersedes the PRD's §10 where they differ; it does not approve implementation.
+
 ## Harness guidance
 
 - [Decisions and scope](decisions.md)
