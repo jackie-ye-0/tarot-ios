@@ -23,6 +23,12 @@ Policy is `no-mistakes-prod-only`, yolo off. This change is internal developer t
 
 Native tooling avoids maintaining a generator or cross-platform framework. A static project is easy to open and portable between Macs but needs ordinary Xcode project edits when adding files/targets. Per-command `DEVELOPER_DIR` avoids changing other projects' tool selection. Separate run output costs disk space but keeps failures and comparisons auditable. No hosted CI means there is no remote verification gate established by this setup.
 
+## Product build scope approved, 11 October 2026
+
+Jackie approved a first product build: a **local-first** tarot app covering the eleven screens in the [design manifest](design.md). Everything runs on the phone, with no account, server, AI calls, analytics or paid services. Card content ships in the app, question readings are composed from that content, data is stored on-device with SwiftData, and the reminder is a local notification. The build spec is [jackie-ye-0/tarot-ios#5](https://github.com/jackie-ye-0/tarot-ios/issues/5), labelled `ready-for-agent`.
+
+This supersedes the exclusions below only for what that spec lists as in scope: tarot cards and reading rules, on-device persistence and product UI. Everything in the spec's Out of Scope section stays excluded and still needs a human decision. Delivery for product work: feature-branch PRs, never merged without approval.
+
 ## Explicitly excluded and unresolved
 
 Do not implement tarot cards, reading algorithms, accounts, persistence, networking, AI providers, payments, production UI or App Store delivery.
