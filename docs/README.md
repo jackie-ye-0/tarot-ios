@@ -19,6 +19,7 @@ Add future research to `docs/research/`, using descriptive, lower-case hyphenate
 ## Design
 
 - [Design manifest](design.md): colours, type, shapes, components, flow and wording rules adopted on 11 October 2026. Follow it for any design or UI work. It supersedes the PRD's §10 where they differ; it does not approve implementation.
+- [Design reference images](design-reference/README.md): a picture of each of the eleven screens, exported from the design canvas, for comparing built screens against.
 
 ## Harness guidance
 
