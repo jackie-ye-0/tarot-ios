@@ -1,6 +1,6 @@
 # Ask foundation (#13)
 
-Scope: the first complete Today → Ask → composer → three-card pick → reading path. The independent image comparison is complete. The latest full check on 14 October 2026 passed all 26 iOS tests on `49b2eb9`, with native control audits unsuppressed. Inspection of its 78 images found one remaining composer helper alignment detail; the one-line correction is implemented but awaits a fresh check and captures after the shared-simulator scheduling hold clears. This report does not claim that the earlier pass validates that final correction.
+Scope: the first complete Today → Ask → composer → three-card pick → reading path. The independent image comparison is complete. A full check passed all 26 iOS tests on `49b2eb9`; the next full check on `3eb99a7` verified the composer helper alignment but passed 25/26 because a reflection caption was never audited fully visible. The capture stop is now corrected and awaits a fresh full check. Native control failures remain unsuppressed.
 
 ## Behaviour and coverage
 
@@ -78,7 +78,7 @@ The fresh-session reviewer opened all 65 full-screen images, eight contrast crop
 
 | Review IDs | Disposition |
 | --- | --- |
-| C4, CE4 | Shared dawn footer padding now uses the content’s 20-point guide. Final inspection found the composer helper’s intrinsic-width text still centred about six points inside that guide; its footer stack now uses leading alignment. The primary action already met the guide. This last alignment correction awaits fresh standard, largest-text and keyboard-dismissed captures. |
+| C4, CE4 | Shared dawn footer padding now uses the content’s 20-point guide. Final inspection found the composer helper’s intrinsic-width text still centred about six points inside that guide; its footer stack now uses leading alignment. The primary action already met the guide. Standard empty/filled and largest filled footer captures on `3eb99a7` confirm the leading guide; the full check had a separate reading-caption coverage failure, whose correction is described below. Final complete evidence remains pending. |
 | R6 | Fixed through the same dawn-footer change. Done keeps standard-size pinning and largest-text inline placement. |
 | S2 | Fixed in shared content alignment and footer spacing: short error copy aligns to the leading 20-point guide instead of centring its intrinsic width; retry shares that guide at both sizes. |
 | CE3 | Added a true filled-composer navigation-top capture, guidance stop, separate field capture and complete-suggestions stop; retained footer/keyboard evidence. |
@@ -116,9 +116,11 @@ A bounded diagnostic then ran only the standard filled-composer audit five conse
 
 The subsequent full strict check on `49b2eb9` passed **26/26**, including the composer control audit and both daily Draw tests. All native controls and mixed/grouped elements retain native failures. Only the ten measured plain-static-text findings listed above were dismissed. The earlier failed runs remain part of the validation record rather than being replaced by the later pass.
 
-### Pending final alignment verification
+### Reflection-caption audit coverage follow-up
 
-After that passing run, image inspection found the composer footer helper's intrinsic-width text centred slightly inside the 20-point button/content guide. `QuestionComposerScreen` now uses a leading-aligned footer stack. This is the remaining C4/CE4 detail; it does not change colours, type roles, chip style or audit handling. A fresh full check and inspection of empty/filled, standard/largest-text and keyboard-dismissed composer captures are required before completion. No simulator-driving command will start while Firstmate’s scheduling hold is in force.
+Run `20261013T213027.896263Z-check-760c90c0` on clean `3eb99a7` passed 32 command tests, the design guard and 25/26 iOS tests, with no skips or runtime warnings. Standard empty/filled and largest filled composer footer images confirm the leading-alignment correction. The sole failure was an unresolved deferred contrast issue on the reading's “Something to sit with” caption. Its recorded frame was `(40, 772.0667, 121, 17)` outside viewport `(0, 47, 390, 658)`. The bottom screenshot shows the question but clips the caption below the pinned footer: the test had scrolled only to `reflection-question`.
+
+The final reading audit stop now scrolls to the caption and explicitly requires the question to remain visible above the footer. It waits for both texts to settle before the audit. App layout, wording and audit policy are unchanged. This closes a coverage gap without suppressing any additional issue; a fresh full check is still required. The failed run and exact audit records are preserved. Xcode took roughly ten minutes after the test suite ended to finalise its result bundle; it was left running and completed without intervention.
 
 ## Remaining release limits
 

@@ -1087,9 +1087,11 @@ final class HarnessShellUITests: XCTestCase {
         try auditAndCapture(app, "09-reading--action", expecting: app.staticTexts["reading-action"])
         scrollTo(app.staticTexts["reading-outcome"], in: app)
         try auditAndCapture(app, "09-reading--outcome", expecting: app.staticTexts["reading-outcome"])
-        scrollTo(app.staticTexts["reflection-question"], in: app)
+        let reflectionCaption = app.staticTexts["Something to sit with"]
+        scrollTo(reflectionCaption, in: app)
+        assertVisible(app.staticTexts["reflection-question"], in: app, abovePinnedFooter: true)
         XCTAssertTrue(app.staticTexts["reflection-question"].label.hasSuffix("?"))
-        try auditAndCapture(app, "09-reading--bottom", expecting: app.staticTexts["reflection-question"], app.buttons["reading-done"])
+        try auditAndCapture(app, "09-reading--bottom", expecting: app.staticTexts["reflection-question"], reflectionCaption, app.buttons["reading-done"])
         app.buttons["reading-done"].tap()
         XCTAssertTrue(app.staticTexts["today-title"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["tab-today"].exists)
