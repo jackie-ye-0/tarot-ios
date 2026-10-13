@@ -61,6 +61,20 @@ These run paths are relative to `.harness/acceptance/standalone codex/`:
 
 Raw session events, final response, stderr and invocation record remain with the local observer; personal paths, raw configuration and transcripts are not committed. Native bundles/logs/screenshots remain in the ignored run folders above. The implementation worker separately read the repaired Git diff and clean-commit run summary. Only documentation changed after the verified code/test baseline, so no additional native rerun was needed for this report.
 
+## Named screenshot export, 13 October 2026
+
+Issue #29 adds named screenshot export and reference coverage without changing the app or its four native tests. Verified with Xcode **27.0 (27A266a)** and **iPhone 17e / iOS 26.5**, using the existing developer directory selection. No tool installation or machine-setting change was needed.
+
+- `./scripts/harness doctor`: passed in `.harness/runs/20261013T044648.815770Z-doctor-df023aee/`.
+- `python3 -m unittest discover -s tests -v`: 27 command contracts passed. Fake tools cover named exports with spaces, left/right pairing, variants, matched/missing coverage, strict success/failure, duplicate names across tests and formats, unsafe names, malformed manifests and the existing failure gates. These fixtures are not iOS evidence.
+- Final `./scripts/harness check`: **exit 0**, 27 command contracts and **4/4 native XCTest tests**, zero failures, skips or expected failures. Run: `.harness/runs/20261013T045816.860413Z-check-2a6c7913/`. This run exercised the final code/tests before commit; only reporting documentation followed.
+- `./scripts/harness evidence`: inspected; reports `screenshots/Passing counter interaction.png`, the comparison page and all **15** missing product screen references. `00-flow-map.png` is context and excluded from screen coverage.
+- Opened the final run's `design-comparison.html` in Chrome and inspected captured browser images. References appear on the left beside explicit missing-main placeholders on the right. The technical shell appears on the right with its exact filename and a no-reference placeholder on the left; count **2**, explanatory text and button are readable. All 16 displayed images loaded without broken links. The page also opened successfully from the relocated complete run folder.
+
+Browser inspection caught scroll-position jumps from deferred image loading; the page now loads local images immediately. Moving scratch output through a symlink exposed an existing fixture path assertion; the test now resolves its checkout path as the runner does. The final full check above passed after both corrections.
+
+For review, open the page path printed by `harness evidence`, check names and contents, then follow [design check §12](design.md#12-design-check). [README](../README.md#screenshot-names-and-design-comparison) documents `--` variant suffixes and `check --require-all-screenshots`. Strict coverage and matched/variant product captures are verified with fake tools only: product screens are still unbuilt, so this run establishes tooling behaviour and technical-shell evidence, not product visual approval.
+
 ## Limits
 
 This demonstrates one observed standalone Codex workflow, not guaranteed future compliance. No CI/branch-protection enforcement, other client or restricted-permission acceptance, physical iPhone testing, broad accessibility audit or App Store delivery is claimed. Only the iPhone 17/iOS 26.5 environment above has been verified. Product features, personal data, live AI calls and provider quality evaluation remain outside scope. Apple tools may use their normal system simulator/cache locations; harness-controlled build output, bundles and logs are kept under `.harness/`.

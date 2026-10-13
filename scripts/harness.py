@@ -1,15 +1,20 @@
 """Local iOS feedback loop. Python standard library and Apple tools only."""
 import argparse
 import datetime
+from html import escape
 import json
 import os
 from pathlib import Path
+import re
+import shutil
 import subprocess
 import sys
+from urllib.parse import quote
 import uuid
 
 ROOT = Path(__file__).resolve().parent.parent
 RUNS = ROOT / '.harness' / 'runs'
+IMAGE_SUFFIXES = ('.png', '.jpeg', '.jpg', '.heic')
 
 
 class Failure(Exception):
@@ -76,7 +81,138 @@ def build_args(action, run, device):
     return ['xcodebuild', action, '-project', str(ROOT / 'HarnessShell.xcodeproj'), '-scheme', 'HarnessShell', '-configuration', 'Debug', '-destination', f'platform=iOS Simulator,id={device["udid"]}', '-derivedDataPath', str(run / 'DerivedData'), '-resultBundlePath', str(run / ('Tests.xcresult' if action == 'test' else 'Build.xcresult')), 'CODE_SIGNING_ALLOWED=NO']
 
 
-def test_ios(run, device, summary):
+def named_screenshots(run):
+    folder = run / 'attachments'
+    try:
+        manifest = json.loads((folder / 'manifest.json').read_text())
+        if not isinstance(manifest, list):
+            raise ValueError('expected a list of test attachments')
+        images = {}
+        seen = set()
+        for test in manifest:
+            for attachment in test['attachments']:
+                exported = attachment['exportedFileName']
+                if not isinstance(exported, str) or Path(exported).name != exported:
+                    raise ValueError('invalid exportedFileName')
+                source = folder / exported
+                if source.suffix.lower() not in IMAGE_SUFFIXES:
+                    continue
+                suggested = attachment['suggestedHumanReadableName']
+                # Xcode adds _<index>_<UUID>.<extension> to XCTAttachment.name.
+                match = re.fullmatch(r'(.+)_\d+_[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}\.[^.]+', suggested)
+                if not match:
+                    raise ValueError(f'cannot recover screenshot name from {suggested!r}')
+                name = match[1]
+                if name in ('.', '..') or any(c in '/\\' or ord(c) < 32 for c in name):
+                    raise ValueError(f'unsafe screenshot name: {name!r}')
+                if name.casefold() in seen:
+                    raise Failure(f'Duplicate screenshot name: {name}. Give every capture a unique name, including its variant suffix.')
+                seen.add(name.casefold())
+                if not source.is_file():
+                    raise ValueError(f'missing exported screenshot: {exported}')
+                images[name] = source
+    except (OSError, ValueError, KeyError, TypeError) as error:
+        raise Failure(f'Cannot read screenshot names from attachments/manifest.json: {error}') from error
+    destination = run / 'screenshots'
+    destination.mkdir()
+    paths = []
+    for name, source in sorted(images.items()):
+        target = destination / (name + source.suffix.lower())
+        shutil.copyfile(source, target)
+        paths.append(str(target.relative_to(run)))
+    return paths
+
+
+def design_comparison(run, summary):
+    """Snapshot references so a copied run still has a working comparison page."""
+    references = {}
+    context = []
+    for source in sorted((ROOT / 'docs/design-reference').glob('*')):
+        if source.suffix.lower() not in IMAGE_SUFFIXES or not source.is_file():
+            continue
+        destination = run / 'design-reference' / source.name
+        destination.parent.mkdir(exist_ok=True)
+        shutil.copyfile(source, destination)
+        relative = str(destination.relative_to(run))
+        if source.stem == '00-flow-map':
+            context.append(relative)
+        else:
+            if source.stem in references:
+                raise Failure(f'Duplicate design reference name: {source.stem}')
+            references[source.stem] = relative
+
+    captures = {Path(path).stem: path for path in summary['screenshots']}
+    groups = {}
+    for name in captures:
+        screen, separator, _ = name.partition('--')
+        if separator:
+            groups.setdefault(screen, []).append(name)
+    coverage = []
+    for name, reference in references.items():
+        coverage.append({'name': name, 'reference': reference,
+                         'screenshot': captures.get(name),
+                         'variants': [captures[v] for v in groups.get(name, [])]})
+    summary['design_coverage'] = coverage
+    summary['design_context'] = context
+    summary['unmatched_screenshots'] = [path for name, path in captures.items()
+                                        if name.partition('--')[0] not in references]
+    summary['comparison_page'] = 'design-comparison.html'
+
+    def figure(path, label, missing):
+        if path is None:
+            return f'<div class="missing"><strong>{label}</strong><p>{missing}</p></div>'
+        url = quote(path)
+        name = escape(Path(path).name)
+        return (f'<figure><figcaption>{label}: <a href="{url}">{name}</a></figcaption>'
+                f'<a href="{url}"><img src="{url}" alt="{label}: {name}"></a></figure>')
+
+    matched = sum(item['screenshot'] is not None for item in coverage)
+    parts = ['<!doctype html><html lang="en"><meta charset="utf-8">',
+             '<meta name="viewport" content="width=device-width, initial-scale=1">',
+             '<title>Design comparison</title><style>',
+             'body{font:16px/1.5 system-ui,sans-serif;color:#202124;background:#fff;margin:32px auto;padding:0 24px;max-width:1100px}',
+             'a{color:#174ea6}section{border-top:1px solid #aaa;padding:24px 0}.pair{display:grid;grid-template-columns:1fr 1fr;gap:24px}',
+             'figure{margin:0;min-width:0}figcaption{overflow-wrap:anywhere;margin-bottom:12px}img{width:100%;max-width:390px;height:auto;border:1px solid #ccc}',
+             '.missing{background:#f4f4f4;padding:16px}h2,h3{overflow-wrap:anywhere}li{margin:4px 0}',
+             '@media(max-width:600px){body{padding:0 12px}.pair{gap:12px}}',
+             '</style><h1>Design comparison</h1>',
+             f'<p>{matched} of {len(coverage)} screen references have a main screenshot. '
+             'Variants never satisfy main-screen coverage. This page does not establish visual approval or a passing test run.</p>',
+             '<p>Reference on the left; built screen on the right. Open an image for full size. '
+             'Check structure, actions, colour, type, shape, spacing and wording against the design manifest §12.</p>',
+             '<p><a href="summary.txt">Run summary</a></p><ul>']
+    for index, item in enumerate(coverage):
+        status = 'matched' if item['screenshot'] else 'MISSING main screenshot'
+        parts.append(f'<li><a href="#screen-{index}">{escape(item["name"])}</a>: {status}</li>')
+    parts.append('</ul>')
+    if context:
+        parts.append('<p>Context only, excluded from screen coverage: ' + ', '.join(
+            f'<a href="{quote(path)}">{escape(Path(path).name)}</a>' for path in context) + '.</p>')
+    for index, item in enumerate(coverage):
+        parts.append(f'<section id="screen-{index}"><h2>{escape(item["name"])}</h2><div class="pair">')
+        parts.append(figure(item['reference'], 'Reference', 'No reference image.'))
+        parts.append(figure(item['screenshot'], 'Built screen', 'Missing main screenshot.'))
+        parts.append('</div>')
+        for variant in item['variants']:
+            parts.append(f'<h3>Variant: {escape(Path(variant).stem)}</h3><div class="pair">')
+            parts.append(figure(item['reference'], 'Reference', 'No reference image.'))
+            parts.append(figure(variant, 'Built variant', 'Missing variant.'))
+            parts.append('</div>')
+        parts.append('</section>')
+    unmatched_groups = sorted({name.partition('--')[0] for name in captures} - references.keys())
+    for screen in unmatched_groups:
+        parts.append(f'<section><h2>{escape(screen)}: no design reference</h2>')
+        for name in [screen] + groups.get(screen, []):
+            if name not in captures:
+                continue
+            parts.append('<div class="pair">' + figure(None, 'Reference', 'No matching reference image.'))
+            parts.append(figure(captures[name], 'Built variant' if '--' in name else 'Built screen', '') + '</div>')
+        parts.append('</section>')
+    parts.append('</html>')
+    (run / summary['comparison_page']).write_text('\n'.join(parts) + '\n')
+
+
+def test_ios(run, device, summary, require_all_screenshots=False):
     bundle = run / 'Tests.xcresult'
     args = build_args('test', run, device) + ['-parallel-testing-enabled', 'NO']
     code, _ = execute(args, run, 'test', True)
@@ -89,8 +225,9 @@ def test_ios(run, device, summary):
             raise Failure('Unexpected test-summary JSON structure; inspect test-summary.log.')
         summary['tests'] = counts
         execute(['xcrun', 'xcresulttool', 'export', 'attachments', '--path', str(bundle), '--output-path', str(run / 'attachments')], run, 'attachment-export')
-        images = sorted(str(p.relative_to(run)) for p in (run / 'attachments').rglob('*') if p.suffix.lower() in ('.png', '.jpeg', '.jpg', '.heic'))
+        images = named_screenshots(run)
         summary['screenshots'] = images
+        design_comparison(run, summary)
         total = counts.get('totalTestCount')
         passed = counts.get('passedTests')
         failed = counts.get('failedTests')
@@ -101,6 +238,12 @@ def test_ios(run, device, summary):
             raise Failure(f'Test verification incomplete: total={total}, passed={passed}, failed={failed}, skipped={skipped}, expected failures={expected_failures}, result={counts.get("result")}; require at least 4, all passing.')
         if not images:
             raise Failure('No retained test screenshot was exported; inspect attachment-export.log and keepAlways attachment lifetime.')
+        if require_all_screenshots:
+            if not summary['design_coverage']:
+                raise Failure('No screen reference images found in docs/design-reference; cannot require full screenshot coverage.')
+            missing = [item['name'] for item in summary['design_coverage'] if not item['screenshot']]
+            if missing:
+                raise Failure('Missing main screenshots for design references: ' + ', '.join(missing))
     except Failure as error:
         evidence_error = str(error)
         summary['evidence_error'] = evidence_error
@@ -142,9 +285,12 @@ def main():
     parser.add_argument('command', choices=['doctor', 'build', 'launch', 'test', 'check', 'evidence'])
     parser.add_argument('--device', help='Available iPhone simulator UDID; otherwise prefer a booted iPhone, then stable alphabetical order')
     parser.add_argument('--run', help='Run directory to inspect (evidence only; defaults to latest)')
+    parser.add_argument('--require-all-screenshots', action='store_true', help='Fail test/check if any screen reference lacks its main screenshot')
     args = parser.parse_args()
     if args.run and args.command != 'evidence':
         parser.error('--run applies only to evidence')
+    if args.require_all_screenshots and args.command not in ('test', 'check'):
+        parser.error('--require-all-screenshots applies only to test/check')
     if args.command == 'evidence':
         try:
             inspect_evidence(args.run)
@@ -167,7 +313,7 @@ def main():
         device = prerequisites(run, args.device)
         summary['device'] = device
         if args.command in ('test', 'check'):
-            test_ios(run, device, summary)
+            test_ios(run, device, summary, args.require_all_screenshots)
         elif args.command == 'build':
             execute(build_args('build', run, device), run, 'build')
         elif args.command == 'launch':
@@ -191,6 +337,17 @@ def main():
         lines.append('Tests: ' + ', '.join(f'{key}={summary["tests"].get(key, "unknown")}' for key in ['totalTestCount', 'passedTests', 'failedTests', 'skippedTests', 'expectedFailures']))
     if 'screenshots' in summary:
         lines.append('Screenshots: ' + ', '.join(summary['screenshots']))
+    if 'design_coverage' in summary:
+        lines.append('Design comparison: ' + str(run / summary['comparison_page']))
+        for item in summary['design_coverage']:
+            match = 'MATCHED ' + item['screenshot'] if item['screenshot'] else 'MISSING main screenshot'
+            lines.append(f'Reference {Path(item["reference"]).name}: {match}')
+            if item['variants']:
+                lines.append('  Variants (do not count as main): ' + ', '.join(item['variants']))
+        if summary['design_context']:
+            lines.append('Context only (excluded from screen coverage): ' + ', '.join(summary['design_context']))
+        if summary['unmatched_screenshots']:
+            lines.append('Screenshots without a reference: ' + ', '.join(summary['unmatched_screenshots']))
     if 'error' in summary:
         lines.append(summary['error'])
     lines.append('Raw logs, command arguments and metadata are in this run directory. A build/doctor/launch pass is not a test pass.')
