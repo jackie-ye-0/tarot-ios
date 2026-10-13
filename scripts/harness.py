@@ -310,6 +310,7 @@ def main():
         summary.update(revision=revision.strip(), worktree=dirty.strip())
         if args.command == 'check':
             execute([sys.executable, '-m', 'unittest', 'discover', '-s', 'tests', '-v'], run, 'command-tests')
+            execute([sys.executable, str(ROOT / 'scripts/design_rules.py')], run, 'design-rules')
         device = prerequisites(run, args.device)
         summary['device'] = device
         if args.command in ('test', 'check'):

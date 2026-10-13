@@ -27,6 +27,7 @@ Add future research to `docs/research/`, using descriptive, lower-case hyphenate
 - [Architecture](architecture.md)
 - [Workflow](workflow.md)
 - [Verification](verification.md)
+- [Foundation slice verification](foundation-verification.md): issue #7 behaviour, design evidence and scope differences.
 - [Harness principles](harness.md)
 
 Add a link here when adding a document. Keep each document's status clear and record approved scope changes in [decisions](decisions.md).

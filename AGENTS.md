@@ -1,6 +1,6 @@
 # Working in this repository
 
-This is an iOS harness setup with a disposable SwiftUI technical shell. Product features are not approved. Read [scope and decisions](docs/decisions.md) before changing scope.
+This is a local-first SwiftUI tarot app with a local iOS verification harness. Product work is limited to the approved build spec and assigned issue. Read [scope and decisions](docs/decisions.md) before changing scope.
 
 - Start with [README](README.md) for prerequisites and commands, then [architecture](docs/architecture.md) when changing code or tooling.
 - Use the [document index](docs/README.md) to find and maintain research in `docs/research/` and product requirements in `docs/prds/`.
@@ -10,7 +10,7 @@ This is an iOS harness setup with a disposable SwiftUI technical shell. Product 
 - Run `./scripts/harness doctor` before iOS work. Use per-command `DEVELOPER_DIR` if needed. Never auto-install tools or change machine settings.
 - Run `./scripts/harness check` after changes; inspect `./scripts/harness evidence` and the exported test screenshot. Non-zero, zero-test, skipped-test and missing-evidence runs do not establish verification. Report unavailable prerequisites precisely.
 - For command changes, first run `python3 -m unittest discover -s tests -v`. These fake-tool tests do not verify iOS.
-- Keep build output in ignored `.harness/`. Use synthetic data only; no credentials, live model calls or new services. No tarot logic, accounts, storage or networking in this setup.
+- Keep build output in ignored `.harness/`. Use synthetic development data only; no credentials, live model calls or new services. Tarot rules and on-device SwiftData storage are approved; accounts and networking remain excluded.
 - [Workflow](docs/workflow.md) defines friction capture, verification and decision boundaries. Guidance is advisory; command outcomes and inspected evidence establish what actually ran.
 - Git policy: `no-mistakes-prod-only`, yolo off. Internal tooling/technical fixture work uses direct PRs; product work requires reassessing scope and the applicable gate. No no-mistakes installation is needed to run this harness. Obtain approval before pushing or publishing unless the task already authorises it. Never merge without approval.
 

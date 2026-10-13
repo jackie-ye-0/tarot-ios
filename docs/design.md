@@ -2,7 +2,7 @@
 
 11 October 2026 · Adopted by Jackie as the visual and interaction direction for the tarot app. This is the single source of truth for how the app looks and behaves on screen. Follow it for any design or UI work; change the app's look by changing this file first. Updated 12 October 2026: Settings matches the build spec, and the reference images and design check (§12) were added.
 
-**What this does not do.** It does not approve building product features. [Decisions and scope](decisions.md) still governs what may be implemented. Nothing here has been built in SwiftUI or verified in the simulator.
+**What this does not do.** It does not approve building product features. [Decisions and scope](decisions.md) still governs what may be implemented. Issue #7 implements Draw, Reveal and a basic Today; later screens remain reference designs.
 
 **Sources.** The reference screens are the eleven artboards (01 Welcome to 11 Settings) and the flow map on the [design canvas](https://claude.ai/artifact/3H8wh1JXA8eg4xQMdDqUw6), a private link. The canvas holds one design; earlier drafts are only in its version history. Because the link is private, a picture of every screen is kept in [design-reference/](design-reference/README.md); use those when you cannot open the canvas. The starting point was the [V1 PRD](prds/prd-divination-app-v1.md) §10 "Soft dawn". Where the two disagree, this file wins. It changes §10 in two ways: cards are tall rounded rectangles, not arch-topped, and the screens before a card is turned use a deep indigo night palette.
 
@@ -73,7 +73,7 @@ Text must reach at least 4.5:1 against what it sits on. Measured pairs: ink on g
 
 ## 3. Typography
 
-Two families, both open licence (SIL OFL): **Gabarito** for display and buttons, **Hanken Grotesk** for everything else. Bundling the font files in the app has not been approved or done yet; until then fall back to the system font and keep the scale.
+Two families, both open licence (SIL OFL): **Gabarito** for display and buttons, **Hanken Grotesk** for everything else. The approved build spec bundles both variable font files with their SIL OFL licences. Font roles use Dynamic Type; the font-loading test rejects system fallback.
 
 | Role | Family, weight | Size | Notes |
 |---|---|---|---|
@@ -86,6 +86,8 @@ Two families, both open licence (SIL OFL): **Gabarito** for display and buttons,
 | Label | Hanken Grotesk 600 | 14 | |
 | Caption | Hanken Grotesk 400 | 13 | Disclaimers, helper lines |
 | Tab label | Hanken Grotesk 600 | 12 | Smallest size allowed, tab bar only |
+
+Card names use Display: 44 on Reveal and 40 beside the Today thumbnail. Card orientation/arcana uses the 16-point body scale with weight 600; Reveal keywords use 16-point regular body text. The standard interpretation has approximately 1.5 line height.
 
 Sizes are the default-size reference in points. In SwiftUI map each role to a Dynamic Type text style so it scales with the user's setting; never fix a size that cannot grow. Emphasis comes from weight 600, not colour. No all-caps labels.
 
@@ -157,7 +159,13 @@ The reference screens also change the flow, not only the look. Jackie adopted th
 | The morning reminder is an inline card on Today, on day one only | A full-screen reminder ask follows the reveal |
 | Composer prompts are phrased as questions | Prompts are topic phrases |
 
-## 11. Not yet designed
+## 11. Foundation slice and states without references
+
+Issue #7 starts directly at Draw. It implements the static fan and selection, explicit Reveal and a basic Today containing the card, name, orientation, keywords and core interpretation. Welcome, shuffle/reveal motion, History, Share, Settings, tabs, Today extras and Ask are later slices; their controls are omitted rather than made inert. The unselected Draw footer says "Choose a card to begin" until shuffle is implemented. The five non-overlapping tap lanes remain available when a card is selected. At standard size the two Draw states share the same disc/fan anchor; the chosen card grows and rises inside it. The title reserves the two-line instruction’s space so selecting a card does not shift the whole composition. This minimum does not cap larger text. At accessibility text sizes, Today stacks its card above its details. Every screen scrolls. The shared reading-screen layout pins its footer only at standard text sizes; at accessibility sizes it places the action and helper/disclaimer text inline after the content, so they remain reachable without taking space from the reading. Text is never capped or shrunk to fit. This rule also applies to any later screen using a pinned footer.
+
+A storage-open failure uses dawn ground, a screen title explaining that readings could not be opened, body copy saying nothing has been replaced, and a "Try again" primary action. A save failure leaves the chosen card in place and shows a native alert explaining how to retry; it never silently switches to a temporary store or deletes saved data.
+
+## 11a. Not yet designed
 
 A birth-details entry form (not in the first build; Settings does not link to one), the paywall, and all empty, loading and error states. Settings and "About someone" keep their original layouts with this manifest's colours and controls applied; they have not had a full design pass. Tab icons are placeholders. When designing these, reuse the roles and components above rather than adding new ones; if a new one is truly needed, add it here in the same change.
 
