@@ -1,10 +1,10 @@
 # Design manifest
 
-11 October 2026 · Adopted by Jackie as the visual and interaction direction for the tarot app. This is the single source of truth for how the app looks and behaves on screen. Follow it for any design or UI work; change the app's look by changing this file first.
+11 October 2026 · Adopted by Jackie as the visual and interaction direction for the tarot app. This is the single source of truth for how the app looks and behaves on screen. Follow it for any design or UI work; change the app's look by changing this file first. Updated 12 October 2026: Settings matches the build spec, and the reference images and design check (§12) were added.
 
 **What this does not do.** It does not approve building product features. [Decisions and scope](decisions.md) still governs what may be implemented. Nothing here has been built in SwiftUI or verified in the simulator.
 
-**Sources.** The reference screens are the eleven artboards (01 Welcome to 11 Settings) and the flow map on the [design canvas](https://claude.ai/artifact/3H8wh1JXA8eg4xQMdDqUw6), a private link. The canvas holds one design; earlier drafts are only in its version history. The starting point was the [V1 PRD](prds/prd-divination-app-v1.md) §10 "Soft dawn". Where the two disagree, this file wins. It changes §10 in two ways: cards are tall rounded rectangles, not arch-topped, and the screens before a card is turned use a deep indigo night palette.
+**Sources.** The reference screens are the eleven artboards (01 Welcome to 11 Settings) and the flow map on the [design canvas](https://claude.ai/artifact/3H8wh1JXA8eg4xQMdDqUw6), a private link. The canvas holds one design; earlier drafts are only in its version history. Because the link is private, a picture of every screen is kept in [design-reference/](design-reference/README.md); use those when you cannot open the canvas. The starting point was the [V1 PRD](prds/prd-divination-app-v1.md) §10 "Soft dawn". Where the two disagree, this file wins. It changes §10 in two ways: cards are tall rounded rectangles, not arch-topped, and the screens before a card is turned use a deep indigo night palette.
 
 ## 1. Principles
 
@@ -151,7 +151,7 @@ The reference screens also change the flow, not only the look. Jackie adopted th
 
 | Change | PRD position |
 |---|---|
-| No birth-data or about-you forms before the first card. Birth details are an optional row in Settings; relationship status is asked on Ask | Onboarding screens 2 and 3 come before the first card |
+| No birth-data or about-you forms before the first card. Birth details are not collected in the first build; relationship status is asked on Ask and can be changed in Settings | Onboarding screens 2 and 3 come before the first card |
 | The area detail screen is replaced by the Ask tab | Each area opens its own detail screen from the daily summary |
 | A three-tab bar with Ask as its own tab | Ask is reached from an area row on the daily summary |
 | The morning reminder is an inline card on Today, on day one only | A full-screen reminder ask follows the reveal |
@@ -159,8 +159,21 @@ The reference screens also change the flow, not only the look. Jackie adopted th
 
 ## 11. Not yet designed
 
-The birth-details entry form (Settings links to it), the paywall, and all empty, loading and error states. Settings and "About someone" keep their original layouts with this manifest's colours and controls applied; they have not had a full design pass. Tab icons are placeholders. When designing these, reuse the roles and components above rather than adding new ones; if a new one is truly needed, add it here in the same change.
+A birth-details entry form (not in the first build; Settings does not link to one), the paywall, and all empty, loading and error states. Settings and "About someone" keep their original layouts with this manifest's colours and controls applied; they have not had a full design pass. Tab icons are placeholders. When designing these, reuse the roles and components above rather than adding new ones; if a new one is truly needed, add it here in the same change.
+
+## 12. Design check
+
+Run this on any change that adds or alters a screen, before asking for review. Passing tests show a screen works; this shows it looks as intended.
+
+1. **Capture.** A UI test opens each screen the change touches in the fixed test state and attaches a kept screenshot named after its reference image (`04-today`, `02-draw-card-chosen`). If the content scrolls, capture the top and the bottom.
+2. **Compare.** Open each screenshot beside its picture in [design-reference/](design-reference/README.md). Check, in this order: what is on the screen and in what order; the primary action and where it sits; colour roles; typefaces and weights; card shape; spacing and alignment; wording. The references are web renderings, so small differences in text rendering are expected. Anything a person would notice at a glance is a difference.
+3. **Automated checks.** The test tools' built-in accessibility audit passes on each screen touched (contrast, 44 point targets, clipped text, text scaling). A test fails if either bundled typeface falls back to the system font. A check fails if a colour, font or corner radius is written outside the design system.
+4. **Large text and Reduce Motion.** Capture each screen touched at the largest text size: nothing is clipped or overlapping and the primary action can be reached. Capture Draw, Reveal and the three-card pick once with Reduce Motion on.
+5. **Independent look.** Someone who did not write the code (a fresh agent session given only the two sets of images and this file, or Jackie) repeats step 2.
+6. **Report.** The pull request lists, screen by screen, each difference found and whether it was fixed or accepted, with the reason. Jackie looks at the pairs before approving a merge.
+
+A screen or state with no reference image (empty, loading and error states, confirmations) is checked against the rules in this file instead, and described here in the same change.
 
 ## Maintaining this file
 
-Keep it to rules another agent can apply without seeing the canvas. Record a rule once, in the section it belongs to. When a design decision changes, update this file and the canvas together and note the date at the top.
+Keep it to rules another agent can apply without seeing the canvas. Record a rule once, in the section it belongs to. When a design decision changes, update this file, the canvas and the affected reference image together and note the date at the top.
