@@ -6,6 +6,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 STYLING_TYPES = ('Color', 'UIColor', 'CGColor', 'Font', 'UIFont',
                  'RoundedRectangle', 'UnevenRoundedRectangle')
+FONT_MODIFIERS = ('font', 'fontWeight', 'fontDesign', 'bold', 'italic')
 SYSTEM_VALUES = ('accentColor', 'black', 'blue', 'brown', 'clear', 'cyan', 'gray', 'green',
                  'indigo', 'mint', 'orange', 'pink', 'primary', 'purple', 'red', 'secondary',
                  'teal', 'white', 'yellow', 'largeTitle', 'title', 'title2', 'title3', 'headline',
@@ -13,6 +14,7 @@ SYSTEM_VALUES = ('accentColor', 'black', 'blue', 'brown', 'clear', 'cyan', 'gray
 BANNED = re.compile(
     rf'\b(?:{"|".join(STYLING_TYPES)})\b'
     r'|\bcornerRadius\b'
+    rf'|\.(?:{"|".join(FONT_MODIFIERS)})\s*\('
     rf'|(?<![A-Za-z0-9_])\.(?:{"|".join(SYSTEM_VALUES)})\b'
 )
 

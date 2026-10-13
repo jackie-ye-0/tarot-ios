@@ -20,6 +20,12 @@ class DesignRoleTests(unittest.TestCase):
             with self.subTest(name=name):
                 self.assertTrue(rules.violations(source))
 
+    def test_rejects_font_modifiers(self):
+        for modifier in rules.FONT_MODIFIERS:
+            with self.subTest(modifier=modifier):
+                source = f'Text("x").{modifier}(designRole)'
+                self.assertEqual(rules.violations(source), [(1, f'.{modifier}(')])
+
     def test_accepts_roles_and_ignores_comments_and_strings(self):
         source = '''
 Text("Color.red, Font.body, and cornerRadius are prose")
@@ -28,6 +34,7 @@ let multilineProse = """RoundedRectangle
 .secondary"""
     .typeRole(Design.TypeRole.body)
     .foregroundStyle(Design.Palette.secondary)
+let explanation = ".fontWeight(.semibold), .bold(), and .italic()"
 // let raw: Color = .red
 /* outer Font /* nested UIColor */ .body */
 '''

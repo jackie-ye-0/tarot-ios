@@ -79,6 +79,6 @@ Only Debug builds, with `--test-mode`, read these launch arguments:
 
 Release builds ignore all these arguments. Normal launches always use the saved installation seed and on-device store. Storage failures surface a retry, never a silent reset or temporary substitute.
 
-`./scripts/harness check` also runs the design-role source guard from `scripts/design_rules.py`. Outside `DesignSystem.swift`, this lexical check rejects the raw colour, font, rounded-shape and corner-radius vocabulary, plus unqualified system colour and text-style values. It does not parse Swift, follow aliases or inspect code inside string interpolation, so XCTest accessibility audits and visual comparison remain required.
+`./scripts/harness check` also runs the design-role source guard from `scripts/design_rules.py`. Outside `DesignSystem.swift`, this lexical check rejects the raw colour, font, font-modifier, rounded-shape and corner-radius vocabulary, plus unqualified system colour and text-style values. It does not parse Swift, follow aliases or inspect code inside string interpolation, so XCTest accessibility audits and visual comparison remain required.
 
 Bundled font provenance and licences are in [Fonts](HarnessShell/Resources/Fonts/README.md). See [foundation verification](docs/foundation-verification.md) for the #7 evidence and accepted reference differences.
