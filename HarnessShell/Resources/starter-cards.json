@@ -1,36 +1,364 @@
 {
-  "version": 1,
+  "version": 2,
   "editorialStatus": "Original first-draft content. Requires Jackie's editorial review before release to real users.",
   "cards": [
     {
-      "id": "star", "name": "The Star", "arcana": "Major Arcana XVII", "suit": null, "rank": 17,
-      "upright": {"keywords": ["Hope", "renewal", "clarity", "calm"], "interpretation": "Hope may feel more useful when you give it something small to do. Notice what restores a little perspective today, and make room to return to it."},
-      "reversed": {"keywords": ["Patience", "quiet", "care", "perspective"], "interpretation": "You may be looking for reassurance that takes time to arrive. Notice one small source of steadiness, without asking it to solve everything today."}
+      "id": "star",
+      "name": "The Star",
+      "arcana": "Major Arcana XVII",
+      "suit": null,
+      "rank": 17,
+      "upright": {
+        "keywords": [
+          "Hope",
+          "renewal",
+          "clarity",
+          "calm"
+        ],
+        "interpretation": "Hope may feel more useful when you give it something small to do. Notice what restores a little perspective today, and make room to return to it.",
+        "daily": {
+          "colourName": "Sage",
+          "colourHex": "#7d8f6a",
+          "object": "Something glass",
+          "bestHour": "After 3 pm",
+          "career": {
+            "score": 72,
+            "line": "Share an idea you have been quietly tending."
+          },
+          "relationship": {
+            "score": 81,
+            "line": "Let a kind word make room for connection."
+          },
+          "social": {
+            "score": 64,
+            "line": "Notice who gives you space to be yourself."
+          }
+        }
+      },
+      "reversed": {
+        "keywords": [
+          "Patience",
+          "quiet",
+          "care",
+          "perspective"
+        ],
+        "interpretation": "You may be looking for reassurance that takes time to arrive. Notice one small source of steadiness, without asking it to solve everything today.",
+        "daily": {
+          "colourName": "Blue",
+          "colourHex": "#6f8ca2",
+          "object": "A smooth stone",
+          "bestHour": "Before 10 am",
+          "career": {
+            "score": 54,
+            "line": "Give one unfinished task a manageable next step."
+          },
+          "relationship": {
+            "score": 62,
+            "line": "Name a need without asking for an instant answer."
+          },
+          "social": {
+            "score": 58,
+            "line": "Reach out to someone who helps you feel at ease."
+          }
+        }
+      }
     },
     {
-      "id": "sun", "name": "The Sun", "arcana": "Major Arcana XIX", "suit": null, "rank": 19,
-      "upright": {"keywords": ["Warmth", "openness", "joy", "ease"], "interpretation": "Notice what feels uncomplicated and worth enjoying today. You may find room to be more open when you stop asking a good moment to prove anything."},
-      "reversed": {"keywords": ["Simplicity", "rest", "honesty", "space"], "interpretation": "You do not have to feel bright on demand. A quieter kind of enjoyment may become easier to notice when you let go of how the day should feel."}
+      "id": "sun",
+      "name": "The Sun",
+      "arcana": "Major Arcana XIX",
+      "suit": null,
+      "rank": 19,
+      "upright": {
+        "keywords": [
+          "Warmth",
+          "openness",
+          "joy",
+          "ease"
+        ],
+        "interpretation": "Notice what feels uncomplicated and worth enjoying today. You may find room to be more open when you stop asking a good moment to prove anything.",
+        "daily": {
+          "colourName": "Ochre",
+          "colourHex": "#c79a3f",
+          "object": "A favourite pen",
+          "bestHour": "Around noon",
+          "career": {
+            "score": 84,
+            "line": "Notice which part of your work gives you energy."
+          },
+          "relationship": {
+            "score": 78,
+            "line": "Share a simple pleasure without making it a test."
+          },
+          "social": {
+            "score": 88,
+            "line": "Invite someone into a moment you are enjoying."
+          }
+        }
+      },
+      "reversed": {
+        "keywords": [
+          "Simplicity",
+          "rest",
+          "honesty",
+          "space"
+        ],
+        "interpretation": "You do not have to feel bright on demand. A quieter kind of enjoyment may become easier to notice when you let go of how the day should feel.",
+        "daily": {
+          "colourName": "Clay",
+          "colourHex": "#b0654a",
+          "object": "A soft scarf",
+          "bestHour": "After 4 pm",
+          "career": {
+            "score": 61,
+            "line": "Let a small piece of progress be enough today."
+          },
+          "relationship": {
+            "score": 68,
+            "line": "Say how you feel without needing to sound bright."
+          },
+          "social": {
+            "score": 57,
+            "line": "Choose company where you do not have to perform."
+          }
+        }
+      }
     },
     {
-      "id": "fool", "name": "The Fool", "arcana": "Major Arcana 0", "suit": null, "rank": 0,
-      "upright": {"keywords": ["Curiosity", "beginnings", "openness"], "interpretation": "A small beginning may teach you more than a perfect plan. Notice what you are curious about, and choose a manageable first step with room to reconsider."},
-      "reversed": {"keywords": ["Pause", "attention", "preparation"], "interpretation": "The urge to begin may be moving faster than your attention. Give yourself a moment to notice what you need before choosing your next step."}
+      "id": "fool",
+      "name": "The Fool",
+      "arcana": "Major Arcana 0",
+      "suit": null,
+      "rank": 0,
+      "upright": {
+        "keywords": [
+          "Curiosity",
+          "beginnings",
+          "openness"
+        ],
+        "interpretation": "A small beginning may teach you more than a perfect plan. Notice what you are curious about, and choose a manageable first step with room to reconsider.",
+        "daily": {
+          "colourName": "Blue",
+          "colourHex": "#6f8ca2",
+          "object": "An empty notebook",
+          "bestHour": "Before 11 am",
+          "career": {
+            "score": 78,
+            "line": "Try a small experiment with room to change course."
+          },
+          "relationship": {
+            "score": 66,
+            "line": "Ask a curious question instead of assuming."
+          },
+          "social": {
+            "score": 82,
+            "line": "Make space for a conversation outside your routine."
+          }
+        }
+      },
+      "reversed": {
+        "keywords": [
+          "Pause",
+          "attention",
+          "preparation"
+        ],
+        "interpretation": "The urge to begin may be moving faster than your attention. Give yourself a moment to notice what you need before choosing your next step.",
+        "daily": {
+          "colourName": "Sage",
+          "colourHex": "#7d8f6a",
+          "object": "A familiar key",
+          "bestHour": "After 2 pm",
+          "career": {
+            "score": 56,
+            "line": "Check what you need before taking the next step."
+          },
+          "relationship": {
+            "score": 63,
+            "line": "Pause to hear the answer before moving on."
+          },
+          "social": {
+            "score": 59,
+            "line": "Leave room to reconsider an invitation."
+          }
+        }
+      }
     },
     {
-      "id": "magician", "name": "The Magician", "arcana": "Major Arcana I", "suit": null, "rank": 1,
-      "upright": {"keywords": ["Focus", "resourcefulness", "practice"], "interpretation": "You may already have something useful to work with. Notice which skill or resource is within reach, and give it one clear purpose today."},
-      "reversed": {"keywords": ["Clarity", "limits", "intention"], "interpretation": "Your attention may be spread across too many possibilities. Choose one intention you can describe plainly, then notice what helps you stay with it."}
+      "id": "magician",
+      "name": "The Magician",
+      "arcana": "Major Arcana I",
+      "suit": null,
+      "rank": 1,
+      "upright": {
+        "keywords": [
+          "Focus",
+          "resourcefulness",
+          "practice"
+        ],
+        "interpretation": "You may already have something useful to work with. Notice which skill or resource is within reach, and give it one clear purpose today.",
+        "daily": {
+          "colourName": "Clay",
+          "colourHex": "#b0654a",
+          "object": "A favourite pen",
+          "bestHour": "Around 10 am",
+          "career": {
+            "score": 86,
+            "line": "Give an existing skill one clear purpose today."
+          },
+          "relationship": {
+            "score": 73,
+            "line": "Match a caring intention with a small action."
+          },
+          "social": {
+            "score": 70,
+            "line": "Offer something useful without taking over."
+          }
+        }
+      },
+      "reversed": {
+        "keywords": [
+          "Clarity",
+          "limits",
+          "intention"
+        ],
+        "interpretation": "Your attention may be spread across too many possibilities. Choose one intention you can describe plainly, then notice what helps you stay with it.",
+        "daily": {
+          "colourName": "Blue",
+          "colourHex": "#6f8ca2",
+          "object": "A paper bookmark",
+          "bestHour": "After 1 pm",
+          "career": {
+            "score": 58,
+            "line": "Choose one priority you can describe plainly."
+          },
+          "relationship": {
+            "score": 61,
+            "line": "Check that your words reflect what you mean."
+          },
+          "social": {
+            "score": 55,
+            "line": "Notice where you are promising more than you want."
+          }
+        }
+      }
     },
     {
-      "id": "hermit", "name": "The Hermit", "arcana": "Major Arcana IX", "suit": null, "rank": 9,
-      "upright": {"keywords": ["Space", "reflection", "discernment"], "interpretation": "A little quiet may help you hear your own view more clearly. Notice which outside voices you can set aside while you consider what matters to you."},
-      "reversed": {"keywords": ["Connection", "balance", "perspective"], "interpretation": "Time alone may be useful without needing to become distance from everyone. Notice whether a small conversation could offer perspective while leaving room for your own thoughts."}
+      "id": "hermit",
+      "name": "The Hermit",
+      "arcana": "Major Arcana IX",
+      "suit": null,
+      "rank": 9,
+      "upright": {
+        "keywords": [
+          "Space",
+          "reflection",
+          "discernment"
+        ],
+        "interpretation": "A little quiet may help you hear your own view more clearly. Notice which outside voices you can set aside while you consider what matters to you.",
+        "daily": {
+          "colourName": "Sage",
+          "colourHex": "#7d8f6a",
+          "object": "A pocket notebook",
+          "bestHour": "Before 9 am",
+          "career": {
+            "score": 76,
+            "line": "Set aside a quiet moment to form your own view."
+          },
+          "relationship": {
+            "score": 62,
+            "line": "Explain the space you need with kindness."
+          },
+          "social": {
+            "score": 51,
+            "line": "Choose one thoughtful exchange over a busy room."
+          }
+        }
+      },
+      "reversed": {
+        "keywords": [
+          "Connection",
+          "balance",
+          "perspective"
+        ],
+        "interpretation": "Time alone may be useful without needing to become distance from everyone. Notice whether a small conversation could offer perspective while leaving room for your own thoughts.",
+        "daily": {
+          "colourName": "Ochre",
+          "colourHex": "#c79a3f",
+          "object": "A familiar mug",
+          "bestHour": "After 5 pm",
+          "career": {
+            "score": 63,
+            "line": "Ask for another perspective on a stuck task."
+          },
+          "relationship": {
+            "score": 71,
+            "line": "Let someone know you would welcome a check-in."
+          },
+          "social": {
+            "score": 68,
+            "line": "Try a small conversation without a big agenda."
+          }
+        }
+      }
     },
     {
-      "id": "strength", "name": "Strength", "arcana": "Major Arcana VIII", "suit": null, "rank": 8,
-      "upright": {"keywords": ["Gentleness", "courage", "patience"], "interpretation": "A patient response may take more courage than pushing harder. Notice where a gentler approach could help you act in line with what matters to you."},
-      "reversed": {"keywords": ["Kindness", "limits", "renewal"], "interpretation": "You may be asking more of yourself than this moment needs. Notice a limit you can respect today, and let kindness be part of how you respond."}
+      "id": "strength",
+      "name": "Strength",
+      "arcana": "Major Arcana VIII",
+      "suit": null,
+      "rank": 8,
+      "upright": {
+        "keywords": [
+          "Gentleness",
+          "courage",
+          "patience"
+        ],
+        "interpretation": "A patient response may take more courage than pushing harder. Notice where a gentler approach could help you act in line with what matters to you.",
+        "daily": {
+          "colourName": "Clay",
+          "colourHex": "#b0654a",
+          "object": "A soft scarf",
+          "bestHour": "Around 11 am",
+          "career": {
+            "score": 79,
+            "line": "Try patience where pushing has stopped helping."
+          },
+          "relationship": {
+            "score": 84,
+            "line": "Listen gently while keeping your own needs clear."
+          },
+          "social": {
+            "score": 72,
+            "line": "Make room for a quieter voice in the group."
+          }
+        }
+      },
+      "reversed": {
+        "keywords": [
+          "Kindness",
+          "limits",
+          "renewal"
+        ],
+        "interpretation": "You may be asking more of yourself than this moment needs. Notice a limit you can respect today, and let kindness be part of how you respond.",
+        "daily": {
+          "colourName": "Sage",
+          "colourHex": "#7d8f6a",
+          "object": "A smooth stone",
+          "bestHour": "After 4 pm",
+          "career": {
+            "score": 57,
+            "line": "Respect a limit before taking on more work."
+          },
+          "relationship": {
+            "score": 69,
+            "line": "Let kindness include what you need as well."
+          },
+          "social": {
+            "score": 60,
+            "line": "Accept a smaller plan if it leaves you more ease."
+          }
+        }
+      }
     }
   ]
 }

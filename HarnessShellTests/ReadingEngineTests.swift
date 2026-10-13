@@ -149,13 +149,85 @@ final class ReadingEngineTests: XCTestCase {
                 XCTAssertTrue((3...4).contains(meaning.keywords.count))
                 XCTAssertTrue(meaning.keywords.allSatisfy { !$0.isEmpty })
                 XCTAssertGreaterThanOrEqual(meaning.interpretation.split(separator: ".").count, 2)
+                let daily = try XCTUnwrap(meaning.daily)
+                XCTAssertTrue(daily.isComplete)
+                let lines = ReadingArea.allCases.map { daily.reading(for: $0).line }
+                XCTAssertEqual(Set(lines).count, 3)
+                for area in ReadingArea.allCases {
+                    XCTAssertTrue((0...100).contains(daily.reading(for: area).score))
+                }
+                XCTAssertNotNil(daily.colourHex.range(of: "^#[0-9a-fA-F]{6}$", options: .regularExpression))
             }
         }
     }
 
     func testSnapshotRoundTripKeepsOriginalContent() throws {
-        let draw = ReadingEngine.dailyDraw(seed: "snapshot", dateKey: "2026-10-11", position: 5, library: try CardLibrary.load())
-        XCTAssertEqual(try JSONDecoder().decode(DailyDraw.self, from: JSONEncoder().encode(draw)), draw)
+        let library = try CardLibrary.load()
+        let draw = ReadingEngine.dailyDraw(seed: "reference-1", dateKey: "2026-10-11", position: 5, library: library)
+        let snapshot = try JSONEncoder().encode(draw)
+        let revised = try amendedLibrary { daily in
+            daily["colourName"] = "Clay"
+            daily["colourHex"] = "#b0654a"
+            daily["object"] = "A new object"
+            daily["bestHour"] = "After 6 pm"
+            daily["career"] = ["score": 10, "line": "A revised work line."]
+        }
+        let next = ReadingEngine.dailyDraw(seed: "reference-1", dateKey: "2026-10-11", position: 5,
+                                          library: try CardLibrary.decode(revised))
+        XCTAssertNotEqual(next.meaning.daily, draw.meaning.daily)
+        XCTAssertEqual(try JSONDecoder().decode(DailyDraw.self, from: snapshot), draw)
+    }
+
+    func testLibraryRejectsMissingOrInvalidTodayContent() throws {
+        let mutations: [(inout [String: Any]) -> Void] = [
+            { $0["colourName"] = " " },
+            { $0["colourHex"] = "#12345G" },
+            { $0["colourHex"] = "#123456\n" },
+            { $0["object"] = "" },
+            { $0["bestHour"] = "" },
+            { $0["career"] = ["score": -1, "line": "Work line."] },
+            { $0["social"] = ["score": 101, "line": "Social line."] },
+            { $0["relationship"] = $0["career"] },
+            { $0["career"] = ["score": 72, "line": " "] },
+            { $0.removeValue(forKey: "social") }
+        ]
+        for mutate in mutations { XCTAssertThrowsError(try CardLibrary.decode(amendedLibrary(mutate))) }
+        var library = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(CardLibrary.load())) as? [String: Any])
+        var cards = try XCTUnwrap(library["cards"] as? [[String: Any]])
+        var meaning = try XCTUnwrap(cards[0]["upright"] as? [String: Any])
+        meaning.removeValue(forKey: "daily")
+        cards[0]["upright"] = meaning
+        library["cards"] = cards
+        XCTAssertThrowsError(try CardLibrary.decode(JSONSerialization.data(withJSONObject: library)))
+    }
+
+    func testEarlierSnapshotOpensWithoutBackfillingNewContent() throws {
+        let draw = ReadingEngine.dailyDraw(seed: "reference-1", dateKey: "2026-10-11", position: 3, library: try CardLibrary.load())
+        var snapshot = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(draw)) as? [String: Any])
+        var card = try XCTUnwrap(snapshot["card"] as? [String: Any])
+        for orientation in ["upright", "reversed"] {
+            var meaning = try XCTUnwrap(card[orientation] as? [String: Any])
+            meaning.removeValue(forKey: "daily")
+            card[orientation] = meaning
+        }
+        snapshot["card"] = card
+        snapshot["contentVersion"] = 1
+        let earlier = try JSONDecoder().decode(DailyDraw.self, from: JSONSerialization.data(withJSONObject: snapshot))
+        XCTAssertEqual(earlier.meaning.interpretation, draw.meaning.interpretation)
+        XCTAssertNil(earlier.meaning.daily)
+        XCTAssertEqual(earlier.contentVersion, 1)
+    }
+
+    private func amendedLibrary(_ mutate: (inout [String: Any]) -> Void) throws -> Data {
+        var library = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(CardLibrary.load())) as? [String: Any])
+        var cards = try XCTUnwrap(library["cards"] as? [[String: Any]])
+        var meaning = try XCTUnwrap(cards[0]["upright"] as? [String: Any])
+        var daily = try XCTUnwrap(meaning["daily"] as? [String: Any])
+        mutate(&daily)
+        meaning["daily"] = daily
+        cards[0]["upright"] = meaning
+        library["cards"] = cards
+        return try JSONSerialization.data(withJSONObject: library)
     }
 
     func testBundledTypefacesDoNotFallBack() throws {

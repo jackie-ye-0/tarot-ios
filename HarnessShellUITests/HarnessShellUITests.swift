@@ -137,10 +137,85 @@ final class HarnessShellUITests: XCTestCase {
         app.buttons["see-meaning"].tap()
         XCTAssertTrue(app.staticTexts["core-interpretation"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["core-interpretation"].label.contains("Hope may feel more useful"))
+        XCTAssertEqual(app.windows.firstMatch.frame.size, CGSize(width: 390, height: 844), "Verify the reference viewport on the selected simulator")
+        for identifier in ["today-card", "core-interpretation", "daily-colour", "daily-object", "daily-hour"] {
+            assertVisible(app.descendants(matching: .any)[identifier].firstMatch, in: app)
+        }
+        assertTodayContent(app)
         try auditAndCapture(app, "04-today")
+        scrollTo(app.staticTexts["line-social"], in: app)
+        try auditAndCapture(app, "04-today--bottom")
         scrollTo(app.staticTexts["next-card-arrival"], in: app)
         XCTAssertEqual(app.staticTexts["next-card-arrival"].label, "Your next card arrives at midnight")
-        capture(app, "04-today--bottom")
+        capture(app, "04-today--midnight")
+        scrollTo(app.buttons["today-card"], in: app)
+        app.buttons["today-card"].tap()
+        XCTAssertTrue(app.buttons["back-to-today"].waitForExistence(timeout: 5))
+        XCTAssertEqual(app.descendants(matching: .any)["revealed-card"].label, "The Star, Upright")
+        try auditAndCapture(app, "03-reveal--reopened")
+        app.buttons["back-to-today"].tap()
+        XCTAssertTrue(app.staticTexts["today-title"].waitForExistence(timeout: 5))
+        assertTodayContent(app)
+        app.buttons["today-card"].tap()
+        app.buttons["see-meaning"].tap()
+        XCTAssertTrue(app.staticTexts["today-title"].waitForExistence(timeout: 5))
+    }
+
+    private func assertTodayContent(_ app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
+        let expected = ["daily-colour": "Colour, Sage", "daily-object": "Object, Something glass", "daily-hour": "Best hour, After 3 pm",
+                        "score-career": "Career, 72 out of 100", "score-relationship": "Relationship, 81 out of 100",
+                        "score-social": "Social, 64 out of 100", "line-career": "Share an idea you have been quietly tending.",
+                        "line-relationship": "Let a kind word make room for connection.", "line-social": "Notice who gives you space to be yourself."]
+        for (identifier, label) in expected {
+            XCTAssertEqual(app.descendants(matching: .any)[identifier].firstMatch.label, label, file: file, line: line)
+        }
+        let scores = ["career", "relationship", "social"].map { app.descendants(matching: .any)["score-\($0)"].firstMatch.frame }
+        XCTAssertEqual(scores[0].minY, scores[1].minY, accuracy: 1, file: file, line: line)
+        XCTAssertEqual(scores[1].minY, scores[2].minY, accuracy: 1, file: file, line: line)
+        XCTAssertLessThanOrEqual(app.descendants(matching: .any)["daily-hour"].firstMatch.frame.maxY, scores[0].minY, file: file, line: line)
+    }
+
+    func testTodaySnapshotSurvivesAChangedContentLibrary() {
+        let app = app(extra: ["--test-store-id", UUID().uuidString], memory: false)
+        reveal(app)
+        app.buttons["see-meaning"].tap()
+        XCTAssertTrue(app.staticTexts["today-title"].waitForExistence(timeout: 5))
+        let interpretation = app.staticTexts["core-interpretation"].label
+        assertTodayContent(app)
+        app.terminate()
+        app.launchArguments.append("--test-revised-content")
+        app.launch()
+        XCTAssertTrue(app.staticTexts["today-title"].waitForExistence(timeout: 5))
+        XCTAssertEqual(app.staticTexts["card-name"].label, "The Star")
+        XCTAssertEqual(app.staticTexts["card-details"].label, "Upright · Major Arcana XVII")
+        XCTAssertEqual(app.staticTexts["core-interpretation"].label, interpretation)
+        assertTodayContent(app)
+        app.terminate()
+        let dateIndex = app.launchArguments.firstIndex(of: "--test-date")!
+        app.launchArguments[dateIndex + 1] = "2026-10-12T00:00:00Z"
+        app.launch()
+        reveal(app)
+        app.buttons["see-meaning"].tap()
+        XCTAssertTrue(app.staticTexts["today-title"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["card-name"].label.hasPrefix("Revised "))
+        XCTAssertEqual(app.descendants(matching: .any)["daily-colour"].firstMatch.label, "Colour, Clay")
+        XCTAssertEqual(app.descendants(matching: .any)["score-career"].firstMatch.label, "Career, 10 out of 100")
+        XCTAssertEqual(app.staticTexts["line-social"].label, "Revised social line.")
+    }
+
+    func testEarlierSnapshotKeepsItsOriginalReading() throws {
+        let app = app(extra: ["--test-earlier-snapshot"])
+        XCTAssertTrue(app.staticTexts["today-title"].waitForExistence(timeout: 5))
+        XCTAssertEqual(app.staticTexts["card-name"].label, "The Star")
+        XCTAssertTrue(app.staticTexts["core-interpretation"].label.contains("Hope may feel more useful"))
+        XCTAssertTrue(app.staticTexts["This earlier draw has no saved extras or area readings."].exists)
+        XCTAssertFalse(app.descendants(matching: .any)["daily-colour"].firstMatch.exists)
+        try auditAndCapture(app, "04-today--earlier-snapshot")
+        app.terminate()
+        let largest = self.app(extra: ["--test-earlier-snapshot", "--test-largest-text"])
+        capture(largest, "04-today--earlier-snapshot-largest-text")
+        scrollTo(largest.staticTexts["This earlier draw has no saved extras or area readings."], in: largest)
+        capture(largest, "04-today--earlier-snapshot-largest-text-bottom")
     }
 
     func testAllFivePositionsGiveSameCardAndSaveTheirPosition() {
@@ -339,6 +414,9 @@ final class HarnessShellUITests: XCTestCase {
         app.buttons["see-meaning"].tap()
         XCTAssertTrue(app.staticTexts["core-interpretation"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.staticTexts["core-interpretation"].label.contains("Hope may feel more useful"))
+        XCTAssertEqual(app.descendants(matching: .any)["daily-colour"].firstMatch.label, "Colour, Blue")
+        XCTAssertEqual(app.descendants(matching: .any)["score-career"].firstMatch.label, "Career, 54 out of 100")
+        XCTAssertEqual(app.staticTexts["line-relationship"].label, "Name a need without asking for an instant answer.")
         capture(app, "04-today--reversed")
     }
 
@@ -416,9 +494,28 @@ final class HarnessShellUITests: XCTestCase {
         XCTAssertLessThanOrEqual(interpretation.frame.maxY, viewport.maxY)
         XCTAssertGreaterThanOrEqual(interpretation.frame.minX, viewport.minX)
         XCTAssertLessThanOrEqual(interpretation.frame.maxX, viewport.maxX)
-        capture(app, "04-today--largest-text-interpretation-end")
+        capture(app, "04-today--largest-text-reading-end")
+        for identifier in ["daily-colour", "daily-object", "daily-hour", "score-career", "score-relationship", "score-social",
+                           "line-career", "line-relationship", "line-social"] {
+            scrollTo(app.descendants(matching: .any)[identifier].firstMatch, in: app)
+            capture(app, "04-today--largest-text-\(identifier)")
+        }
         scrollTo(app.staticTexts["next-card-arrival"], in: app)
         capture(app, "04-today--largest-text-bottom")
+        scrollTo(app.buttons["today-card"], in: app)
+        app.buttons["today-card"].tap()
+        scrollTo(app.buttons["back-to-today"], in: app)
+        capture(app, "03-reveal--reopened-largest-text")
+        let modalDetails = app.scrollViews["screen-content"].staticTexts["card-details"]
+        scrollTo(modalDetails, in: app)
+        XCTAssertGreaterThan(modalDetails.frame.height, 40,
+                             "The modal must retain the injected largest text size")
+        capture(app, "03-reveal--reopened-largest-text-details")
+        scrollTo(app.staticTexts["reveal-disclaimer"], in: app)
+        assertVisible(app.buttons["see-meaning"], in: app)
+        capture(app, "03-reveal--reopened-largest-text-bottom")
+        app.buttons["see-meaning"].tap()
+        XCTAssertTrue(app.staticTexts["today-title"].waitForExistence(timeout: 5))
         app.terminate()
         let reduced = self.app(extra: ["--test-reduce-motion", "--test-hold-shuffle"], animations: true)
         XCTAssertTrue(reduced.buttons["draw-card-3"].waitForExistence(timeout: 5))
@@ -439,5 +536,11 @@ final class HarnessShellUITests: XCTestCase {
             assertVisible(reduced.staticTexts[identifier], in: reduced, abovePinnedFooter: identifier != "reveal-disclaimer")
         }
         capture(reduced, "03-reveal--reduce-motion")
+        reduced.buttons["see-meaning"].tap()
+        reduced.buttons["today-card"].tap()
+        XCTAssertTrue(reduced.buttons["back-to-today"].waitForExistence(timeout: 5))
+        capture(reduced, "03-reveal--reopened-reduce-motion")
+        reduced.buttons["back-to-today"].tap()
+        XCTAssertTrue(reduced.staticTexts["today-title"].waitForExistence(timeout: 5))
     }
 }

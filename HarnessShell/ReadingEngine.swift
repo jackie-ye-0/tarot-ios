@@ -4,6 +4,45 @@ import Foundation
 struct CardMeaning: Codable, Equatable {
     let keywords: [String]
     let interpretation: String
+    // Absent only in snapshots saved before the full Today content shipped.
+    let daily: DailyContent?
+}
+
+enum ReadingArea: String, Codable, CaseIterable {
+    case career, relationship, social
+    var label: String { rawValue.capitalized }
+}
+
+struct AreaReading: Codable, Equatable {
+    let score: Int
+    let line: String
+}
+
+struct DailyContent: Codable, Equatable {
+    let colourName: String
+    let colourHex: String
+    let object: String
+    let bestHour: String
+    let career: AreaReading
+    let relationship: AreaReading
+    let social: AreaReading
+
+    func reading(for area: ReadingArea) -> AreaReading {
+        switch area {
+        case .career: career
+        case .relationship: relationship
+        case .social: social
+        }
+    }
+
+    var isComplete: Bool {
+        let readings = ReadingArea.allCases.map { reading(for: $0) }
+        return [colourName, object, bestHour].allSatisfy { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+            && colourHex.count == 7
+            && colourHex.range(of: "^#[0-9a-fA-F]{6}$", options: .regularExpression) != nil
+            && readings.allSatisfy { (0...100).contains($0.score) && !$0.line.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+            && Set(readings.map { $0.line.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }).count == 3
+    }
 }
 
 enum Orientation: String, Codable {
@@ -34,13 +73,17 @@ struct CardLibrary: Codable {
         guard let url = Bundle.main.url(forResource: "starter-cards", withExtension: "json") else {
             throw CocoaError(.fileNoSuchFile)
         }
-        let library = try JSONDecoder().decode(CardLibrary.self, from: Data(contentsOf: url))
+        return try decode(Data(contentsOf: url))
+    }
+
+    static func decode(_ data: Data) throws -> CardLibrary {
+        let library = try JSONDecoder().decode(CardLibrary.self, from: data)
         guard library.version > 0, library.cards.count >= 6,
               Set(library.cards.map(\.id)).count == library.cards.count,
               library.cards.allSatisfy({ card in
                   !card.name.isEmpty && !card.arcana.isEmpty &&
                   [card.upright, card.reversed].allSatisfy {
-                      (3...4).contains($0.keywords.count) && !$0.interpretation.isEmpty
+                      (3...4).contains($0.keywords.count) && !$0.interpretation.isEmpty && $0.daily?.isComplete == true
                   }
               }) else { throw CocoaError(.coderReadCorrupt) }
         return library
