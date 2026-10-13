@@ -381,8 +381,9 @@ struct BackToTodayAction: View {
 
 struct CardExpansionMark: View {
     var body: some View {
-        Image(systemName: "arrow.up.right.and.arrow.down.left")
+        Image(systemName: "arrow.up.left.and.arrow.down.right")
             .resizable().scaledToFit().frame(width: 14, height: 14)
+            .rotationEffect(.degrees(90))
             .foregroundStyle(Design.Palette.surface)
             .frame(width: 28, height: 28)
             .background(Design.Palette.ink, in: Circle())

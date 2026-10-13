@@ -661,6 +661,13 @@ final class HarnessShellUITests: XCTestCase {
         XCTAssertEqual(app.descendants(matching: .any)["score-career"].firstMatch.label, "Career, 54 out of 100")
         XCTAssertEqual(app.staticTexts["line-relationship"].label, "Name a need without asking for an instant answer.")
         capture(app, "04-today--reversed")
+        scrollTo(app.staticTexts["line-social"], in: app)
+        dragContent(app, up: true)
+        for area in ["career", "relationship", "social"] {
+            assertVisible(app.staticTexts["area-label-\(area)"], in: app)
+            assertVisible(app.staticTexts["line-\(area)"], in: app)
+        }
+        capture(app, "04-today--reversed-bottom")
     }
 
     func testStorageOpenFailureRecoveryAndDesignEvidence() throws {
