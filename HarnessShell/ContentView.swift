@@ -97,7 +97,9 @@ struct DrawScreen: View {
             }
             .transaction { $0.animation = nil; $0.disablesAnimations = true }
         }
-        .task(id: animationsEnabled ? shuffleID : -1) { await shuffle() }
+        .task(id: animationsEnabled ? shuffleID : -1) { [shuffleID] in
+            await shuffle(generation: shuffleID)
+        }
     }
 
     private func choose(_ position: Int?) {
@@ -127,7 +129,8 @@ struct DrawScreen: View {
         shuffleID += 1
     }
 
-    private func shuffle() async {
+    private func shuffle(generation: Int) async {
+        guard generation == shuffleID else { return }
         guard selected == nil else { return }
         guard animationsEnabled else {
             order = [order[2], order[0], order[4], order[1], order[3]]
@@ -144,13 +147,15 @@ struct DrawScreen: View {
                 phase = .washLeft
             }
             try await Task.sleep(for: .seconds(Design.Motion.washDuration))
+            try Task.checkCancellation()
+            guard generation == shuffleID else { return }
             // Debug launch configuration holds a real phase so XCTest can test interruption
             // without racing its automatic wait for the app to become idle.
             if holdShuffle { return }
-            try Task.checkCancellation()
             animate(Design.Motion.wash) { phase = .washRight }
             try await Task.sleep(for: .seconds(Design.Motion.washDuration))
             try Task.checkCancellation()
+            guard generation == shuffleID else { return }
             animate(Design.Motion.fanOut) { phase = .fanned }
         } catch is CancellationError {
             // Selection, another shuffle, Reduce Motion or leaving Draw cancels this run.
