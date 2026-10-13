@@ -495,19 +495,39 @@ struct DailyAreaLines: View {
 }
 
 struct TarotCardView: View {
-    let card: TarotCard?
+    let card: CardIdentity?
     var orientation: Orientation = .upright
     let width: CGFloat
+
+    init(card: TarotCard?, orientation: Orientation = .upright, width: CGFloat) {
+        self.card = card?.identity
+        self.orientation = orientation
+        self.width = width
+    }
+
+    init(face: CardIdentity, orientation: Orientation = .upright, width: CGFloat) {
+        card = face
+        self.orientation = orientation
+        self.width = width
+    }
 
     var body: some View {
         let shape = RoundedRectangle(cornerRadius: width / 10)
         ZStack {
             shape.fill(card == nil ? Design.Palette.cardBack : Design.Palette.surface)
             Canvas { context, size in
-                if let card { drawFront(card, context: &context, size: size) }
+                if let card {
+                    if card.suit == nil && card.rank == 17 { drawStar(context: &context, size: size) }
+                    else {
+                        context.scaleBy(x: size.width / 100, y: size.height / 160)
+                        let drawing = CardFaceDrawing(context: context)
+                        drawing.draw(card)
+                    }
+                }
                 else { drawBack(context: &context, size: size) }
             }
             .clipShape(shape)
+            .accessibilityHidden(true)
             shape.strokeBorder(card == nil ? Design.Palette.gold : Design.Palette.ink,
                                lineWidth: max(1.3, width / 100))
         }
@@ -551,7 +571,7 @@ struct TarotCardView: View {
         context.stroke(water, with: .color(gold.opacity(0.5)), lineWidth: w * 0.008)
     }
 
-    private func drawFront(_ card: TarotCard, context: inout GraphicsContext, size: CGSize) {
+    private func drawStar(context: inout GraphicsContext, size: CGSize) {
         let w = size.width
         let h = size.height
         let inset = w * 0.06
@@ -592,34 +612,312 @@ struct TarotCardView: View {
             context.stroke(wave, with: .color(Design.Palette.surface.opacity(index == 0 ? 1 : 0.6)), lineWidth: w * 0.008)
         }
         let centre = CGPoint(x: w * 0.5, y: h * 0.34)
-        if card.rank == 17 {
-            var star = Path()
-            let points: [(Double, Double)] = [(0,-0.3),(0.06,-0.06),(0.3,0),(0.06,0.06),(0,0.3),(-0.06,0.06),(-0.3,0),(-0.06,-0.06)]
-            star.addLines(points.map { CGPoint(x: centre.x + $0.0 * w, y: centre.y + $0.1 * w) }); star.closeSubpath()
-            context.fill(star, with: .color(Design.Palette.ochre))
-            context.stroke(star, with: .color(Design.Palette.ink), lineWidth: w * 0.009)
-            var glow = context
-            glow.translateBy(x: centre.x * 0.52, y: centre.y * 0.52)
-            glow.scaleBy(x: 0.48, y: 0.48)
-            glow.fill(star, with: .color(Design.Palette.surface))
-        } else {
-            let radius = w * (0.16 + Double(card.rank % 3) * 0.025)
-            let sun = Path(ellipseIn: CGRect(x: centre.x - radius, y: centre.y - radius, width: radius * 2, height: radius * 2))
-            context.fill(sun, with: .color(Design.Palette.ochre))
-            context.stroke(sun, with: .color(Design.Palette.ink), lineWidth: w * 0.009)
-            var rays = Path()
-            let count = 5 + card.rank % 7
-            for i in 0..<count {
-                let a = Double(i) * .pi * 2 / Double(count)
-                rays.move(to: CGPoint(x: centre.x + cos(a) * radius * 1.22, y: centre.y + sin(a) * radius * 1.22))
-                rays.addLine(to: CGPoint(x: centre.x + cos(a) * radius * 1.5, y: centre.y + sin(a) * radius * 1.5))
-            }
-            context.stroke(rays, with: .color(Design.Palette.ink), lineWidth: w * 0.009)
-        }
+        var star = Path()
+        let points: [(Double, Double)] = [(0,-0.3),(0.06,-0.06),(0.3,0),(0.06,0.06),(0,0.3),(-0.06,0.06),(-0.3,0),(-0.06,-0.06)]
+        star.addLines(points.map { CGPoint(x: centre.x + $0.0 * w, y: centre.y + $0.1 * w) }); star.closeSubpath()
+        context.fill(star, with: .color(Design.Palette.ochre))
+        context.stroke(star, with: .color(Design.Palette.ink), lineWidth: w * 0.009)
+        var glow = context
+        glow.translateBy(x: centre.x * 0.52, y: centre.y * 0.52)
+        glow.scaleBy(x: 0.48, y: 0.48)
+        glow.fill(star, with: .color(Design.Palette.surface))
         for point in [(0.22,0.23),(0.79,0.21),(0.17,0.48),(0.83,0.48)] {
             let dot = Path(ellipseIn: CGRect(x: w * point.0 - w * 0.017, y: h * point.1 - w * 0.017, width: w * 0.034, height: w * 0.034))
             context.fill(dot, with: .color(Design.Palette.surface))
             context.stroke(dot, with: .color(Design.Palette.ink), lineWidth: w * 0.006)
+        }
+    }
+}
+
+/// One 100 × 160 coordinate system keeps the same silhouettes at every card size.
+private struct CardFaceDrawing {
+    var context: GraphicsContext
+    private let ink = Design.Palette.ink
+    private let paper = Design.Palette.surface
+    private let blue = Design.Palette.blue
+    private let clay = Design.Palette.clay
+    private let sage = Design.Palette.sage
+    private let ochre = Design.Palette.ochre
+
+    func draw(_ card: CardIdentity) {
+        var cropped = context
+        cropped.clip(to: Path(roundedRect: CGRect(x: 6, y: 6, width: 88, height: 148), cornerRadius: 7.5))
+        let art = CardFaceDrawing(context: cropped)
+        art.rectangle(6, 6, 88, 148, fill: blue.opacity(0.24), outlined: false)
+        art.polygon([(6, 124), (40, 111), (72, 127), (94, 118), (94, 154), (6, 154)], fill: sage)
+        art.polygon([(6, 145), (57, 132), (94, 144), (94, 154), (6, 154)], fill: clay)
+        art.line([(6, 119), (94, 119)])
+        if let suit = card.suit { art.minor(suit: suit.lowercased(), rank: card.rank) }
+        else { art.major(rank: card.rank) }
+    }
+
+    private func paint(_ path: Path, fill: Color, outlined: Bool = true) {
+        context.fill(path, with: .color(fill))
+        if outlined { context.stroke(path, with: .color(ink), style: StrokeStyle(lineWidth: 1.15, lineJoin: .round)) }
+    }
+
+    private func line(_ points: [(Double, Double)], colour: Color? = nil, width: Double = 1.4) {
+        var path = Path()
+        path.addLines(points.map { CGPoint(x: $0.0, y: $0.1) })
+        context.stroke(path, with: .color(colour ?? ink), style: StrokeStyle(lineWidth: width, lineCap: .round, lineJoin: .round))
+    }
+
+    private func polygon(_ points: [(Double, Double)], fill: Color, outlined: Bool = true) {
+        var path = Path()
+        path.addLines(points.map { CGPoint(x: $0.0, y: $0.1) })
+        path.closeSubpath()
+        paint(path, fill: fill, outlined: outlined)
+    }
+
+    private func ellipse(_ x: Double, _ y: Double, _ w: Double, _ h: Double, fill: Color, outlined: Bool = true) {
+        paint(Path(ellipseIn: CGRect(x: x, y: y, width: w, height: h)), fill: fill, outlined: outlined)
+    }
+
+    private func rectangle(_ x: Double, _ y: Double, _ w: Double, _ h: Double, fill: Color, outlined: Bool = true) {
+        paint(Path(CGRect(x: x, y: y, width: w, height: h)), fill: fill, outlined: outlined)
+    }
+
+    private func star(_ x: Double, _ y: Double, radius: Double, fill: Color) {
+        let points = (0..<10).map { index -> (Double, Double) in
+            let angle = Double(index) * .pi / 5 - .pi / 2
+            let r = index.isMultiple(of: 2) ? radius : radius * 0.43
+            return (x + cos(angle) * r, y + sin(angle) * r)
+        }
+        polygon(points, fill: fill)
+    }
+
+    private func crescent(_ x: Double, _ y: Double, radius: Double) {
+        var path = Path()
+        path.move(to: CGPoint(x: x + radius * 0.45, y: y - radius))
+        path.addCurve(to: CGPoint(x: x + radius * 0.45, y: y + radius),
+                      control1: CGPoint(x: x - radius * 1.65, y: y - radius),
+                      control2: CGPoint(x: x - radius * 1.65, y: y + radius))
+        path.addCurve(to: CGPoint(x: x + radius * 0.45, y: y - radius),
+                      control1: CGPoint(x: x - radius * 0.65, y: y + radius * 0.45),
+                      control2: CGPoint(x: x - radius * 0.65, y: y - radius * 0.45))
+        path.closeSubpath()
+        paint(path, fill: ochre)
+    }
+
+    private func infinity(_ x: Double, _ y: Double) {
+        var path = Path()
+        path.move(to: CGPoint(x: x, y: y))
+        path.addCurve(to: CGPoint(x: x, y: y), control1: CGPoint(x: x - 30, y: y - 25), control2: CGPoint(x: x - 30, y: y + 25))
+        path.addCurve(to: CGPoint(x: x, y: y), control1: CGPoint(x: x + 30, y: y - 25), control2: CGPoint(x: x + 30, y: y + 25))
+        context.stroke(path, with: .color(ink), style: StrokeStyle(lineWidth: 2, lineCap: .round))
+    }
+
+    private func crown(_ y: Double, royal: Bool = false) {
+        let tips: [(Double, Double)] = royal
+            ? [(26,y), (36,y+8), (40,y-5), (50,y+5), (60,y-5), (64,y+8), (74,y), (69,y+24), (31,y+24)]
+            : [(28,y), (40,y+10), (50,y-8), (60,y+10), (72,y), (67,y+23), (33,y+23)]
+        polygon(tips, fill: ochre)
+        line([(34,y+17), (66,y+17)])
+    }
+
+    private func symbol(_ suit: String, x: Double, y: Double, scale: Double = 1) {
+        var transformed = context
+        transformed.translateBy(x: x, y: y)
+        transformed.scaleBy(x: scale, y: scale)
+        let art = CardFaceDrawing(context: transformed)
+        switch suit {
+        case "wands":
+            art.polygon([(-2,-13),(2,-13),(2,14),(-2,14)], fill: clay)
+            art.polygon([(2,-4),(10,-11),(10,-2),(2,3)], fill: sage)
+            art.polygon([(-2,5),(-10,-2),(-10,6),(-2,10)], fill: sage)
+        case "cups":
+            var bowl = Path()
+            bowl.move(to: CGPoint(x: -11, y: -11))
+            bowl.addLine(to: CGPoint(x: 11, y: -11))
+            bowl.addQuadCurve(to: CGPoint(x: 0, y: 4), control: CGPoint(x: 11, y: 4))
+            bowl.addQuadCurve(to: CGPoint(x: -11, y: -11), control: CGPoint(x: -11, y: 4))
+            art.paint(bowl, fill: blue)
+            art.line([(0,4),(0,13)], width: 2)
+            art.line([(-7,13),(7,13)], width: 2)
+            art.line([(-8,-7),(8,-7)], colour: paper)
+        case "swords":
+            art.polygon([(0,-16),(5,-7),(3,6),(-3,6),(-5,-7)], fill: paper)
+            art.line([(0,-10),(0,5)], colour: blue)
+            art.line([(-9,7),(9,7)], width: 2.5)
+            art.rectangle(-2, 8, 4, 8, fill: clay)
+        case "pentacles":
+            art.ellipse(-12, -12, 24, 24, fill: ochre)
+            art.star(0, 0, radius: 9, fill: paper)
+        default: break // Only canonical suit metadata reaches the full-deck catalogue.
+        }
+    }
+
+    private func minor(suit: String, rank: Int) {
+        if rank == 1 {
+            ellipse(19, 32, 62, 68, fill: paper)
+            symbol(suit, x: 50, y: 65, scale: 2.1)
+        } else if (2...10).contains(rank) {
+            let pairs = rank / 2
+            // Five rows need room between the longest suit silhouettes (the sword's tip and hilt).
+            let pipScale: Double = switch rank {
+            case 10: 0.52
+            case 8...9: 0.68
+            default: 0.85
+            }
+            for row in 0..<pairs {
+                let y = pairs == 1 ? 80.0 : 29 + Double(row) * 77 / Double(pairs - 1)
+                for x in [29.0, 71.0] { symbol(suit, x: x, y: y, scale: pipScale) }
+            }
+            if !rank.isMultiple(of: 2) { symbol(suit, x: 50, y: rank == 3 ? 38 : 67, scale: 0.85) }
+        } else {
+            switch rank {
+            case 11:
+                polygon([(30,102),(24,59),(45,82)], fill: sage)
+                line([(29,100),(27,69)])
+                ellipse(43, 22, 14, 14, fill: ochre)
+            case 12:
+                line([(23,111),(74,23)], width: 3)
+                polygon([(74,23),(45,24),(61,44)], fill: clay)
+            case 13:
+                ellipse(23, 59, 54, 53, fill: sage)
+                crown(30)
+            case 14:
+                rectangle(23, 53, 54, 57, fill: clay)
+                rectangle(30, 59, 40, 48, fill: paper)
+                crown(27, royal: true)
+            default: break
+            }
+            symbol(suit, x: 50, y: 82, scale: 1.55)
+        }
+    }
+
+    private func major(rank: Int) {
+        switch rank {
+        case 0: // The Fool: a beginning at the edge.
+            ellipse(58, 21, 23, 23, fill: ochre)
+            polygon([(12,92),(61,92),(40,113),(12,118)], fill: clay)
+            line([(35,86),(53,41)], width: 3)
+            polygon([(47,47),(30,46),(29,60),(41,61)], fill: sage)
+            line([(57,98),(70,103),(75,110)])
+        case 1:
+            infinity(50, 37)
+            line([(42,106),(58,58)], width: 5)
+            star(60, 52, radius: 11, fill: ochre)
+            rectangle(22, 99, 56, 7, fill: clay)
+        case 2:
+            rectangle(19, 43, 15, 63, fill: blue)
+            rectangle(66, 43, 15, 63, fill: paper)
+            crescent(51, 52, radius: 22)
+            line([(40,93),(60,93)], width: 3)
+        case 3:
+            crown(40)
+            for x in [30.0,50,70] {
+                line([(x,105),(x,79)])
+                polygon([(x,90),(x-6,80),(x,74),(x+6,80)], fill: sage)
+            }
+        case 4:
+            rectangle(25, 30, 50, 66, fill: clay)
+            rectangle(35, 46, 30, 43, fill: paper)
+            rectangle(18, 84, 64, 18, fill: ochre)
+            line([(26,103),(26,112)], width: 4)
+            line([(74,103),(74,112)], width: 4)
+            polygon([(42,40),(50,27),(58,40)], fill: ochre)
+        case 5:
+            for (index,w) in [20.0,32,44].enumerated() { rectangle(50-w/2, 26+Double(index)*12, w, 7, fill: ochre) }
+            for flip in [-1.0,1] {
+                ellipse(50+flip*20-7, 69, 14, 14, fill: paper)
+                line([(50+flip*20,83),(50-flip*18,107),(50-flip*22,100)], width: 3)
+            }
+        case 6:
+            ellipse(20, 43, 23, 23, fill: ochre)
+            ellipse(57, 43, 23, 23, fill: clay)
+            polygon([(18,102),(31,68),(47,94),(53,94),(69,68),(82,102)], fill: sage)
+            line([(31,39),(50,24),(69,39)])
+            ellipse(45, 79, 10, 10, fill: paper)
+        case 7:
+            polygon([(17,40),(50,23),(83,40)], fill: blue)
+            line([(23,40),(23,93),(77,93),(77,40)])
+            rectangle(24, 66, 52, 31, fill: clay)
+            ellipse(24, 93, 18, 18, fill: ochre)
+            ellipse(58, 93, 18, 18, fill: ochre)
+            star(50, 80, radius: 10, fill: paper)
+        case 8:
+            infinity(50, 30)
+            ellipse(24, 52, 52, 52, fill: ochre)
+            polygon([(30,67),(29,47),(44,56),(56,56),(71,47),(70,67),(64,92),(50,102),(36,92)], fill: clay)
+            ellipse(37, 69, 4, 4, fill: paper)
+            ellipse(59, 69, 4, 4, fill: paper)
+            polygon([(45,82),(55,82),(50,89)], fill: paper)
+        case 9:
+            polygon([(14,113),(47,65),(79,113)], fill: blue)
+            line([(66,38),(66,103)], width: 3)
+            line([(43,37),(43,27),(58,27),(58,37)])
+            rectangle(36, 37, 28, 36, fill: paper)
+            star(50, 55, radius: 11, fill: ochre)
+        case 10:
+            ellipse(18, 34, 64, 64, fill: ochre)
+            ellipse(26, 42, 48, 48, fill: paper)
+            for index in 0..<8 {
+                let angle = Double(index) * .pi / 4
+                line([(50,66),(50+cos(angle)*29,66+sin(angle)*29)])
+            }
+            ellipse(44, 60, 12, 12, fill: clay)
+        case 11:
+            line([(50,30),(50,106)], width: 3)
+            line([(22,53),(78,53)], width: 3)
+            polygon([(50,23),(55,33),(50,40),(45,33)], fill: ochre)
+            for x in [28.0,72] {
+                line([(x,53),(x-12,81),(x+12,81),(x,53)])
+                polygon([(x-14,82),(x+14,82),(x+7,93),(x-7,93)], fill: blue)
+            }
+        case 12:
+            line([(24,30),(76,30)], width: 4)
+            line([(50,30),(50,47),(33,65),(52,77),(62,59)], width: 3)
+            polygon([(42,69),(58,69),(64,89),(36,89)], fill: clay)
+            ellipse(40, 91, 20, 20, fill: ochre)
+        case 13:
+            crescent(51, 43, radius: 19)
+            line([(32,105),(32,78),(40,71)], width: 3)
+            line([(31,69),(27,64)], width: 2)
+            line([(63,108),(63,90)], width: 2)
+            polygon([(63,97),(47,85),(54,81),(63,87),(72,77),(79,84)], fill: sage)
+        case 14:
+            symbol("cups", x: 31, y: 43, scale: 1.3)
+            symbol("cups", x: 69, y: 91, scale: 1.3)
+            line([(37,58),(60,74)], colour: blue, width: 5)
+            line([(46,55),(66,68)], colour: paper, width: 2)
+            polygon([(24,109),(38,84),(48,109)], fill: sage)
+        case 15:
+            polygon([(28,60),(23,29),(43,49),(57,49),(77,29),(72,60),(65,79),(50,90),(35,79)], fill: clay)
+            for x in [33.0,50,67] { ellipse(x-7, 94, 14, 18, fill: paper) }
+            polygon([(43,67),(57,67),(50,76)], fill: ochre)
+        case 16:
+            polygon([(30,108),(35,56),(62,56),(70,108)], fill: clay)
+            polygon([(33,45),(29,31),(43,36),(49,24),(55,38),(68,32),(63,47)], fill: ochre)
+            polygon([(74,18),(49,62),(59,64),(42,97),(73,58),(62,55),(85,18)], fill: ochre)
+            rectangle(41, 71, 8, 13, fill: paper)
+        case 18:
+            crescent(53, 44, radius: 23)
+            rectangle(17, 74, 17, 32, fill: blue)
+            rectangle(66, 74, 17, 32, fill: clay)
+            ellipse(35, 100, 30, 11, fill: paper)
+            line([(44,79),(56,85),(44,91)], colour: blue, width: 2)
+        case 19:
+            ellipse(28, 38, 44, 44, fill: ochre)
+            for index in 0..<12 {
+                let angle = Double(index) * .pi / 6
+                line([(50+cos(angle)*27,60+sin(angle)*27),(50+cos(angle)*36,60+sin(angle)*36)])
+            }
+            line([(38,98),(50,105),(62,98)], colour: ochre, width: 4)
+        case 20:
+            polygon([(25,31),(51,48),(72,45),(58,67),(49,55),(21,43)], fill: ochre)
+            line([(61,69),(67,79)])
+            line([(74,61),(83,65)])
+            for x in [28.0,50,72] {
+                ellipse(x-6, 92, 12, 12, fill: paper)
+                line([(x,108),(x,114)], width: 2)
+            }
+        case 21:
+            ellipse(22, 24, 56, 84, fill: sage)
+            ellipse(32, 34, 36, 64, fill: paper)
+            polygon([(50,43),(61,66),(50,89),(39,66)], fill: clay)
+            for (x,y) in [(18.0,28.0),(82,28),(18,105),(82,105)] { star(x,y,radius: 7,fill: ochre) }
+        default: break // The Star uses its reference landscape in TarotCardView.
         }
     }
 }

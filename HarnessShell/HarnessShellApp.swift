@@ -4,7 +4,15 @@ import SwiftUI
 struct HarnessShellApp: App {
     private let configuration = LaunchConfiguration.current()
     var body: some Scene {
-        WindowGroup { LaunchView(configuration: configuration) }
+        WindowGroup {
+            #if DEBUG
+            if configuration.testMode && (configuration.cardFaceProof || configuration.cardSizeProof) {
+                CardFaceProof(sizes: configuration.cardSizeProof, largestText: configuration.largestText)
+            } else { LaunchView(configuration: configuration) }
+            #else
+            LaunchView(configuration: configuration)
+            #endif
+        }
     }
 }
 

@@ -284,24 +284,24 @@ final class HarnessShellUITests: XCTestCase {
         XCTAssertTrue(viewport.contains(frame), "\(element.identifier): \(frame) outside visible area \(viewport)", file: file, line: line)
     }
 
-    private func dragContent(_ app: XCUIApplication, up: Bool) {
-        let viewport = visibleFrame(in: app)
+    private func dragContent(_ app: XCUIApplication, up: Bool, abovePinnedFooter: Bool = false) {
+        let viewport = visibleFrame(in: app, abovePinnedFooter: abovePinnedFooter)
         let origin = app.coordinate(withNormalizedOffset: .zero)
         let start = origin.withOffset(CGVector(dx: viewport.midX, dy: up ? viewport.maxY - 80 : viewport.minY + 80))
         let end = origin.withOffset(CGVector(dx: viewport.midX, dy: up ? viewport.minY + 80 : viewport.maxY - 80))
         start.press(forDuration: 0.05, thenDragTo: end)
     }
 
-    private func scrollTo(_ element: XCUIElement, in app: XCUIApplication,
+    private func scrollTo(_ element: XCUIElement, in app: XCUIApplication, abovePinnedFooter: Bool = false,
                           file: StaticString = #filePath, line: UInt = #line) {
         XCTAssertTrue(element.waitForExistence(timeout: 5), file: file, line: line)
         for _ in 0..<10 {
             let frame = element.frame
-            let viewport = visibleFrame(in: app)
+            let viewport = visibleFrame(in: app, abovePinnedFooter: abovePinnedFooter)
             if !frame.isEmpty && viewport.contains(frame) { break }
-            dragContent(app, up: frame.maxY > viewport.maxY)
+            dragContent(app, up: frame.maxY > viewport.maxY, abovePinnedFooter: abovePinnedFooter)
         }
-        assertVisible(element, in: app, file: file, line: line)
+        assertVisible(element, in: app, abovePinnedFooter: abovePinnedFooter, file: file, line: line)
     }
 
     private func reveal(_ app: XCUIApplication, position: Int = 3) {
@@ -315,6 +315,75 @@ final class HarnessShellUITests: XCTestCase {
         XCTAssertTrue(turnOver.waitForExistence(timeout: 5))
         turnOver.tap()
         XCTAssertTrue(app.buttons["see-meaning"].waitForExistence(timeout: 5))
+    }
+
+    func testAllSeventyEightFacesRenderInBothOrientations() throws {
+        let app = app(extra: ["--test-card-faces"])
+        var renderedFaces = Set<Data>()
+        for page in 0..<26 {
+            let first = page * 3
+            XCTAssertEqual(app.staticTexts["face-proof-title"].label, "Card faces \(first + 1)–\(first + 3) of 78")
+            for index in first..<first + 3 {
+                let name = app.staticTexts["face-name-\(index)"].label
+                XCTAssertFalse(name.isEmpty)
+                for orientation in ["upright", "reversed"] {
+                    let face = app.descendants(matching: .any)["face-\(index)-\(orientation)"]
+                    XCTAssertTrue(face.waitForExistence(timeout: 5))
+                    assertVisible(face, in: app, abovePinnedFooter: true)
+                    XCTAssertEqual(face.label, "\(name), \(orientation.capitalized)")
+                    XCTAssertEqual(face.frame.width, 72, accuracy: 1)
+                    let pixels = face.screenshot().pngRepresentation
+                    XCTAssertFalse(pixels.isEmpty)
+                    XCTAssertTrue(renderedFaces.insert(pixels).inserted, "Duplicate face: \(name), \(orientation)")
+                }
+            }
+            if page == 0 || page == 25 { try auditAndCapture(app, "card-faces--page-\(page + 1)") }
+            else { capture(app, "card-faces--page-\(page + 1)") }
+            app.buttons["face-proof-next"].tap()
+        }
+        XCTAssertEqual(renderedFaces.count, 156)
+        XCTAssertEqual(app.staticTexts["face-proof-title"].label, "Card faces 1–3 of 78")
+    }
+
+    func testFaceSizesAndLargestTextProof() throws {
+        let sizes = app(extra: ["--test-card-sizes"])
+        for page in 0..<5 {
+            for width in [214, 120, 84, 36] {
+                let face = sizes.descendants(matching: .any)["face-size-\(width)"]
+                scrollTo(face, in: sizes, abovePinnedFooter: true)
+                XCTAssertEqual(face.frame.width, CGFloat(width), accuracy: 1)
+                XCTAssertTrue(face.label.hasSuffix(", Reversed"))
+                capture(sizes, "card-sizes--sample-\(page + 1)-width-\(width)")
+            }
+            if page == 0 { try sizes.performAccessibilityAudit() }
+            sizes.buttons["face-proof-next"].tap()
+        }
+        sizes.terminate()
+        let largest = app(extra: ["--test-card-faces", "--test-largest-text"])
+        scrollTo(largest.staticTexts["face-proof-title"], in: largest)
+        capture(largest, "card-faces--largest-text")
+        for index in 0..<3 {
+            scrollTo(largest.staticTexts["face-name-\(index)"], in: largest)
+            scrollTo(largest.descendants(matching: .any)["face-\(index)-reversed"], in: largest)
+            capture(largest, "card-faces--largest-text-row-\(index)")
+        }
+        scrollTo(largest.buttons["face-proof-next"], in: largest)
+        capture(largest, "card-faces--largest-text-bottom")
+        largest.buttons["face-proof-next"].tap()
+        XCTAssertTrue(largest.staticTexts["face-name-3"].exists)
+        largest.terminate()
+        let largeSizes = app(extra: ["--test-card-sizes", "--test-largest-text"])
+        scrollTo(largeSizes.staticTexts["face-proof-title"], in: largeSizes)
+        capture(largeSizes, "card-sizes--largest-text")
+        for width in [214, 120, 84, 36] {
+            scrollTo(largeSizes.descendants(matching: .any)["face-size-\(width)"], in: largeSizes)
+            capture(largeSizes, "card-sizes--largest-text-width-\(width)")
+        }
+        scrollTo(largeSizes.buttons["face-proof-next"], in: largeSizes)
+        capture(largeSizes, "card-sizes--largest-text-bottom")
+        largeSizes.buttons["face-proof-next"].tap()
+        XCTAssertTrue(largeSizes.staticTexts["Ten of Wands"].exists)
+
     }
 
     func testDrawRevealTodayAndDesignEvidence() throws {

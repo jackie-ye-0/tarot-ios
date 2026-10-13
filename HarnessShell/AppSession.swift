@@ -17,6 +17,8 @@ struct LaunchConfiguration {
     var testControls = false
     var revisedContent = false
     var earlierSnapshot = false
+    var cardFaceProof = false
+    var cardSizeProof = false
 
     static func current() -> LaunchConfiguration {
         var result = LaunchConfiguration()
@@ -41,6 +43,8 @@ struct LaunchConfiguration {
         result.testControls = arguments.contains("--test-controls")
         result.revisedContent = arguments.contains("--test-revised-content")
         result.earlierSnapshot = arguments.contains("--test-earlier-snapshot")
+        result.cardFaceProof = arguments.contains("--test-card-faces")
+        result.cardSizeProof = arguments.contains("--test-card-sizes")
         #endif
         return result
     }
