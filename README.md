@@ -72,7 +72,7 @@ No app icon, AI/provider integration, hosted CI, device signing or App Store del
 
 ## Debug test configuration
 
-Only Debug builds, with `--test-mode`, read these launch arguments:
+Only Debug builds, with `--test-mode`, read these launch arguments. This mode also exposes the scroll layout’s actual safe-area viewport as accessibility test metadata; ordinary launches retain their normal accessibility values:
 
 - `--test-date <ISO-8601 instant>` and `--test-time-zone <IANA zone>` fix the clock and date key.
 - `--test-seed <string>` supplies the seed when the store has no installation identity.

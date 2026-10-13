@@ -363,4 +363,17 @@ final class ReadingEngineTests: XCTestCase {
         XCTAssertNil(old.meaning.questionPositions)
     }
 
+    func testQuestionEditsDismissReturnCollapsePastedBreaksAndThenLimit() {
+        XCTAssertEqual(QuestionEdit.applying("Where can I grow?\n", to: "Where can I grow?"),
+                       QuestionEdit(text: "Where can I grow?", dismissKeyboard: true))
+        XCTAssertEqual(QuestionEdit.applying("Where\n can I grow?", to: "Where can I grow?"),
+                       QuestionEdit(text: "Where can I grow?", dismissKeyboard: true))
+        XCTAssertEqual(QuestionEdit.applying("First\r\n\r\nsecond\nthird", to: ""),
+                       QuestionEdit(text: "First second third", dismissKeyboard: false))
+        XCTAssertEqual(QuestionEdit.applying("  A question?  ", to: ""),
+                       QuestionEdit(text: "  A question?  ", dismissKeyboard: false))
+        XCTAssertEqual(QuestionEdit.applying("123\n\n\n4567", to: "", characterLimit: 7),
+                       QuestionEdit(text: "123 456", dismissKeyboard: false))
+    }
+
 }

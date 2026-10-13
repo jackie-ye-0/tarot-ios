@@ -42,7 +42,6 @@ private func measuredContrast(_ image: CGImage) -> (ratio: Double, background: D
     let text = abs(dark - background) >= abs(light - background) ? dark : light
     return ((max(background, text) + 0.05) / (min(background, text) + 0.05), background, text)
 }
-
 final class HarnessShellUITests: XCTestCase {
     override func setUpWithError() throws { continueAfterFailure = false }
 
@@ -322,7 +321,14 @@ final class HarnessShellUITests: XCTestCase {
         XCTAssertTrue(element.exists || element.waitForExistence(timeout: 5), file: file, line: line)
         for _ in 0..<10 {
             let frame = element.frame
-            let viewport = visibleFrame(in: app, abovePinnedFooter: abovePinnedFooter)
+            let viewport = scrollViewport(in: app)
+            let footer = app.otherElements["screen-footer"]
+            let isFooterElement = !element.identifier.isEmpty &&
+                footer.descendants(matching: .any).matching(identifier: element.identifier).firstMatch.exists
+            if footer.exists && isFooterElement && footer.frame.minY >= viewport.maxY - 0.5 && footer.frame.contains(frame) {
+                assertVisible(element, in: app, file: file, line: line)
+                return
+            }
             if !frame.isEmpty && viewport.contains(frame) { break }
             let delta = frame.maxY > viewport.maxY
                 ? min(viewport.height / 2, frame.maxY - viewport.maxY + 24)
@@ -332,7 +338,8 @@ final class HarnessShellUITests: XCTestCase {
             let end = origin.withOffset(CGVector(dx: viewport.midX, dy: viewport.midY - delta / 2))
             start.press(forDuration: 0.05, thenDragTo: end)
         }
-        assertVisible(element, in: app, abovePinnedFooter: abovePinnedFooter, file: file, line: line)
+        XCTAssertTrue(scrollViewport(in: app).contains(element.frame),
+                      "\(element.identifier) must be fully inside its scroll viewport", file: file, line: line)
     }
 
     private func reveal(_ app: XCUIApplication, position: Int = 3) {
@@ -1041,9 +1048,9 @@ final class HarnessShellUITests: XCTestCase {
             XCTAssertFalse(app.staticTexts[identifier].label.isEmpty)
         }
         scrollTo(app.staticTexts["reading-action"], in: app)
-        capture(app, "09-reading--action")
+        try auditAndCapture(app, "09-reading--action", expecting: app.staticTexts["reading-action"])
         scrollTo(app.staticTexts["reading-outcome"], in: app)
-        capture(app, "09-reading--outcome")
+        try auditAndCapture(app, "09-reading--outcome", expecting: app.staticTexts["reading-outcome"])
         scrollTo(app.staticTexts["reflection-question"], in: app)
         XCTAssertTrue(app.staticTexts["reflection-question"].label.hasSuffix("?"))
         try auditAndCapture(app, "09-reading--bottom", expecting: app.staticTexts["reflection-question"], app.buttons["reading-done"])
@@ -1121,12 +1128,20 @@ final class HarnessShellUITests: XCTestCase {
         app.buttons["submit-question"].tap()
         scrollTo(app.staticTexts["spread-question"], in: app)
         capture(app, "08-three-card-pick--largest-text")
+        for position in ["situation", "action", "outcome"] {
+            scrollTo(app.descendants(matching: .any)["spread-slot-\(position)"].firstMatch, in: app)
+            capture(app, "08-three-card-pick--largest-text-\(position)")
+        }
         scrollTo(app.buttons["draw-card-3"], in: app)
         capture(app, "08-three-card-pick--largest-text-bottom")
         chooseSpread(app, largest: true)
         capture(app, "08-three-card-pick-complete--largest-text-bottom")
         scrollTo(app.staticTexts["spread-question"], in: app)
         capture(app, "08-three-card-pick-complete--largest-text")
+        for position in ["situation", "action", "outcome"] {
+            scrollTo(app.descendants(matching: .any)["spread-slot-\(position)"].firstMatch, in: app)
+            capture(app, "08-three-card-pick-complete--largest-text-\(position)")
+        }
         scrollTo(app.buttons["read-spread"], in: app)
         app.buttons["read-spread"].tap()
         scrollTo(app.staticTexts["reading-question"], in: app)
@@ -1169,6 +1184,7 @@ final class HarnessShellUITests: XCTestCase {
             XCTAssertTrue(app.keyboards.buttons["Done"].exists)
             app.keyboards.buttons["Done"].tap()
             XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
+            XCTAssertEqual(field.value as? String, "Where can I grow?")
             for index in 0..<3 { scrollTo(app.buttons["suggestion-\(index)"], in: app) }
             scrollTo(app.buttons["submit-question"], in: app)
             XCTAssertTrue(app.buttons["submit-question"].isEnabled)
@@ -1177,6 +1193,32 @@ final class HarnessShellUITests: XCTestCase {
             XCTAssertTrue(app.staticTexts["spread-question"].waitForExistence(timeout: 5))
             XCTAssertEqual(app.staticTexts["spread-question"].label, "“Where can I grow?”")
             app.terminate()
+        }
+    }
+
+
+    func testContrastMeasurementSelfChecks() {
+        func synthetic(background: UInt8, text: UInt8) -> CGImage {
+            var pixels: [UInt8] = []
+            for _ in 0..<40 {
+                for x in 0..<100 {
+                    let grey = x < 70 ? background : text
+                    pixels += [grey, grey, grey, 255]
+                }
+            }
+            let provider = CGDataProvider(data: Data(pixels) as CFData)!
+            return CGImage(width: 100, height: 40, bitsPerComponent: 8, bitsPerPixel: 32,
+                           bytesPerRow: 400, space: CGColorSpace(name: CGColorSpace.sRGB)!,
+                           bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.last.rawValue),
+                           provider: provider, decode: nil, shouldInterpolate: false, intent: .defaultIntent)!
+        }
+        for (background, text, expected) in [(UInt8(255), UInt8(67), 10.0),
+                                               (UInt8(67), UInt8(255), 10.0),
+                                               (UInt8(255), UInt8(149), 3.0)] {
+            let measured = measuredContrast(synthetic(background: background, text: text))
+            XCTAssertNotNil(measured)
+            XCTAssertEqual(measured?.ratio ?? 0, expected, accuracy: 0.25)
+            if expected == 3 { XCTAssertLessThan(measured?.ratio ?? .infinity, 4.5) }
         }
     }
 

@@ -1,6 +1,37 @@
 import CryptoKit
 import Foundation
 
+/// A question stays one paragraph; a lone inserted Return finishes editing.
+struct QuestionEdit: Equatable {
+    let text: String
+    let dismissKeyboard: Bool
+
+    static func applying(_ proposed: String, to previous: String, characterLimit: Int? = nil) -> QuestionEdit {
+        let old = Array(previous)
+        let new = Array(proposed)
+        var prefix = 0
+        while prefix < min(old.count, new.count), old[prefix] == new[prefix] { prefix += 1 }
+        var suffix = 0
+        while suffix < min(old.count, new.count) - prefix,
+              old[old.count - suffix - 1] == new[new.count - suffix - 1] { suffix += 1 }
+        let inserted = new[prefix..<(new.count - suffix)]
+        let isReturn = inserted.count == 1 && inserted.first?.isNewline == true
+        var text = ""
+        var inBreak = false
+        for character in (isReturn ? previous : proposed) {
+            if character.isNewline {
+                if !inBreak { text.append(" ") }
+                inBreak = true
+            } else {
+                text.append(character)
+                inBreak = false
+            }
+        }
+        if let characterLimit { text = String(text.prefix(max(0, characterLimit))) }
+        return QuestionEdit(text: text, dismissKeyboard: isReturn)
+    }
+}
+
 enum ReadingArea: String, Codable, CaseIterable, Identifiable {
     case career, relationship, social
     var id: String { rawValue }

@@ -3,6 +3,7 @@ import Observation
 import SwiftData
 
 struct LaunchConfiguration {
+    var exposesTestViewport = false
     var fixedDate: Date?
     var timeZone: TimeZone?
     var seed: String?
@@ -28,6 +29,7 @@ struct LaunchConfiguration {
         let arguments = ProcessInfo.processInfo.arguments
         guard arguments.contains("--test-mode") else { return result }
         result.testMode = true
+        result.exposesTestViewport = true
         func value(_ key: String) -> String? {
             guard let index = arguments.firstIndex(of: key), index + 1 < arguments.count else { return nil }
             return arguments[index + 1]

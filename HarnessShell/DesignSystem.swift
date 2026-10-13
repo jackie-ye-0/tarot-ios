@@ -287,6 +287,29 @@ struct ActionPressStyle: ButtonStyle {
     }
 }
 
+private struct TestViewportEnabledKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+extension EnvironmentValues {
+    var testViewportEnabled: Bool {
+        get { self[TestViewportEnabledKey.self] }
+        set { self[TestViewportEnabledKey.self] = newValue }
+    }
+}
+
+// Only Debug test launches expose geometry; normal accessibility values are unchanged.
+private struct TestViewportValue: ViewModifier {
+    let frame: CGRect
+    @Environment(\.testViewportEnabled) private var enabled
+
+    @ViewBuilder func body(content: Content) -> some View {
+        if enabled {
+            content.accessibilityValue("test-viewport:\(frame.minX),\(frame.minY),\(frame.width),\(frame.height)")
+        } else { content }
+    }
+}
+
 /// Standard-size actions stay pinned; accessibility-size actions follow the scroll content.
 struct ReadingScreenLayout<Content: View, Footer: View>: View {
     var night = false
@@ -313,6 +336,7 @@ struct ReadingScreenLayout<Content: View, Footer: View>: View {
             }
             .accessibilityIdentifier("screen-content")
             .clipped()
+            .modifier(TestViewportValue(frame: geometry.frame(in: .global)))
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if !textSize.isAccessibilitySize { actions }
@@ -1154,7 +1178,11 @@ struct QuestionField: View {
     @FocusState private var focused: Bool
 
     var body: some View {
-        TextField("Your question", text: $text,
+        TextField("Your question", text: Binding(get: { text }, set: { proposed in
+            let edit = QuestionEdit.applying(proposed, to: text)
+            text = edit.text
+            if edit.dismissKeyboard { focused = false }
+        }),
                   prompt: Text("Type your question...").foregroundStyle(Design.Palette.placeholder), axis: .vertical)
             .typeRole(.body)
             .foregroundStyle(Design.Palette.ink)
@@ -1162,7 +1190,6 @@ struct QuestionField: View {
             .lineLimit(4...6)
             .focused($focused)
             .submitLabel(.done)
-            .onSubmit { focused = false }
             .padding(Design.Space.group)
             .frame(minHeight: 132, alignment: .topLeading)
             .background(Design.Palette.surface, in: RoundedRectangle(cornerRadius: 20))
