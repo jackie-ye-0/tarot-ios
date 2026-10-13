@@ -1,6 +1,6 @@
 # Ask foundation (#13)
 
-Scope: the first complete Today → Ask → composer → three-card pick → reading path. The full local check and author image comparison passed on 14 October 2026. The required independent comparison is pending.
+Scope: the first complete Today → Ask → composer → three-card pick → reading path. The independent image comparison is complete and its layout/capture corrections are implemented. The latest full check on 14 October 2026 passed 25/26 iOS tests and is blocked by a native contrast failure on a composer suggestion button; it is not a verification pass.
 
 ## Behaviour and coverage
 
@@ -15,7 +15,7 @@ Scope: the first complete Today → Ask → composer → three-card pick → rea
 
 ## Scope differences from the references
 
-The author compared the final captures with all ten applicable reference states. These differences are accepted for the reasons below, subject to the independent comparison. They are not exceptions to accessibility or action reachability. The original artwork, grain, daily wording and native rendering differences recorded in [foundation verification](foundation-verification.md) remain applicable to Draw, Reveal and the basic Today.
+The author compared the final captures with all ten applicable reference states. These differences are accepted for the reasons below, including the independent findings recorded later in this report. They are not exceptions to accessibility or action reachability. The original artwork, grain, daily wording and native rendering differences recorded in [foundation verification](foundation-verification.md) remain applicable to Draw, Reveal and the basic Today.
 
 | Screen | Difference and reason |
 | --- | --- |
@@ -24,7 +24,7 @@ The author compared the final captures with all ten applicable reference states.
 | Today and Ask tabs | Two tabs rather than three, explicitly required by #13. History joins in #19. Icons use the platform symbols within the manifest's selected-pill and labelled-tab treatment. The selected pill uses ink fill and a surface-coloured icon after the native accessibility audit rejected the reference tint, including with an ink outline. The label remains ink on surface. |
 | Ask | The context panel, recent reading and relationship-status prompt belong to #14. The named-person entry belongs to #18. The remaining content keeps the manifest's hierarchy and leaves open ground below the suggestions. Suggestions are actual questions, as required by #13 and the manifest, unlike the reference's topic phrases. |
 | Composer, empty and filled | Character count/limit and the miniature empty-slot preview belong to #14. The explanatory three-card sentence remains above the primary action. The native keyboard Done key dismisses it; no accessory toolbar is added. The selector reserves a 44-point Back target, and the title wraps after “ask” rather than “to” at default size. Native font metrics, safe-area placement and the manifest’s section spacing are retained instead of forced line breaks or compressed type. |
-| Three-card pick | Static reuse of the existing fan gives a wider, deeper spread than the mock-up, retaining the established card-back drawing and five separate tap lanes. The progress label centres in the space beside the 44-point Back control; the ritual disc is larger than the mock-up, using the foundation’s 1.345-width proportion in the shared screen ground and staying in place across both states. Shuffle, pulse and restoration of unfinished picks belong to #15. A quiet instruction replaces the absent shuffle action. Empty slots have an explicit night-ground fill so their gold numerals retain contrast over the disc. The cards show the injected starter draw, rather than the reference's sample spread. |
+| Three-card pick | The compact fan retains the established card-back drawing with narrower visual offsets and angles after review, while preserving five separate tap lanes. The progress label is centred on the screen independently of the 44-point Back control; the ritual disc is larger than the mock-up, using the foundation’s 1.345-width proportion in the shared screen ground and staying in place across both states. Shuffle, pulse and restoration of unfinished picks belong to #15. A quiet instruction replaces the absent shuffle action. Empty slots have an explicit night-ground fill so their gold numerals retain contrast over the disc. The cards show the injected starter draw, rather than the reference's sample spread. |
 | Completed pick | The same six-card starter art and original names replace the reference examples. Filled cards use the required gold outline and say “Upright” as well as “Reversed”, adding a line to upright cards so orientation is always explicit. Distinct full-library faces are #12. |
 | Reading | Original starter position meanings and the area lens replace the sample reading. Cards retain the starter faces and explicit Upright/Reversed labels described above. Area-coloured section headings use darker partners (5.7–5.9:1 on plain ground) after the native audit rejected the former near-threshold relationship colour over grain. The saved label says “Saved on this phone” until History exists (#19). Feedback and More belong to #16; Share belongs to #23. Done remains the only primary action and is pinned at standard size, following the manifest; it becomes inline at accessibility sizes. The small decorative area dot is omitted: the area is written in the saved label and repeated by the section-heading colour. |
 | All touched screens | Native status bar and safe-area placement; bundled native font rendering and original deterministic grain can differ slightly from web/JPEG rendering. Larger text wraps and scrolls instead of being reduced to match the reference. |
@@ -41,19 +41,19 @@ Three bounded reading-only audit runs on the assigned simulator (`.harness/ask-r
 
 The shared helper uses the [WCAG sRGB relative-luminance formula](https://www.w3.org/TR/WCAG22/#dfn-relative-luminance), estimates dominant background luminance, and selects the 1% luminance tail farthest from it for text. Synthetic near-10:1 pairs measured 9.894 in both directions; the near-3:1 pair measured 2.995 and remained below 4.5. These self-checks also run in the UI-test target. Alpha-dependent images cannot establish a background and are rejected.
 
-Every audit category stays enabled. Fixtures use the existing Debug Reduce Motion switch and wait for real state/geometry conditions, with no fixed sleep. The Debug-only viewport value comes from the actual scroll layout after safe-area/pinned-action insets. A contrast issue can be dismissed only when fully inside that viewport and its own image measures at least 4.5:1, with identifier, label, image and ratio kept in evidence. No identifier allow-list is used. Off-screen contrast issues are deferred only if the same element is audited fully visible at another stop; unresolved deferrals fail the test. No other audit category is dismissed. The final run’s per-element dispositions are listed below.
+Every audit category stays enabled. Fixtures use the existing Debug Reduce Motion switch and wait for real state/geometry conditions, with no fixed sleep. The Debug-only viewport value comes from the actual scroll layout after safe-area/pinned-action insets. A contrast issue can be dismissed only for plain static text without non-text descendants, fully inside that viewport and its own image measures at least 4.5:1, with identifier, label, image and ratio kept in evidence. No identifier allow-list is used. Off-screen contrast issues are deferred only if the same element is audited fully visible at another stop; unresolved deferrals fail the test. No other audit category is dismissed. The independent-review input run’s per-element dispositions are listed below. The stricter current guard leaves the new button failure unsuppressed.
 
-## Final evidence and independent comparison
+## Independent-review input evidence
 
-`lockf /tmp/tarot-ios-harness.lock ./scripts/harness check --device B8FDA44A-52B0-45F2-9FFE-1E3381435CAC` passed on clean code/test commit `5494309` in `.harness/runs/20261013T180322.383990Z-check-492295a2/`. It ran **32 Python command tests, the design-role guard, and 26 iOS tests** (13 engine/font and 13 UI), with zero failures, skips, expected failures or runtime warnings. Toolchain: Xcode 27.0 (27A266a), iPhone 17e Tarot 1, iOS 26.5. This report-only update does not change the tested app or tests.
+`lockf /tmp/tarot-ios-harness.lock ./scripts/harness check --device B8FDA44A-52B0-45F2-9FFE-1E3381435CAC` passed on clean code/test commit `5494309` in `.harness/runs/20261013T180322.383990Z-check-492295a2/`. It ran **32 Python command tests, the design-role guard, and 26 iOS tests** (13 engine/font and 13 UI), with zero failures, skips, expected failures or runtime warnings. Toolchain: Xcode 27.0 (27A266a), iPhone 17e Tarot 1, iOS 26.5. This is the last complete pre-review pass, not a pass for the subsequent review corrections.
 
 `./scripts/harness evidence` was inspected, and the generated comparison page was opened with chrome-devtools-axi. All **73 exported images** were inspected: 65 full-screen captures and eight contrast crops. The ten main reference states are Draw empty/chosen, Reveal, Today, Ask, composer empty/filled, pick empty/complete and reading. Every touched screen has largest-text captures; Draw, Reveal and both pick states have Reduce Motion captures. Storage-open failure also has standard and largest-text evidence. Missing main references are Welcome, Today’s reminder state, About someone, History and Settings, all outside #13; strict all-screen coverage was not requested.
 
 The author inspection verified the new tabs/entry, all three area labels, complete suggested questions, empty/enabled composer actions, ordered labelled slots, positions/orientations, position passages, lens, reflection and Done. Largest-text captures overlap across long text, include each spread slot, and show reachable actions. The composer additionally captures its full guidance, empty/filled field, complete suggestion list, keyboard and post-dismissal action. A native off-screen text field can lack usable geometry: the helper now rejects empty/invalid frames, approaches that field through surrounding text, and checks its visible frame before capture. This closes the earlier false-passing footer capture. The focused field is also checked and shown above the keyboard at both text sizes.
 
-### Final measured contrast dismissals
+### Measured contrast dismissals in the independent-review input
 
-These are **all eight** built-in contrast dismissals in the final run. Each issue was contrast-only, fully inside the true viewport and measured from its own kept image. All other screens’ audits passed without a measured dismissal. All categories remained enabled. Ratios below are rounded to six decimal places; kept `accessibility-audit-*` attachments and the packet’s `audit-records.json` contain full precision, frames, viewport, labels and luminances.
+These are **all eight** built-in contrast dismissals in that pre-review input run. Each issue was contrast-only, fully inside the true viewport and measured from its own kept image. All other screens’ audits passed without a measured dismissal. All categories remained enabled. Ratios below are rounded to six decimal places; kept `accessibility-audit-*` attachments and the packet’s `audit-records.json` contain full precision, frames, viewport, labels and luminances.
 
 | Audit capture | Element identifier | Measured ratio |
 | --- | --- | --- |
@@ -68,9 +68,47 @@ These are **all eight** built-in contrast dismissals in the final run. Each issu
 
 Outcome was deferred at the top and Action audit stops, then audited fully visible at the Outcome stop. The reflection was deferred at the Outcome stop and audited fully visible at the bottom stop. An off-screen “Action” card-position label had already been audited fully visible at the top. No unresolved deferral remained, and no other audit category was dismissed. The synthetic near-3:1 control still failed the 4.5 floor in the measurement self-check.
 
-### Independent comparison
+## Independent comparison follow-up
 
-Pending Firstmate’s fresh-session reviewer. The final packet contains the committed manifest, references, built screenshots, comparison page, run summary and kept audit evidence. The reviewer receives only the images and manifest, with a handoff naming the touched states. Findings and each disposition will be recorded here before the first completion handoff, and in the eventual pull request.
+The fresh-session reviewer opened all 65 full-screen images, eight contrast crops and ten matching references without app source, tests or author findings. The verdict was **“pass after the listed must-fix items”**. This was one independent round; the author then implemented the corrections below. No second independent verdict is claimed.
+
+| Review IDs | Disposition |
+| --- | --- |
+| C4, CE4 | Fixed at the shared footer: dawn actions/helper use the same 20-point guide as content, including empty, enabled, largest-text and keyboard-dismissed composer states. |
+| R6 | Fixed through the same dawn-footer change. Done keeps standard-size pinning and largest-text inline placement. |
+| S2 | Fixed in shared content alignment and footer spacing: short error copy aligns to the leading 20-point guide instead of centring its intrinsic width; retry shares that guide at both sizes. |
+| CE3 | Added a true filled-composer navigation-top capture, guidance stop, separate field capture and complete-suggestions stop; retained footer/keyboard evidence. |
+| PC5 | Completed-pick largest-text capture now returns to the navigation origin and explicitly checks Back, progress and question visibility, retaining each slot and footer. |
+| CE2 | Added a clear 12-point strip above dawn footer contents so scrolled suggestions cannot touch the helper, including with the keyboard present. A suggestion can meet the scroll boundary while editing; it is fully visible in the suggestions and keyboard-dismissed captures, and the focused field and primary remain above the keyboard. |
+| P1, PC3 | Progress centres across the full screen independently of the 44-point Back target, in both empty and completed picks. |
+| P2 | Compact fan horizontal steps changed from 20% to 16% of available width, per-step angles from 8° to 6° and vertical steps from 18 to 12 points. Five independent tap lanes retain their width and height. |
+
+All other reviewer findings were acceptable. Their screen-by-screen reasons are retained below, including the smaller native rendering differences:
+
+- **D1–D5, DC1–DC4:** fixture weekday; deferred History/shuffle; foundation disc/fan/art geometry; selected card in front for clear selection; native type, texture and footer placement. These retain the approved #7 foundation and readable single-primary structure.
+- **RV1–RV5:** deferred Share; small native card aspect/art/glow and text-metric differences; explicit rotated Reversed variant and changed keywords. The common card shape, wording roles, orientation and disclaimer remain present.
+- **T1–T6:** fixture date; deferred Today extras/Settings/History; original reflective reading copy; “Ask the cards” wording; the required two labelled tabs and audited dark selected pill; thumbnail/native wrapping differences. The reference contains later-ticket content.
+- **A1–A4:** #14 context/status/recent-reading and #18 named-person content deferred; suggestions changed to actual questions; two audited tabs; native selector/chip spacing and arrow weight. The approved hierarchy is preserved.
+- **C1–C3, CE1, CE5:** #14 count/limit/mini-preview deferred; native Back and font wrapping; field and chip spacing; disabled/enabled labels; alternate typed keyboard question. Full content remains reachable without compressed type.
+- **P3–P6, PC1–PC2, PC4, PC6:** 24-point night guide; opaque night slot fill; deferred #15 shuffle/pulse; stable foundation disc; injected six-card art/wording rather than reference examples; explicit Upright/Reversed captions; slightly larger filled cards and shifted vertical spacing; settled Reduce Motion states. The compact fan/progress corrections above supersede the older fan/alignment acceptance.
+- **R1–R5, R7:** deferred Share/More/feedback; “Saved on this phone” pending History; omitted decorative area dot with area still named; original six-card position/lens/reflection text; explicit orientation and audited darker area headings; pinned/inline Done per manifest. The Action audit screenshot repeats the already-visible top passage; other captures cover the remainder.
+- **S1, S3:** manifest-compliant error copy and retry; intentionally open middle at standard text and inline retry at largest text. S2's old inset difference is fixed.
+
+The follow-up also limits measured contrast overrides to plain static text with no non-text descendants. Grouped/mixed elements retain native failures; no 7:1 branch exists in the test helper, whose only acceptance floor is 4.5:1.
+
+### Draw test synchronisation follow-up
+
+Two post-review full checks each passed 25/26 iOS tests. The first missed the first daily-card tap; the unchanged five-position test then passed in a focused run. The second passed that test but missed the tap following the Draw accessibility audit. Recorded frames show the audit temporarily enlarging text and restoring normal geometry near that interaction. This supports a settling issue after the native audit, but does not establish the cause of the earlier launch-time miss.
+
+Commit `b0d0d40` uses the existing unchanged-frame predicate immediately before those Draw interactions. There is still one tap, with no fixed delay or retry. Both affected tests passed in two focused iterations (four successful executions), with no skips or runtime warnings. App layout and content were unchanged by this test-only follow-up. The final full-run outcome is recorded separately.
+
+## Latest full-check blocker
+
+The full locked check on code/test commit `b0d0d40`, `.harness/runs/20261013T194910.479224Z-check-c4718bc9/`, passed 32 command tests, the design-role guard and **25/26 iOS tests**, with no skips or runtime warnings. Both daily Draw tests passed. The sole failure is the filled composer's native contrast audit on the `suggestion-0` Button (“Where is this going?”). The static-text-only guard leaves it unsuppressed, as required.
+
+The native issue's app and element screenshots were inspected. Its ink text/surface pair measures 11.369905:1 using the same helper offline, but a control image does not qualify for the static-text override and the measurement does not establish the border's contrast. No control exception or colour workaround has been added. This is an unresolved native audit failure requiring guidance, not an accessibility pass.
+
+All 78 images from the first post-review run on `2977339` were inspected, covering every corrected layout and capture state. Its complete Ask audit passed; that run's separate daily-tap failure is recorded above. The current app UI is unchanged from that run; `b0d0d40` only adds test synchronisation. A passing full check and refreshed final evidence remain necessary before completion. The original independent-review input packet is preserved separately from this follow-up evidence.
 
 ## Remaining release limits
 
