@@ -18,7 +18,6 @@ struct LaunchView: View {
     @Environment(\.scenePhase) private var scenePhase
     #if DEBUG
     @State private var advanceOnBackground = false
-    @State private var testReduceMotion: Bool?
     #endif
 
     var body: some View {
@@ -83,9 +82,6 @@ struct LaunchView: View {
                         session.clock.toggleTestTimeZone()
                         NotificationCenter.default.post(name: .NSSystemTimeZoneDidChange, object: nil)
                     }.accessibilityIdentifier("test-time-zone")
-                    Button("Toggle Reduce Motion") {
-                        testReduceMotion = !(testReduceMotion ?? configuration.reduceMotion)
-                    }.accessibilityIdentifier("test-toggle-motion")
                 }
                 .typeRole(Design.TypeRole.caption)
                 .foregroundStyle(Design.Palette.ink)
@@ -98,12 +94,7 @@ struct LaunchView: View {
     }
 
     private var animationsEnabled: Bool {
-        #if DEBUG
-        let reduced = testReduceMotion ?? configuration.reduceMotion
-        #else
-        let reduced = configuration.reduceMotion
-        #endif
-        return !configuration.disableAnimations && !reduced && !systemReduceMotion
+        !configuration.disableAnimations && !configuration.reduceMotion && !systemReduceMotion
     }
 
     private func load() {

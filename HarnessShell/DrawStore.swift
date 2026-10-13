@@ -25,6 +25,11 @@ final class StoredDailyDraw {
 
 @MainActor
 final class DrawStore {
+    enum StoreError: Error {
+        case read(any Error)
+        case save(any Error)
+    }
+
     private let container: ModelContainer
     private var context: ModelContext { container.mainContext }
 
@@ -45,21 +50,28 @@ final class DrawStore {
     }
 
     func draw(for dateKey: String) throws -> DailyDraw? {
-        let request = FetchDescriptor<StoredDailyDraw>(predicate: #Predicate { $0.dateKey == dateKey })
-        return try context.fetch(request).first.map { try JSONDecoder().decode(DailyDraw.self, from: $0.snapshot) }
+        do {
+            let request = FetchDescriptor<StoredDailyDraw>(predicate: #Predicate { $0.dateKey == dateKey })
+            return try context.fetch(request).first.map { try JSONDecoder().decode(DailyDraw.self, from: $0.snapshot) }
+        } catch { throw StoreError.read(error) }
     }
 
     func save(_ draw: DailyDraw) throws -> DailyDraw {
         if let saved = try self.draw(for: draw.dateKey) { return saved }
-        context.insert(try StoredDailyDraw(draw))
-        do { try context.save() } catch { context.rollback(); throw error }
-        return draw
+        do {
+            context.insert(try StoredDailyDraw(draw))
+            try context.save()
+            return draw
+        } catch {
+            context.rollback()
+            throw StoreError.save(error)
+        }
     }
 
-    func draws(from start: String, before end: String) throws -> [DailyDraw] {
-        let request = FetchDescriptor<StoredDailyDraw>(predicate: #Predicate {
-            $0.dateKey >= start && $0.dateKey < end
-        })
-        return try context.fetch(request).map { try JSONDecoder().decode(DailyDraw.self, from: $0.snapshot) }
+    func draws(from start: String) throws -> [DailyDraw] {
+        do {
+            let request = FetchDescriptor<StoredDailyDraw>(predicate: #Predicate { $0.dateKey >= start })
+            return try context.fetch(request).map { try JSONDecoder().decode(DailyDraw.self, from: $0.snapshot) }
+        } catch { throw StoreError.read(error) }
     }
 }

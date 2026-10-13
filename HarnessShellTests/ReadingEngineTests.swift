@@ -69,18 +69,37 @@ final class ReadingEngineTests: XCTestCase {
         DailyDraw(dateKey: date, position: 1, orientation: .upright, card: library.cards[card], contentVersion: library.version)
     }
 
-    func testRepeatWindowIncludesFourteenthDayButNotFifteenthTodayOrFuture() throws {
+    func testRepeatWindowIncludesFourteenthDayTodayAndFutureButNotFifteenthDay() throws {
         let library = try syntheticDeck()
         let day = "2026-10-11"
         XCTAssertEqual(ReadingEngine.repeatWindowStart(for: day), "2026-09-27")
         XCTAssertEqual(ReadingEngine.repeatWindowStart(for: "2028-03-01"), "2028-02-16")
         XCTAssertEqual(ReadingEngine.repeatWindowStart(for: "2027-01-01"), "2026-12-18")
         for (date, expected) in [("2026-09-26", 49), ("2026-09-27", 4), ("2026-10-10", 4),
-                                  ("2026-10-11", 49), ("2026-10-12", 49)] {
+                                  ("2026-10-11", 4), ("2026-10-12", 4)] {
             let draw = ReadingEngine.dailyDraw(seed: "repeat-window", dateKey: day, position: 1,
                                               library: library, previousDraws: [past(49, on: date, in: library)])
             XCTAssertEqual(draw.card.id, "card-\(expected)", date)
         }
+    }
+
+    func testWestwardTravelDoesNotRepeatTheLaterDateCard() throws {
+        let library = try CardLibrary.load()
+        let instant = try XCTUnwrap(ISO8601DateFormatter().date(from: "2026-10-11T00:00:00Z"))
+        let sydney = try XCTUnwrap(TimeZone(identifier: "Australia/Sydney"))
+        let honolulu = try XCTUnwrap(TimeZone(identifier: "Pacific/Honolulu"))
+        let sydneyKey = ReadingEngine.dateKey(for: instant, timeZone: sydney)
+        let honoluluKey = ReadingEngine.dateKey(for: instant, timeZone: honolulu)
+        let laterDraw = ReadingEngine.dailyDraw(seed: "travel-2", dateKey: sydneyKey, position: 2, library: library)
+        let unfilteredEarlierDraw = ReadingEngine.dailyDraw(seed: "travel-2", dateKey: honoluluKey,
+                                                           position: 5, library: library)
+        let earlierDraw = ReadingEngine.dailyDraw(seed: "travel-2", dateKey: honoluluKey, position: 5,
+                                                  library: library, previousDraws: [laterDraw])
+
+        XCTAssertEqual(sydneyKey, "2026-10-11")
+        XCTAssertEqual(honoluluKey, "2026-10-10")
+        XCTAssertEqual(unfilteredEarlierDraw.card.id, laterDraw.card.id)
+        XCTAssertNotEqual(earlierDraw.card.id, laterDraw.card.id)
     }
 
     func testSaltedRetriesStopAtFirstFreshCardOrAcceptThirdRetry() throws {

@@ -82,7 +82,7 @@ Only Debug builds, with `--test-mode`, read these launch arguments:
 - `--test-disable-animations` independently switches animations off for deterministic UI checks. Motion-specific tests leave it off.
 - `--test-hold-shuffle` holds the first wash phase for a deterministic interruption test. Tapping any card still resolves it immediately; Reduce Motion and animation-off bypass the hold entirely. This avoids racing XCTest’s automatic animation-idle wait.
 - `--test-storage-open-failure` makes the first store-opening attempt fail so UI tests can verify the error and retry path.
-- `--test-controls` adds a Debug-only test menu for advancing the configured clock to the next local midnight, arming a date advance while backgrounded, switching Sydney/Honolulu, and toggling the injected Reduce Motion preference. Clock changes emit the same notifications the app observes in production; background advancement waits for the real foreground lifecycle to refresh. Ordinary design captures omit this menu. No simulator setting is changed.
+- `--test-controls` adds a Debug-only test menu for advancing the configured clock to the next local midnight, arming a date advance while backgrounded, and switching Sydney/Honolulu. Clock changes emit the same notifications the app observes in production; background advancement waits for the real foreground lifecycle to refresh. Ordinary design captures omit this menu. No simulator setting is changed.
 
 In Debug test mode, the Draw title and Reveal card also expose a `settled` accessibility value after SwiftUI reports that their animations have been removed. UI audits and captures wait on this value; it does not add visible test controls.
 

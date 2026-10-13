@@ -107,15 +107,21 @@ final class AppSession {
     }
 
     func turnOver(position: Int) {
+        let draw: DailyDraw
         do {
             // A tap at midnight must not carry yesterday's selection into the new day.
             guard try !updateDay() else { return }
             if let saved = try store.draw(for: dateKey) { screen = .today(saved); return }
-            let previous = try store.draws(from: ReadingEngine.repeatWindowStart(for: dateKey), before: dateKey)
-            let draw = ReadingEngine.dailyDraw(seed: seed, dateKey: dateKey, position: position,
-                                              library: library, previousDraws: previous)
-            screen = .reveal(try store.save(draw))
-        } catch { saveFailed = true }
+            let previous = try store.draws(from: ReadingEngine.repeatWindowStart(for: dateKey))
+            draw = ReadingEngine.dailyDraw(seed: seed, dateKey: dateKey, position: position,
+                                           library: library, previousDraws: previous)
+        } catch {
+            dayRefreshFailed = true
+            return
+        }
+        do { screen = .reveal(try store.save(draw)) }
+        catch DrawStore.StoreError.read(_) { dayRefreshFailed = true }
+        catch { saveFailed = true }
     }
 
     func showToday(_ draw: DailyDraw) {

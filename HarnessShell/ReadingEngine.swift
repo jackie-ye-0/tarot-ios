@@ -78,7 +78,7 @@ enum ReadingEngine {
         precondition((1...5).contains(position))
         precondition(!library.cards.isEmpty)
         let start = repeatWindowStart(for: dateKey)
-        let recentCards = Set(previousDraws.filter { $0.dateKey >= start && $0.dateKey < dateKey }.map { $0.card.id })
+        let recentCards = Set(previousDraws.filter { $0.dateKey >= start }.map { $0.card.id })
         for attempt in 0...3 {
             let draw = candidate(seed: seed, dateKey: dateKey, position: position, library: library, attempt: attempt)
             if !recentCards.contains(draw.card.id) || attempt == 3 { return draw }
