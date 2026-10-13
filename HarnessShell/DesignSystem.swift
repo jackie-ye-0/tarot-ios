@@ -1175,6 +1175,7 @@ struct QuestionEntry: View {
 
 struct QuestionField: View {
     @Binding var text: String
+    var onFocus: () -> Void = {}
     @FocusState private var focused: Bool
 
     var body: some View {
@@ -1189,6 +1190,9 @@ struct QuestionField: View {
             .tint(Design.Palette.ink)
             .lineLimit(4...6)
             .focused($focused)
+            .onChange(of: focused) { _, isFocused in
+                if isFocused { onFocus() }
+            }
             .submitLabel(.done)
             .padding(Design.Space.group)
             .frame(minHeight: 132, alignment: .topLeading)

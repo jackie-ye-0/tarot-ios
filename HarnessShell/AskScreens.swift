@@ -40,39 +40,44 @@ struct QuestionComposerScreen: View {
     @Environment(\.dynamicTypeSize) private var textSize
 
     var body: some View {
-        ReadingScreenLayout {
-            VStack(alignment: .leading, spacing: Design.Space.section) {
-                if textSize.isAccessibilitySize {
-                    back
-                    AreaSelector(selection: $session.area)
-                } else {
-                    HStack(spacing: Design.Space.small) {
+        ScrollViewReader { scroll in
+            ReadingScreenLayout {
+                VStack(alignment: .leading, spacing: Design.Space.section) {
+                    if textSize.isAccessibilitySize {
                         back
                         AreaSelector(selection: $session.area)
+                    } else {
+                        HStack(spacing: Design.Space.small) {
+                            back
+                            AreaSelector(selection: $session.area)
+                        }
                     }
+                    VStack(alignment: .leading, spacing: Design.Space.small) {
+                        Text("What would you like to ask about \(session.area.subject)?")
+                            .typeRole(Design.TypeRole.title).accessibilityIdentifier("composer-title")
+                        Text("Open questions work best. “What” and “how” more than “will”.")
+                            .typeRole(Design.TypeRole.secondary).foregroundStyle(Design.Palette.secondary)
+                    }
+                    QuestionField(text: $session.question) {
+                        scroll.scrollTo("question-field", anchor: .top)
+                    }
+                    .id("question-field")
+                    SuggestedQuestions(questions: session.suggestions) { session.question = $0 }
                 }
-                VStack(alignment: .leading, spacing: Design.Space.small) {
-                    Text("What would you like to ask about \(session.area.subject)?")
-                        .typeRole(Design.TypeRole.title).accessibilityIdentifier("composer-title")
-                    Text("Open questions work best. “What” and “how” more than “will”.")
+                .foregroundStyle(Design.Palette.ink)
+                .padding(.horizontal, Design.Space.page)
+                .padding(.top, Design.Space.related)
+                .padding(.bottom, Design.Space.section)
+            } footer: {
+                VStack(spacing: Design.Space.group) {
+                    Text("Next you'll draw three cards: one for the situation, one for an action, one for the outcome.")
                         .typeRole(Design.TypeRole.secondary).foregroundStyle(Design.Palette.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    PrimaryAction(title: session.canSubmit ? "Draw my three cards" : "Write or pick a question",
+                                  arrow: session.canSubmit, action: session.submitQuestion)
+                        .disabled(!session.canSubmit)
+                        .accessibilityIdentifier("submit-question")
                 }
-                QuestionField(text: $session.question)
-                SuggestedQuestions(questions: session.suggestions) { session.question = $0 }
-            }
-            .foregroundStyle(Design.Palette.ink)
-            .padding(.horizontal, Design.Space.page)
-            .padding(.top, Design.Space.related)
-            .padding(.bottom, Design.Space.section)
-        } footer: {
-            VStack(spacing: Design.Space.group) {
-                Text("Next you'll draw three cards: one for the situation, one for an action, one for the outcome.")
-                    .typeRole(Design.TypeRole.secondary).foregroundStyle(Design.Palette.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                PrimaryAction(title: session.canSubmit ? "Draw my three cards" : "Write or pick a question",
-                              arrow: session.canSubmit, action: session.submitQuestion)
-                    .disabled(!session.canSubmit)
-                    .accessibilityIdentifier("submit-question")
             }
         }
     }

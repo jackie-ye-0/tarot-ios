@@ -1181,6 +1181,7 @@ final class HarnessShellUITests: XCTestCase {
             XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
             field.typeText("Where can I grow?")
             waitForSettled([field, app.keyboards.firstMatch])
+            assertVisible(field, in: app)
             capture(app, largest ? "06-composer-question-entered--largest-text-keyboard" : "06-composer-question-entered--keyboard")
             XCTAssertTrue(app.keyboards.buttons["Done"].exists)
             app.keyboards.buttons["Done"].tap()
