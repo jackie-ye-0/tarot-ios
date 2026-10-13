@@ -69,7 +69,7 @@ struct QuestionComposerScreen: View {
                 .padding(.top, Design.Space.related)
                 .padding(.bottom, Design.Space.section)
             } footer: {
-                VStack(spacing: Design.Space.group) {
+                VStack(alignment: .leading, spacing: Design.Space.group) {
                     Text("Next you'll draw three cards: one for the situation, one for an action, one for the outcome.")
                         .typeRole(Design.TypeRole.secondary).foregroundStyle(Design.Palette.secondary)
                         .fixedSize(horizontal: false, vertical: true)

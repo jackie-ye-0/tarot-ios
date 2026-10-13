@@ -1,6 +1,6 @@
 # Ask foundation (#13)
 
-Scope: the first complete Today → Ask → composer → three-card pick → reading path. The independent image comparison is complete and its layout/capture corrections are implemented. The latest full check on 14 October 2026 passed 25/26 iOS tests and is blocked by a native contrast failure on a composer suggestion button; it is not a verification pass.
+Scope: the first complete Today → Ask → composer → three-card pick → reading path. The independent image comparison is complete. The latest full check on 14 October 2026 passed all 26 iOS tests on `49b2eb9`, with native control audits unsuppressed. Inspection of its 78 images found one remaining composer helper alignment detail; the one-line correction is implemented but awaits a fresh check and captures after the shared-simulator scheduling hold clears. This report does not claim that the earlier pass validates that final correction.
 
 ## Behaviour and coverage
 
@@ -41,32 +41,36 @@ Three bounded reading-only audit runs on the assigned simulator (`.harness/ask-r
 
 The shared helper uses the [WCAG sRGB relative-luminance formula](https://www.w3.org/TR/WCAG22/#dfn-relative-luminance), estimates dominant background luminance, and selects the 1% luminance tail farthest from it for text. Synthetic near-10:1 pairs measured 9.894 in both directions; the near-3:1 pair measured 2.995 and remained below 4.5. These self-checks also run in the UI-test target. Alpha-dependent images cannot establish a background and are rejected.
 
-Every audit category stays enabled. Fixtures use the existing Debug Reduce Motion switch and wait for real state/geometry conditions, with no fixed sleep. The Debug-only viewport value comes from the actual scroll layout after safe-area/pinned-action insets. A contrast issue can be dismissed only for plain static text without non-text descendants, fully inside that viewport and its own image measures at least 4.5:1, with identifier, label, image and ratio kept in evidence. No identifier allow-list is used. Off-screen contrast issues are deferred only if the same element is audited fully visible at another stop; unresolved deferrals fail the test. No other audit category is dismissed. The independent-review input run’s per-element dispositions are listed below. The stricter current guard leaves the new button failure unsuppressed.
+Every audit category stays enabled. Fixtures use the existing Debug Reduce Motion switch and wait for real state/geometry conditions, with no fixed sleep. The Debug-only viewport value comes from the actual scroll layout after safe-area/pinned-action insets. A contrast issue can be dismissed only for plain static text without non-text descendants, fully inside that viewport and its own image measures at least 4.5:1, with identifier, label, image and ratio kept in evidence. No identifier allow-list is used. Off-screen contrast issues are deferred only if the same element is audited fully visible at another stop; unresolved deferrals fail the test. No other audit category is dismissed. The latest passing run’s per-element dispositions are listed below. The stricter current guard leaves native control failures unsuppressed; the earlier button failure and its bounded frequency check are retained under Validation limits.
 
-## Independent-review input evidence
+## Latest complete verification evidence
 
-`lockf /tmp/tarot-ios-harness.lock ./scripts/harness check --device B8FDA44A-52B0-45F2-9FFE-1E3381435CAC` passed on clean code/test commit `5494309` in `.harness/runs/20261013T180322.383990Z-check-492295a2/`. It ran **32 Python command tests, the design-role guard, and 26 iOS tests** (13 engine/font and 13 UI), with zero failures, skips, expected failures or runtime warnings. Toolchain: Xcode 27.0 (27A266a), iPhone 17e Tarot 1, iOS 26.5. This is the last complete pre-review pass, not a pass for the subsequent review corrections.
+`lockf /tmp/tarot-ios-harness.lock ./scripts/harness check --device B8FDA44A-52B0-45F2-9FFE-1E3381435CAC` passed on clean commit `49b2eb97368c20274110a70d0ad1588512bf273f` in `.harness/runs/20261013T201947.958208Z-check-f9595a6b/`. It ran **32 Python command tests, the design-role guard, and 26 iOS tests** (13 engine/font and 13 UI), with zero failures, skips, expected failures or runtime warnings. Toolchain: Xcode 27.0 (27A266a), iPhone 17e Tarot 1, iOS 26.5. This pass includes the independent review's layout/capture changes and Draw test synchronisation, but precedes the final composer helper alignment correction described below.
 
-`./scripts/harness evidence` was inspected, and the generated comparison page was opened with chrome-devtools-axi. All **73 exported images** were inspected: 65 full-screen captures and eight contrast crops. The ten main reference states are Draw empty/chosen, Reveal, Today, Ask, composer empty/filled, pick empty/complete and reading. Every touched screen has largest-text captures; Draw, Reveal and both pick states have Reduce Motion captures. Storage-open failure also has standard and largest-text evidence. Missing main references are Welcome, Today’s reminder state, About someone, History and Settings, all outside #13; strict all-screen coverage was not requested.
+`./scripts/harness evidence` was inspected, and all ten matched states on the generated comparison page were opened with chrome-devtools-axi and visually compared. All **78 exported images** were inspected: 68 full-screen captures and ten contrast crops. The ten main reference states are Draw empty/chosen, Reveal, Today, Ask, composer empty/filled, pick empty/complete and reading. Every touched screen has largest-text captures; Draw, Reveal and both pick states have Reduce Motion captures. Storage-open failure also has standard and largest-text evidence. Missing main references are Welcome, Today’s reminder state, About someone, History and Settings, all outside #13; strict all-screen coverage was not requested.
 
-The author inspection verified the new tabs/entry, all three area labels, complete suggested questions, empty/enabled composer actions, ordered labelled slots, positions/orientations, position passages, lens, reflection and Done. Largest-text captures overlap across long text, include each spread slot, and show reachable actions. The composer additionally captures its full guidance, empty/filled field, complete suggestion list, keyboard and post-dismissal action. A native off-screen text field can lack usable geometry: the helper now rejects empty/invalid frames, approaches that field through surrounding text, and checks its visible frame before capture. This closes the earlier false-passing footer capture. The focused field is also checked and shown above the keyboard at both text sizes.
+The author inspection verified the new tabs/entry, all three area labels, complete suggested questions, empty/enabled composer actions, ordered labelled slots, positions/orientations, position passages, lens, reflection and Done. Largest-text captures overlap across long text, include each spread slot, and show reachable actions. Filled-composer top captures include Back, selector and title; separate stops cover the full guidance, field, all three suggestions, footer and keyboard states. Completed-pick top captures include Back, progress and the full question. The focused field is checked and shown above the keyboard at both text sizes. No content or primary action was unreachable in the inspected captures.
 
-### Measured contrast dismissals in the independent-review input
+The original independent-review input remains preserved separately: clean code/test commit `5494309`, full passing run `20261013T180322.383990Z-check-492295a2`, 73 images (65 full-screen and eight contrast crops). The independent report refers to that original packet. The newer passing packet retains its own manifest copy, references, comparison page, screenshots, logs, result bundle, audit records and the failed-run/frequency evidence. It must not be relabelled as evidence for the pending helper correction.
 
-These are **all eight** built-in contrast dismissals in that pre-review input run. Each issue was contrast-only, fully inside the true viewport and measured from its own kept image. All other screens’ audits passed without a measured dismissal. All categories remained enabled. Ratios below are rounded to six decimal places; kept `accessibility-audit-*` attachments and the packet’s `audit-records.json` contain full precision, frames, viewport, labels and luminances.
+### Measured contrast dismissals in the latest passing run
 
-| Audit capture | Element identifier | Measured ratio |
+These are **all ten** built-in contrast dismissals in run `20261013T201947.958208Z-check-f9595a6b`. Each was contrast-only, plain static text without non-text descendants, fully inside the true viewport and measured from its own kept image. All other screens’ audits passed without a measured dismissal. All categories remained enabled and all controls passed the strict native audit. Ratios below are rounded to six decimal places; kept `accessibility-audit-*` attachments and `audit-records.json` contain full precision, frames, viewport, labels and luminances.
+
+| Audit capture | Element identifier or semantic key | Measured ratio |
 | --- | --- | --- |
-| `09-reading` | `reading-action` | 9.060674:1 |
 | `09-reading` | `reading-situation` | 9.061062:1 |
-| `09-reading--action` | `reading-action` | 9.060674:1 |
+| `09-reading` | `reading-action` | 9.060674:1 |
 | `09-reading--action` | `reading-situation` | 9.061062:1 |
-| `09-reading--bottom` | `reading-lens` | 9.060849:1 |
-| `09-reading--bottom` | `reading-situation` | 9.060999:1 |
-| `09-reading--outcome` | `reading-action` | 9.062703:1 |
-| `09-reading--outcome` | `reading-situation` | 9.061240:1 |
+| `09-reading--action` | `reading-action` | 9.060674:1 |
+| `09-reading--outcome` | `reading-situation` | 9.060874:1 |
+| `09-reading--outcome` | `reading-action` | 9.062421:1 |
+| `09-reading--bottom` | `reading-situation` | 9.059955:1 |
+| `09-reading--bottom` | `label:48:Action · The Sun, reversed` | 5.226312:1 |
+| `09-reading--bottom` | `reading-action` | 9.064122:1 |
+| `09-reading--bottom` | `reading-lens` | 9.061047:1 |
 
-Outcome was deferred at the top and Action audit stops, then audited fully visible at the Outcome stop. The reflection was deferred at the Outcome stop and audited fully visible at the bottom stop. An off-screen “Action” card-position label had already been audited fully visible at the top. No unresolved deferral remained, and no other audit category was dismissed. The synthetic near-3:1 control still failed the 4.5 floor in the measurement self-check.
+Outcome was deferred at the top and Action audit stops, then audited fully visible at the Outcome stop. The lens and reflection were deferred at the Outcome stop and audited fully visible at the bottom stop. Off-screen Situation, Action and Outcome card-position labels had already been audited fully visible at the top. No unresolved deferral remained, and no other audit category was dismissed. The synthetic near-3:1 control still failed the 4.5 floor in the measurement self-check.
 
 ## Independent comparison follow-up
 
@@ -74,7 +78,7 @@ The fresh-session reviewer opened all 65 full-screen images, eight contrast crop
 
 | Review IDs | Disposition |
 | --- | --- |
-| C4, CE4 | Fixed at the shared footer: dawn actions/helper use the same 20-point guide as content, including empty, enabled, largest-text and keyboard-dismissed composer states. |
+| C4, CE4 | Shared dawn footer padding now uses the content’s 20-point guide. Final inspection found the composer helper’s intrinsic-width text still centred about six points inside that guide; its footer stack now uses leading alignment. The primary action already met the guide. This last alignment correction awaits fresh standard, largest-text and keyboard-dismissed captures. |
 | R6 | Fixed through the same dawn-footer change. Done keeps standard-size pinning and largest-text inline placement. |
 | S2 | Fixed in shared content alignment and footer spacing: short error copy aligns to the leading 20-point guide instead of centring its intrinsic width; retry shares that guide at both sizes. |
 | CE3 | Added a true filled-composer navigation-top capture, guidance stop, separate field capture and complete-suggestions stop; retained footer/keyboard evidence. |
@@ -102,13 +106,19 @@ Two post-review full checks each passed 25/26 iOS tests. The first missed the fi
 
 Commit `b0d0d40` uses the existing unchanged-frame predicate immediately before those Draw interactions. There is still one tap, with no fixed delay or retry. Both affected tests passed in two focused iterations (four successful executions), with no skips or runtime warnings. App layout and content were unchanged by this test-only follow-up. The final full-run outcome is recorded separately.
 
-## Latest full-check blocker
+## Validation limits: intermittent native control-contrast flag
 
-The full locked check on code/test commit `b0d0d40`, `.harness/runs/20261013T194910.479224Z-check-c4718bc9/`, passed 32 command tests, the design-role guard and **25/26 iOS tests**, with no skips or runtime warnings. Both daily Draw tests passed. The sole failure is the filled composer's native contrast audit on the `suggestion-0` Button (“Where is this going?”). The static-text-only guard leaves it unsuppressed, as required.
+The full locked check on code/test commit `b0d0d40`, `.harness/runs/20261013T194910.479224Z-check-c4718bc9/`, passed 32 command tests, the design-role guard and **25/26 iOS tests**, with no skips or runtime warnings. The sole failure was the filled composer's native contrast audit on the `suggestion-0` Button (“Where is this going?”). That run remains failed and its screenshots, logs and result bundle are retained. The static-text-only guard did not suppress it.
 
-The native issue's app and element screenshots were inspected. Its ink text/surface pair measures 11.369905:1 using the same helper offline, but a control image does not qualify for the static-text override and the measurement does not establish the border's contrast. No control exception or colour workaround has been added. This is an unresolved native audit failure requiring guidance, not an accessibility pass.
+The failed native element crop's text/background measurement was **11.369905:1**, diagnostic only. A control image does not qualify for the static-text override, and that measurement does not establish the border's contrast. No control exception, colour change or chip-style change was introduced.
 
-All 78 images from the first post-review run on `2977339` were inspected, covering every corrected layout and capture state. Its complete Ask audit passed; that run's separate daily-tap failure is recorded above. The current app UI is unchanged from that run; `b0d0d40` only adds test synchronisation. A passing full check and refreshed final evidence remain necessary before completion. The original independent-review input packet is preserved separately from this follow-up evidence.
+A bounded diagnostic then ran only the standard filled-composer audit five consecutive times with the app and audit policy unchanged. **All five passed: 0/5 reported the `suggestion-0` flag, and no other element identifier was flagged in any iteration.** There were no runtime warnings. Temporary logging recorded every native callback and failure continuation would have retained failures while collecting all flags. The temporary fixture was removed byte-for-byte before the full check; no permanent retry loop was added. The five-execution raw log, result bundle, per-iteration captures and result inventory are preserved. This demonstrates an intermittent native flag, not a reason to dismiss future control failures.
+
+The subsequent full strict check on `49b2eb9` passed **26/26**, including the composer control audit and both daily Draw tests. All native controls and mixed/grouped elements retain native failures. Only the ten measured plain-static-text findings listed above were dismissed. The earlier failed runs remain part of the validation record rather than being replaced by the later pass.
+
+### Pending final alignment verification
+
+After that passing run, image inspection found the composer footer helper's intrinsic-width text centred slightly inside the 20-point button/content guide. `QuestionComposerScreen` now uses a leading-aligned footer stack. This is the remaining C4/CE4 detail; it does not change colours, type roles, chip style or audit handling. A fresh full check and inspection of empty/filled, standard/largest-text and keyboard-dismissed composer captures are required before completion. No simulator-driving command will start while Firstmate’s scheduling hold is in force.
 
 ## Remaining release limits
 
