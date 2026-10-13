@@ -380,6 +380,8 @@ final class HarnessShellUITests: XCTestCase {
         XCTAssertEqual(card.label, "Card \(position) of 5")
         XCTAssertGreaterThanOrEqual(card.frame.width, 44)
         XCTAssertGreaterThanOrEqual(card.frame.height, 44)
+        waitForSettled([app.staticTexts["draw-title"], card])
+        XCTAssertTrue(card.isHittable)
         card.tap()
         let turnOver = app.buttons["turn-over"]
         XCTAssertTrue(turnOver.waitForExistence(timeout: 5))
@@ -472,6 +474,8 @@ final class HarnessShellUITests: XCTestCase {
             precedingLane = card.frame
         }
         try auditAndCapture(app, "02-draw", expecting: app.staticTexts["draw-title"], app.buttons["draw-card-3"])
+        // The native scaling audit can still be restoring the layout on return.
+        waitForSettled([app.staticTexts["draw-title"], app.buttons["draw-card-3"]])
         let fanFrame = app.buttons["draw-card-3"].frame
         app.buttons["draw-card-3"].tap()
         XCTAssertTrue(app.buttons["turn-over"].waitForExistence(timeout: 5))
