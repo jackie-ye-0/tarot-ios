@@ -112,7 +112,12 @@ final class HarnessShellUITests: XCTestCase {
                     return true
                 }
                 guard !viewport.isNull && viewport.contains(frame) else { return false }
-                guard element.elementType == .staticText else { return false }
+                // A mixed accessibility group can hide low-contrast text behind
+                // high-contrast art. Only plain static text supports this measure.
+                guard element.elementType == .staticText,
+                      element.descendants(matching: .any).allElementsBoundByIndex.allSatisfy({ $0.elementType == .staticText }) else {
+                    return false
+                }
                 let screenshot = element.screenshot()
                 guard let image = screenshot.image.cgImage, let measured = measuredContrast(image) else {
                     return false
@@ -357,6 +362,16 @@ final class HarnessShellUITests: XCTestCase {
         scrollTo(field, in: app)
         waitForSettled([field])
         assertVisible(field, in: app)
+    }
+
+    private func showNavigationTop(_ app: XCUIApplication) {
+        let back = app.buttons["go-back"]
+        scrollTo(back, in: app)
+        // Once the first control is visible, a downward drag reaches the real
+        // scroll origin, rather than stopping at a later heading or question.
+        dragContent(app, up: false)
+        waitForSettled([back])
+        assertVisible(back, in: app)
     }
 
     private func reveal(_ app: XCUIApplication, position: Int = 3) {
@@ -1131,7 +1146,7 @@ final class HarnessShellUITests: XCTestCase {
         capture(app, "05-ask--largest-text-bottom")
         scrollTo(app.buttons["ask-question-entry"], in: app)
         app.buttons["ask-question-entry"].tap()
-        scrollTo(app.buttons["area-relationship"], in: app)
+        showNavigationTop(app)
         capture(app, "06-composer--largest-text")
         scrollTo(app.staticTexts["Open questions work best. “What” and “how” more than “will”."], in: app)
         capture(app, "06-composer--largest-text-guidance")
@@ -1144,12 +1159,21 @@ final class HarnessShellUITests: XCTestCase {
         capture(app, "06-composer--largest-text-bottom")
         scrollTo(app.buttons["suggestion-0"], in: app)
         app.buttons["suggestion-0"].tap()
-        showQuestionField(app)
+        showNavigationTop(app)
         capture(app, "06-composer-question-entered--largest-text")
+        scrollTo(app.staticTexts["Open questions work best. “What” and “how” more than “will”."], in: app)
+        capture(app, "06-composer-question-entered--largest-text-guidance")
+        showQuestionField(app)
+        capture(app, "06-composer-question-entered--largest-text-field")
+        scrollTo(app.buttons["suggestion-1"], in: app)
+        for index in 0..<3 { assertVisible(app.buttons["suggestion-\(index)"], in: app) }
+        capture(app, "06-composer-question-entered--largest-text-suggestions")
         scrollTo(app.buttons["submit-question"], in: app)
         capture(app, "06-composer-question-entered--largest-text-bottom")
         app.buttons["submit-question"].tap()
-        scrollTo(app.staticTexts["spread-question"], in: app)
+        showNavigationTop(app)
+        assertVisible(app.staticTexts["spread-progress"], in: app)
+        assertVisible(app.staticTexts["spread-question"], in: app)
         capture(app, "08-three-card-pick--largest-text")
         for position in ["situation", "action", "outcome"] {
             scrollTo(app.descendants(matching: .any)["spread-slot-\(position)"].firstMatch, in: app)
@@ -1159,7 +1183,9 @@ final class HarnessShellUITests: XCTestCase {
         capture(app, "08-three-card-pick--largest-text-bottom")
         chooseSpread(app, largest: true)
         capture(app, "08-three-card-pick-complete--largest-text-bottom")
-        scrollTo(app.staticTexts["spread-question"], in: app)
+        showNavigationTop(app)
+        assertVisible(app.staticTexts["spread-progress"], in: app)
+        assertVisible(app.staticTexts["spread-question"], in: app)
         capture(app, "08-three-card-pick-complete--largest-text")
         for position in ["situation", "action", "outcome"] {
             scrollTo(app.descendants(matching: .any)["spread-slot-\(position)"].firstMatch, in: app)

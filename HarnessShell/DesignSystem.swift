@@ -326,6 +326,7 @@ struct ReadingScreenLayout<Content: View, Footer: View>: View {
             ScrollView {
                 VStack(spacing: 0) {
                     content()
+                        .frame(maxWidth: .infinity, alignment: .leading)
                         .frame(minHeight: fillsAvailableHeight && !textSize.isAccessibilitySize ? max(0, geometry.size.height) : nil,
                                alignment: .top)
                     if textSize.isAccessibilitySize {
@@ -349,7 +350,8 @@ struct ReadingScreenLayout<Content: View, Footer: View>: View {
 
     private var actions: some View {
         footer()
-            .padding(.horizontal, Design.Space.ritual)
+            .padding(.horizontal, night ? Design.Space.ritual : Design.Space.page)
+            .padding(.top, night ? 0 : Design.Space.related)
             .padding(.bottom, Design.Space.related)
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("screen-footer")
@@ -1062,7 +1064,7 @@ struct CardFan: View {
         case .gathered: distance * width * 0.04
         case .washLeft: -distance * width * 0.12
         case .washRight: distance * width * 0.15
-        case .fanned: distance * width * 0.20
+        case .fanned: distance * width * (compact ? 0.16 : 0.20)
         }
     }
 
@@ -1071,7 +1073,7 @@ struct CardFan: View {
         case .gathered: abs(distance) * 4 + 20
         case .washLeft: distance * 12 + 20
         case .washRight: -distance * 12 + 20
-        case .fanned: chosen ? -27 : abs(distance) * 18 + (selected == nil && !compact ? 20 : 0)
+        case .fanned: chosen ? -27 : abs(distance) * (compact ? 12 : 18) + (selected == nil && !compact ? 20 : 0)
         }
     }
 
@@ -1080,7 +1082,7 @@ struct CardFan: View {
         case .gathered: Double(distance) * 3
         case .washLeft: Double(-distance) * 12
         case .washRight: Double(distance) * 12
-        case .fanned: chosen ? 0 : Double(distance) * 8
+        case .fanned: chosen ? 0 : Double(distance) * (compact ? 6 : 8)
         }
     }
 }

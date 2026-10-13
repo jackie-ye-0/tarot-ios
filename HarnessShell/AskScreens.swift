@@ -133,13 +133,17 @@ struct ThreeCardPickScreen: View {
     var body: some View {
         ReadingScreenLayout(night: true, ritualDisc: true) {
             VStack(alignment: .leading, spacing: Design.Space.page) {
-                HStack {
-                    NavigationAction(night: true) { session.screen = .composer }
-                    Spacer()
+                ZStack {
+                    HStack {
+                        NavigationAction(night: true) { session.screen = .composer }
+                        Spacer()
+                    }
                     Text(session.picks.count == 3 ? "All three drawn" : "Card \(session.picks.count + 1) of 3")
                         .typeRole(Design.TypeRole.secondary).foregroundStyle(Design.Palette.nightSecondary)
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity)
+                        .padding(.horizontal, Design.Space.target + Design.Space.small)
                         .accessibilityIdentifier("spread-progress")
-                    Spacer()
                 }
                 VStack(alignment: .leading, spacing: Design.Space.small) {
                     Text("“\(session.question)”").typeRole(.section).accessibilityIdentifier("spread-question")
