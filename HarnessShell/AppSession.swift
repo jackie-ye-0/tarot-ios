@@ -10,6 +10,9 @@ struct LaunchConfiguration {
     var testStoreID: UUID?
     var largestText = false
     var reduceMotion = false
+    var disableAnimations = false
+    var holdShuffle = false
+    var testMode = false
     var forceStoreOpenFailure = false
 
     static func current() -> LaunchConfiguration {
@@ -17,6 +20,7 @@ struct LaunchConfiguration {
         #if DEBUG
         let arguments = ProcessInfo.processInfo.arguments
         guard arguments.contains("--test-mode") else { return result }
+        result.testMode = true
         func value(_ key: String) -> String? {
             guard let index = arguments.firstIndex(of: key), index + 1 < arguments.count else { return nil }
             return arguments[index + 1]
@@ -28,6 +32,8 @@ struct LaunchConfiguration {
         result.testStoreID = value("--test-store-id").flatMap(UUID.init(uuidString:))
         result.largestText = arguments.contains("--test-largest-text")
         result.reduceMotion = arguments.contains("--test-reduce-motion")
+        result.disableAnimations = arguments.contains("--test-disable-animations")
+        result.holdShuffle = arguments.contains("--test-hold-shuffle")
         result.forceStoreOpenFailure = arguments.contains("--test-storage-open-failure")
         #endif
         return result

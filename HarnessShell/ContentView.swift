@@ -2,14 +2,20 @@ import SwiftUI
 
 struct ContentView: View {
     @Bindable var session: AppSession
+    var animationsEnabled = true
+    var holdShuffle = false
+    var testMode = false
 
     var body: some View {
         Group {
             switch session.screen {
             case .draw:
-                DrawScreen(session: session).id("draw")
+                DrawScreen(session: session, animationsEnabled: animationsEnabled,
+                           holdShuffle: holdShuffle, testMode: testMode).id("draw")
             case .reveal(let draw):
-                RevealScreen(draw: draw) { session.screen = .today(draw) }.id("reveal")
+                RevealScreen(draw: draw, animationsEnabled: animationsEnabled, testMode: testMode) {
+                    session.screen = .today(draw)
+                }.id("reveal")
             case .today(let draw):
                 TodayScreen(draw: draw, dateLabel: session.dateLabel).id("today")
             }
@@ -24,8 +30,20 @@ struct ContentView: View {
 
 struct DrawScreen: View {
     let session: AppSession
+    let animationsEnabled: Bool
+    let holdShuffle: Bool
+    let testMode: Bool
     @State private var selected: Int?
+    @State private var phase = FanPhase.gathered
+    @State private var shuffling = true
+    @State private var shuffleID = 0
+    @State private var fanID = 0
+    @State private var order = Array(1...5)
+    @State private var motionSettled = true
+    @State private var motionGeneration = 0
     @Environment(\.dynamicTypeSize) private var textSize
+
+    private var isShuffling: Bool { animationsEnabled && shuffling }
 
     var body: some View {
         ReadingScreenLayout(night: true, fillsAvailableHeight: true) {
@@ -36,10 +54,12 @@ struct DrawScreen: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.bottom, Design.Space.related)
                 VStack(spacing: Design.Space.related) {
-                    Text(selected == nil ? "Pick the one that pulls at you" : "This one is yours")
+                    Text(selected != nil ? "This one is yours" : isShuffling ? "Washing the cards…" : "Pick the one that pulls at you")
                         .typeRole(Design.TypeRole.title)
                         .foregroundStyle(Design.Palette.cream)
                         .accessibilityIdentifier("draw-title")
+                        .testMotionState(enabled: testMode,
+                                         settled: !animationsEnabled || (motionSettled && (!shuffling || holdShuffle)))
                         .frame(maxWidth: selected == nil && !textSize.isAccessibilitySize ? Design.Space.titleWidth : .infinity)
                     Text(selected.map { "Card \($0) of five. Ready when you are." } ?? "Tap any card. Trust the first tug.")
                         .typeRole(Design.TypeRole.body)
@@ -48,7 +68,10 @@ struct DrawScreen: View {
                 .multilineTextAlignment(.center)
                 .frame(minHeight: textSize.isAccessibilitySize ? nil : Design.Space.drawHeadingHeight, alignment: .top)
                 .zIndex(1) // The decorative disc can extend behind, but never cover, the heading.
-                CardFan(selected: $selected)
+                .transaction { $0.animation = nil; $0.disablesAnimations = true }
+                CardFan(selected: selected, phase: animationsEnabled ? phase : .fanned,
+                        order: order, choose: { choose($0) })
+                    .id(fanID)
                 Spacer(minLength: 0)
             }
             .padding(.horizontal, Design.Space.ritual)
@@ -58,13 +81,90 @@ struct DrawScreen: View {
                 if let selected {
                     PrimaryAction(title: "Turn it over", night: true) { session.turnOver(position: selected) }
                         .accessibilityIdentifier("turn-over")
-                    QuietAction(title: "Choose a different card") { self.selected = nil }
+                    QuietAction(title: "Choose a different card") {
+                        choose(nil)
+                    }
+                    .accessibilityIdentifier("choose-different")
                 } else {
-                    Text("Choose a card to begin")
+                    QuietAction(title: "Shuffle again", underlined: true, action: shuffleAgain)
+                        .accessibilityIdentifier("shuffle-again")
+                    Text("Shuffling changes the order, not your card.")
                         .typeRole(Design.TypeRole.caption)
                         .foregroundStyle(Design.Palette.nightSecondary)
-                        .frame(minHeight: Design.Space.target)
+                        .multilineTextAlignment(.center)
+                        .accessibilityIdentifier("shuffle-helper")
                 }
+            }
+            .transaction { $0.animation = nil; $0.disablesAnimations = true }
+        }
+        .task(id: animationsEnabled ? shuffleID : -1) { await shuffle() }
+    }
+
+    private func choose(_ position: Int?) {
+        // Interrupting the ritual snaps to its result; a settled pick can gently lift.
+        if isShuffling {
+            var transaction = Transaction(animation: nil)
+            transaction.disablesAnimations = true
+            withTransaction(transaction) {
+                shuffleID += 1
+                // Replacing the presentation also ends motion already targeting the final fan.
+                fanID += 1
+                phase = .fanned
+                shuffling = false
+                selected = position
+                motionGeneration += 1
+                motionSettled = true
+            }
+        } else {
+            animate(animationsEnabled ? Design.Motion.entrance : nil) { selected = position }
+        }
+    }
+
+    private func shuffleAgain() {
+        shuffling = animationsEnabled
+        motionGeneration += 1
+        motionSettled = false
+        shuffleID += 1
+    }
+
+    private func shuffle() async {
+        guard selected == nil else { return }
+        guard animationsEnabled else {
+            order = [order[2], order[0], order[4], order[1], order[3]]
+            phase = .fanned
+            shuffling = false
+            motionSettled = true
+            return
+        }
+        guard shuffling else { return }
+        do {
+            animate(Design.Motion.wash) {
+                // This order belongs only to the decorative backs, never the reading engine.
+                order = [order[2], order[0], order[4], order[1], order[3]]
+                phase = .washLeft
+            }
+            try await Task.sleep(for: .seconds(Design.Motion.washDuration))
+            // Debug launch configuration holds a real phase so XCTest can test interruption
+            // without racing its automatic wait for the app to become idle.
+            if holdShuffle { return }
+            try Task.checkCancellation()
+            animate(Design.Motion.wash) { phase = .washRight }
+            try await Task.sleep(for: .seconds(Design.Motion.washDuration))
+            try Task.checkCancellation()
+            animate(Design.Motion.fanOut) { phase = .fanned }
+        } catch is CancellationError {
+            // Selection, another shuffle, Reduce Motion or leaving Draw cancels this run.
+        } catch { assertionFailure("Unexpected shuffle timing error: \(error)") }
+    }
+
+    private func animate(_ animation: Animation?, changes: () -> Void) {
+        motionGeneration += 1
+        let generation = motionGeneration
+        motionSettled = false
+        withAnimation(animation, completionCriteria: .removed, changes) {
+            if generation == motionGeneration {
+                motionSettled = true
+                if case .fanned = phase { shuffling = false }
             }
         }
     }
@@ -72,30 +172,46 @@ struct DrawScreen: View {
 
 struct RevealScreen: View {
     let draw: DailyDraw
+    let animationsEnabled: Bool
+    let testMode: Bool
     let continueAction: () -> Void
+    @State private var appeared = false
+    @State private var motionSettled = false
+
+    private var revealed: Bool { !animationsEnabled || appeared }
 
     var body: some View {
-        ReadingScreenLayout {
+        ReadingScreenLayout(dawnProgress: revealed ? 1 : 0,
+                            dawnAnimation: animationsEnabled ? Design.Motion.dawn : nil) {
             VStack(spacing: Design.Space.large) {
                 Text("You picked card \(draw.position) of five")
                     .typeRole(Design.TypeRole.secondary)
-                    .foregroundStyle(Design.Palette.secondary)
+                    .foregroundStyle(revealed ? Design.Palette.secondary : Design.Palette.nightSecondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .accessibilityIdentifier("draw-position")
                     .padding(.bottom, Design.Space.small)
-                TarotCardView(card: draw.card, orientation: draw.orientation, width: 214)
+                TurningTarotCard(draw: draw, progress: revealed ? 1 : 0, width: 214)
+                    .animation(animationsEnabled ? Design.Motion.flip : nil, value: revealed)
+                    .background {
+                        RevealSun(risen: revealed)
+                            .animation(animationsEnabled ? Design.Motion.dawn : nil, value: revealed)
+                    }
                     .accessibilityIdentifier("revealed-card")
+                    .testMotionState(enabled: testMode, settled: !animationsEnabled || motionSettled)
                 VStack(spacing: Design.Space.small) {
                     Text(draw.card.name)
                         .typeRole(.display)
                         .accessibilityIdentifier("card-name")
+                        .modifier(RevealTextRise(visible: revealed, animated: animationsEnabled, index: 0))
                     Text("\(draw.orientation.label) · \(draw.card.arcana)")
                         .typeRole(.metadata)
                         .accessibilityIdentifier("card-details")
+                        .modifier(RevealTextRise(visible: revealed, animated: animationsEnabled, index: 1))
                     Text(draw.meaning.keywords.joined(separator: ", "))
                         .typeRole(.keywords)
                         .foregroundStyle(Design.Palette.secondary)
                         .accessibilityIdentifier("card-keywords")
+                        .modifier(RevealTextRise(visible: revealed, animated: animationsEnabled, index: 2))
                 }
                 .multilineTextAlignment(.center)
                 .foregroundStyle(Design.Palette.ink)
@@ -110,10 +226,15 @@ struct RevealScreen: View {
                     .accessibilityIdentifier("see-meaning")
                 Text("For entertainment and reflection")
                     .typeRole(Design.TypeRole.caption)
-                    .foregroundStyle(Design.Palette.secondary)
+                    .foregroundStyle(revealed ? Design.Palette.secondary : Design.Palette.nightSecondary)
                     .multilineTextAlignment(.center)
                     .accessibilityIdentifier("reveal-disclaimer")
             }
+        }
+        .onAppear {
+            guard animationsEnabled else { return }
+            withAnimation(Design.Motion.dawn, completionCriteria: .removed) { appeared = true }
+            completion: { motionSettled = true }
         }
     }
 }
