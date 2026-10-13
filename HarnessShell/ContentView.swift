@@ -14,16 +14,22 @@ struct ContentView: View {
                            holdShuffle: holdShuffle, testMode: testMode).id("draw")
             case .reveal(let draw):
                 RevealScreen(draw: draw, animationsEnabled: animationsEnabled, testMode: testMode) {
-                    session.screen = .today(draw)
+                    session.showToday(draw)
                 }.id("reveal")
             case .today(let draw):
                 TodayScreen(draw: draw, dateLabel: session.dateLabel).id("today")
             }
         }
+        .id(session.dateKey)
         .alert("Your card could not be saved", isPresented: $session.saveFailed) {
             Button("OK", role: .cancel) { }
         } message: {
             Text("Your choice is still here. Free some space on your phone if needed, then tap Turn it over to try again.")
+        }
+        .alert("Today's card could not be opened", isPresented: $session.dayRefreshFailed) {
+            Button("Try again") { session.refreshDay() }
+        } message: {
+            Text("Your saved cards are unchanged. Try again after checking the free space on your phone.")
         }
     }
 }
@@ -237,7 +243,11 @@ struct RevealScreen: View {
             }
         }
         .onAppear {
-            guard animationsEnabled else { return }
+            guard animationsEnabled else {
+                appeared = true
+                motionSettled = true
+                return
+            }
             withAnimation(Design.Motion.dawn, completionCriteria: .removed) { appeared = true }
             completion: { motionSettled = true }
         }
@@ -264,6 +274,12 @@ struct TodayScreen: View {
                     .lineSpacing(Design.Space.readingLeading)
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("core-interpretation")
+                Text("Your next card arrives at midnight")
+                    .typeRole(Design.TypeRole.caption)
+                    .foregroundStyle(Design.Palette.secondary)
+                    .frame(maxWidth: .infinity)
+                    .multilineTextAlignment(.center)
+                    .accessibilityIdentifier("next-card-arrival")
             }
             .foregroundStyle(Design.Palette.ink)
             .padding(.horizontal, Design.Space.page)

@@ -138,6 +138,9 @@ final class HarnessShellUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["core-interpretation"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["core-interpretation"].label.contains("Hope may feel more useful"))
         try auditAndCapture(app, "04-today")
+        scrollTo(app.staticTexts["next-card-arrival"], in: app)
+        XCTAssertEqual(app.staticTexts["next-card-arrival"].label, "Your next card arrives at midnight")
+        capture(app, "04-today--bottom")
     }
 
     func testAllFivePositionsGiveSameCardAndSaveTheirPosition() {
@@ -223,6 +226,8 @@ final class HarnessShellUITests: XCTestCase {
         // Changing a creation seed cannot replace an existing installation or saved snapshot.
         let index = app.launchArguments.firstIndex(of: "--test-seed")!
         app.launchArguments[index + 1] = "different-seed"
+        let zoneIndex = app.launchArguments.firstIndex(of: "--test-time-zone")!
+        app.launchArguments[zoneIndex + 1] = "Pacific/Auckland"
         app.launch()
         XCTAssertTrue(app.staticTexts["today-title"].waitForExistence(timeout: 5))
         XCTAssertEqual(app.staticTexts["card-name"].label, name)
@@ -240,6 +245,90 @@ final class HarnessShellUITests: XCTestCase {
         reveal(expected)
         XCTAssertEqual(expected.staticTexts["card-name"].label, nextName)
         XCTAssertEqual(expected.staticTexts["card-details"].label, nextDetails)
+    }
+
+    private func testControl(_ identifier: String, in app: XCUIApplication) {
+        app.descendants(matching: .any)["test-controls"].tap()
+        let action = app.descendants(matching: .any)[identifier]
+        XCTAssertTrue(action.waitForExistence(timeout: 5), app.debugDescription)
+        action.tap()
+    }
+
+    func testForegroundMidnightRoutesTodayToFreshDraw() {
+        let app = app(extra: ["--test-controls"], date: "2026-10-11T12:59:59Z")
+        reveal(app)
+        let previousName = app.staticTexts["card-name"].label
+        app.buttons["see-meaning"].tap()
+        XCTAssertTrue(app.staticTexts["today-title"].waitForExistence(timeout: 5))
+        testControl("test-next-day", in: app)
+        XCTAssertTrue(app.staticTexts["draw-title"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Monday 12 October"].exists)
+        XCTAssertFalse(app.buttons["turn-over"].exists)
+        reveal(app)
+        XCTAssertNotEqual(app.staticTexts["card-name"].label, previousName)
+    }
+
+    func testMidnightClearsUnturnedSelectionAndBackgroundReturnLeavesReveal() {
+        let app = app(extra: ["--test-controls"])
+        app.buttons["draw-card-2"].tap()
+        XCTAssertTrue(app.buttons["turn-over"].exists)
+        testControl("test-next-day", in: app)
+        XCTAssertEqual(app.staticTexts["draw-title"].label, "Pick the one that pulls at you")
+        XCTAssertFalse(app.buttons["turn-over"].exists)
+        reveal(app)
+        let previousName = app.staticTexts["card-name"].label
+        testControl("test-background-day", in: app)
+        XCUIDevice.shared.press(.home)
+        app.activate()
+        XCTAssertTrue(app.staticTexts["draw-title"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Tuesday 13 October"].exists)
+        XCTAssertFalse(app.buttons["see-meaning"].exists)
+        reveal(app)
+        XCTAssertNotEqual(app.staticTexts["card-name"].label, previousName)
+    }
+
+    func testTravelBackAndForwardRestoresEachSavedDate() {
+        let app = app(extra: ["--test-controls"], seed: "travel-2")
+        reveal(app, position: 2)
+        let name = app.staticTexts["card-name"].label
+        let details = app.staticTexts["card-details"].label
+        testControl("test-time-zone", in: app)
+        XCTAssertTrue(app.staticTexts["draw-title"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Saturday 10 October"].exists)
+        reveal(app, position: 5)
+        let earlierName = app.staticTexts["card-name"].label
+        let earlierDetails = app.staticTexts["card-details"].label
+        // Filling yesterday creates a repeat conflict for today; its saved snapshot must still win.
+        XCTAssertEqual(earlierName, name)
+        XCTAssertNotEqual(earlierDetails, details)
+        testControl("test-time-zone", in: app)
+        XCTAssertTrue(app.staticTexts["today-title"].waitForExistence(timeout: 5))
+        XCTAssertEqual(app.staticTexts["today-title"].label, "Sunday 11 October")
+        XCTAssertEqual(app.staticTexts["card-name"].label, name)
+        XCTAssertEqual(app.staticTexts["card-details"].label, details)
+        testControl("test-time-zone", in: app)
+        XCTAssertEqual(app.staticTexts["today-title"].label, "Saturday 10 October")
+        XCTAssertEqual(app.staticTexts["card-name"].label, earlierName)
+        XCTAssertEqual(app.staticTexts["card-details"].label, earlierDetails)
+    }
+
+    func testTimeZoneChangeWithinSameDateKeepsRevealAndCompletedMotion() {
+        let app = app(extra: ["--test-controls", "--test-reduce-motion"], date: "2026-10-11T12:00:00Z", animations: true)
+        reveal(app)
+        let name = app.staticTexts["card-name"].label
+        testControl("test-time-zone", in: app)
+        XCTAssertTrue(app.buttons["see-meaning"].exists)
+        XCTAssertFalse(app.staticTexts["today-title"].exists)
+        testControl("test-toggle-motion", in: app)
+        waitForRitualToSettle(app)
+        XCTAssertEqual(app.staticTexts["card-name"].label, name)
+        XCTAssertTrue(app.staticTexts["card-name"].isHittable,
+                      "Turning Reduce Motion off must not hide an already revealed card's text")
+        for identifier in ["card-name", "card-details", "card-keywords"] {
+            assertVisible(app.staticTexts[identifier], in: app, abovePinnedFooter: true)
+        }
+        app.buttons["see-meaning"].tap()
+        XCTAssertTrue(app.staticTexts["today-title"].waitForExistence(timeout: 5))
     }
 
     func testReversedCardUsesItsOwnMeaning() throws {
@@ -329,6 +418,8 @@ final class HarnessShellUITests: XCTestCase {
         XCTAssertLessThanOrEqual(interpretation.frame.maxY, viewport.maxY)
         XCTAssertGreaterThanOrEqual(interpretation.frame.minX, viewport.minX)
         XCTAssertLessThanOrEqual(interpretation.frame.maxX, viewport.maxX)
+        capture(app, "04-today--largest-text-interpretation-end")
+        scrollTo(app.staticTexts["next-card-arrival"], in: app)
         capture(app, "04-today--largest-text-bottom")
         app.terminate()
         let reduced = self.app(extra: ["--test-reduce-motion", "--test-hold-shuffle"], animations: true)

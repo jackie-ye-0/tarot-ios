@@ -41,6 +41,82 @@ final class ReadingEngineTests: XCTestCase {
         XCTAssertEqual(ReadingEngine.dateKey(for: instant.addingTimeInterval(-3600), timeZone: sydney), "2026-10-10")
     }
 
+    func testBothSidesOfMidnightAcrossTimeZonesAndDaylightSaving() throws {
+        for (zone, midnight, before, after) in [
+            ("Australia/Sydney", "2026-10-10T13:00:00Z", "2026-10-10", "2026-10-11"),
+            ("America/Los_Angeles", "2026-10-11T07:00:00Z", "2026-10-10", "2026-10-11"),
+            ("Pacific/Honolulu", "2027-01-01T10:00:00Z", "2026-12-31", "2027-01-01"),
+            ("Australia/Sydney", "2026-10-04T13:00:00Z", "2026-10-04", "2026-10-05"),
+            ("America/Los_Angeles", "2026-11-02T08:00:00Z", "2026-11-01", "2026-11-02")
+        ] {
+            let date = try XCTUnwrap(ISO8601DateFormatter().date(from: midnight))
+            let timeZone = try XCTUnwrap(TimeZone(identifier: zone))
+            XCTAssertEqual(ReadingEngine.dateKey(for: date.addingTimeInterval(-1), timeZone: timeZone), before, zone)
+            XCTAssertEqual(ReadingEngine.dateKey(for: date, timeZone: timeZone), after, zone)
+        }
+    }
+
+    // The six-card starter cannot exercise a fourteen-day non-repeat run. Content expansion is #12.
+    private func syntheticDeck() throws -> CardLibrary {
+        let template = try CardLibrary.load().cards[0]
+        return CardLibrary(version: 1, editorialStatus: "synthetic-test", cards: (0..<78).map {
+            TarotCard(id: "card-\($0)", name: "Synthetic card \($0)", arcana: template.arcana,
+                      suit: nil, rank: $0, upright: template.upright, reversed: template.reversed)
+        })
+    }
+
+    private func past(_ card: Int, on date: String, in library: CardLibrary) -> DailyDraw {
+        DailyDraw(dateKey: date, position: 1, orientation: .upright, card: library.cards[card], contentVersion: library.version)
+    }
+
+    func testRepeatWindowIncludesFourteenthDayButNotFifteenthTodayOrFuture() throws {
+        let library = try syntheticDeck()
+        let day = "2026-10-11"
+        XCTAssertEqual(ReadingEngine.repeatWindowStart(for: day), "2026-09-27")
+        XCTAssertEqual(ReadingEngine.repeatWindowStart(for: "2028-03-01"), "2028-02-16")
+        XCTAssertEqual(ReadingEngine.repeatWindowStart(for: "2027-01-01"), "2026-12-18")
+        for (date, expected) in [("2026-09-26", 49), ("2026-09-27", 4), ("2026-10-10", 4),
+                                  ("2026-10-11", 49), ("2026-10-12", 49)] {
+            let draw = ReadingEngine.dailyDraw(seed: "repeat-window", dateKey: day, position: 1,
+                                              library: library, previousDraws: [past(49, on: date, in: library)])
+            XCTAssertEqual(draw.card.id, "card-\(expected)", date)
+        }
+    }
+
+    func testSaltedRetriesStopAtFirstFreshCardOrAcceptThirdRetry() throws {
+        let library = try syntheticDeck()
+        // Fixed vectors also prove orientation does not exempt a repeated card identity.
+        let candidates = [49, 4, 5, 53]
+        for excludedCount in 0...4 {
+            let previous = candidates.prefix(excludedCount).enumerated().map {
+                past($0.element, on: String(format: "2026-10-%02d", 10 - $0.offset), in: library)
+            }
+            for position in 1...5 {
+                let draw = ReadingEngine.dailyDraw(seed: "repeat-window", dateKey: "2026-10-11", position: position,
+                                                  library: library, previousDraws: previous)
+                XCTAssertEqual(draw.card.id, "card-\(candidates[min(excludedCount, 3)])")
+                XCTAssertEqual(draw.orientation, excludedCount >= 3 ? .upright : .reversed)
+                XCTAssertEqual(draw.position, position)
+                XCTAssertEqual(draw, ReadingEngine.dailyDraw(seed: "repeat-window", dateKey: "2026-10-11", position: position,
+                                                            library: library, previousDraws: Array(previous.reversed())))
+            }
+        }
+    }
+
+    func testTwoYearSimulatedRunHasNoRepeatInsideFourteenDays() throws {
+        let library = try syntheticDeck()
+        let zone = try XCTUnwrap(TimeZone(secondsFromGMT: 0))
+        let start = try XCTUnwrap(ISO8601DateFormatter().date(from: "2026-01-01T00:00:00Z"))
+        var history: [DailyDraw] = []
+        for day in 0..<730 {
+            let key = ReadingEngine.dateKey(for: start.addingTimeInterval(Double(day) * 86_400), timeZone: zone)
+            let draw = ReadingEngine.dailyDraw(seed: "long-run", dateKey: key, position: day % 5 + 1,
+                                              library: library, previousDraws: history)
+            XCTAssertFalse(history.suffix(14).contains { $0.card.id == draw.card.id }, key)
+            history.append(draw)
+        }
+    }
+
     func testStarterLibraryHasBothCompleteOrientationsAndDistinctIDs() throws {
         let library = try CardLibrary.load()
         XCTAssertGreaterThanOrEqual(library.cards.count, 6)

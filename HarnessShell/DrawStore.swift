@@ -55,4 +55,11 @@ final class DrawStore {
         do { try context.save() } catch { context.rollback(); throw error }
         return draw
     }
+
+    func draws(from start: String, before end: String) throws -> [DailyDraw] {
+        let request = FetchDescriptor<StoredDailyDraw>(predicate: #Predicate {
+            $0.dateKey >= start && $0.dateKey < end
+        })
+        return try context.fetch(request).map { try JSONDecoder().decode(DailyDraw.self, from: $0.snapshot) }
+    }
 }

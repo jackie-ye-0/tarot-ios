@@ -4,7 +4,7 @@ import SwiftData
 
 struct LaunchConfiguration {
     var fixedDate: Date?
-    var timeZone = TimeZone.current
+    var timeZone: TimeZone?
     var seed: String?
     var inMemory = false
     var testStoreID: UUID?
@@ -14,6 +14,7 @@ struct LaunchConfiguration {
     var holdShuffle = false
     var testMode = false
     var forceStoreOpenFailure = false
+    var testControls = false
 
     static func current() -> LaunchConfiguration {
         var result = LaunchConfiguration()
@@ -35,9 +36,36 @@ struct LaunchConfiguration {
         result.disableAnimations = arguments.contains("--test-disable-animations")
         result.holdShuffle = arguments.contains("--test-hold-shuffle")
         result.forceStoreOpenFailure = arguments.contains("--test-storage-open-failure")
+        result.testControls = arguments.contains("--test-controls")
         #endif
         return result
     }
+}
+
+@MainActor
+final class SessionClock {
+    private var fixedDate: Date?
+    private var fixedTimeZone: TimeZone?
+
+    init(configuration: LaunchConfiguration) {
+        fixedDate = configuration.fixedDate
+        fixedTimeZone = configuration.timeZone
+    }
+
+    var now: Date { fixedDate ?? Date() }
+    var timeZone: TimeZone { fixedTimeZone ?? .current }
+
+    #if DEBUG
+    func advanceTestDay() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = timeZone
+        fixedDate = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: now))!
+    }
+
+    func toggleTestTimeZone() {
+        fixedTimeZone = TimeZone(identifier: timeZone.identifier == "Pacific/Honolulu" ? "Australia/Sydney" : "Pacific/Honolulu")!
+    }
+    #endif
 }
 
 @MainActor @Observable
@@ -48,17 +76,22 @@ final class AppSession {
 
     var screen: Screen = .draw
     var saveFailed = false
-    let date: Date
-    let timeZone: TimeZone
-    private let dateKey: String
+    var dayRefreshFailed = false
+    private(set) var date: Date
+    private(set) var timeZone: TimeZone
+    private(set) var dateKey: String
+    let clock: SessionClock
     private let seed: String
     private let store: DrawStore
     private let library: CardLibrary
 
-    init(clock: () -> Date, timeZone: TimeZone, seed: String, store: DrawStore, library: CardLibrary) throws {
-        date = clock()
-        self.timeZone = timeZone
-        dateKey = ReadingEngine.dateKey(for: date, timeZone: timeZone)
+    init(clock: SessionClock, seed: String, store: DrawStore, library: CardLibrary) throws {
+        self.clock = clock
+        let now = clock.now
+        let zone = clock.timeZone
+        date = now
+        timeZone = zone
+        dateKey = ReadingEngine.dateKey(for: now, timeZone: zone)
         self.seed = seed
         self.store = store
         self.library = library
@@ -75,9 +108,43 @@ final class AppSession {
 
     func turnOver(position: Int) {
         do {
-            let draw = ReadingEngine.dailyDraw(seed: seed, dateKey: dateKey, position: position, library: library)
+            // A tap at midnight must not carry yesterday's selection into the new day.
+            guard try !updateDay() else { return }
+            if let saved = try store.draw(for: dateKey) { screen = .today(saved); return }
+            let previous = try store.draws(from: ReadingEngine.repeatWindowStart(for: dateKey), before: dateKey)
+            let draw = ReadingEngine.dailyDraw(seed: seed, dateKey: dateKey, position: position,
+                                              library: library, previousDraws: previous)
             screen = .reveal(try store.save(draw))
         } catch { saveFailed = true }
+    }
+
+    func showToday(_ draw: DailyDraw) {
+        do {
+            guard try !updateDay() else { return }
+            screen = .today(draw)
+        } catch { dayRefreshFailed = true }
+    }
+
+    func refreshDay() {
+        do { _ = try updateDay(); dayRefreshFailed = false }
+        catch { dayRefreshFailed = true }
+    }
+
+    @discardableResult
+    private func updateDay() throws -> Bool {
+        let now = clock.now
+        let zone = clock.timeZone
+        let key = ReadingEngine.dateKey(for: now, timeZone: zone)
+        let changed = key != dateKey
+        if changed {
+            let saved = try store.draw(for: key)
+            screen = saved.map(Screen.today) ?? .draw
+            dateKey = key
+            saveFailed = false
+        }
+        date = now
+        timeZone = zone
+        return changed
     }
 }
 
@@ -105,7 +172,6 @@ enum AppLaunch {
         let seed = try store.installSeed {
             configuration.seed ?? (0..<4).map { _ in String(randomness.next(), radix: 16) }.joined(separator: "-")
         }
-        let clock: () -> Date = { configuration.fixedDate ?? Date() }
-        return try AppSession(clock: clock, timeZone: configuration.timeZone, seed: seed, store: store, library: library)
+        return try AppSession(clock: SessionClock(configuration: configuration), seed: seed, store: store, library: library)
     }
 }
