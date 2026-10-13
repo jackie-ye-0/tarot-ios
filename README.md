@@ -24,7 +24,7 @@ Run from the repository root. Checkout paths containing spaces are supported.
 
 | Command | Purpose |
 | --- | --- |
-| `./scripts/harness doctor` | Probe Xcode/tools/SDKs; discover and record an available iPhone simulator |
+| `./scripts/harness doctor` | Probe Xcode/tools/SDKs; create or reuse and record this checkout's iPhone simulator |
 | `./scripts/harness build` | Build the app for that simulator |
 | `./scripts/harness launch` | Build, boot if needed, install, launch and capture a simulator image |
 | `./scripts/harness test` | Run unit and UI tests; export result summary and retained attachments |
@@ -32,7 +32,9 @@ Run from the repository root. Checkout paths containing spaces are supported.
 | `./scripts/harness evidence` | Print the latest run summary, including failed runs |
 | `python3 -m unittest discover -s tests -v` | Run command-contract tests without Xcode |
 
-Use `--device <UDID>` on doctor/build/launch/test/check to choose an available iPhone explicitly. Otherwise the runner prefers a booted iPhone, then sorts available devices by runtime/name/UDID. This is deterministic selection, not a claim to select the newest SDK. See a doctor's `devices.log` for choices. Xcode reports incompatible destinations in the retained build/test log; select a compatible one explicitly.
+Use `--device <UDID>` on doctor/build/launch/test/check to choose an available iPhone explicitly. Otherwise the runner creates and reuses `iPhone Tarot Harness <checkout-path hash>`, dedicated to this checkout's resolved path. On first use it takes the model/runtime of an available iPhone sorted by runtime/name/UDID, creating an empty device without copying its data. It never selects an arbitrary booted device. Moving a checkout gives it a new simulator; old devices are left in place. See a doctor's `devices.log` for choices. Xcode reports incompatible destinations in the retained build/test log; select a compatible one explicitly.
+
+Device creation and the build/launch/test phase queue across checkouts on `/tmp/tarot-ios-harness-simulator.lock`, using Python's standard-library file locking. No caller flags or outer lock are needed, including for automated review. The lock path differs from the legacy `/tmp/tarot-ios-harness.lock`, so existing `lockf` wrappers can remain during migration. Command-contract tests run before the lock and use isolated fake locks. `summary.json` records lock request/acquire/release times. The harness never deletes, erases or shuts down simulators; leave the shared lock file in place while commands may be running.
 
 Use `./scripts/harness evidence --run ".harness/runs/<run-id>"` for a particular run. Every invocation has a distinct timestamp/UUID directory containing `summary.txt`, `summary.json`, raw logs, command arguments, toolchain/device metadata once prerequisites succeed, and Git head/dirty-state information. Build output lives in that run's `DerivedData/` with `Build.xcresult` for builds/launches; tests retain `Tests.xcresult` and exported `attachments/`. A successful test requires at least four executed tests, all passing with no skips, plus an exported image. Inspect the image visually; its existence does not prove layout quality. Launch images are immediate diagnostics and may capture the startup screen before rendering completes. Use the UI test attachment taken after successful interaction for visual verification.
 

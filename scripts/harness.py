@@ -1,6 +1,9 @@
 """Local iOS feedback loop. Python standard library and Apple tools only."""
 import argparse
+from contextlib import contextmanager
 import datetime
+import fcntl
+import hashlib
 from html import escape
 import json
 import os
@@ -15,6 +18,8 @@ import uuid
 ROOT = Path(__file__).resolve().parent.parent
 RUNS = ROOT / '.harness' / 'runs'
 IMAGE_SUFFIXES = ('.png', '.jpeg', '.jpg', '.heic')
+SIMULATOR_LOCK = Path('/tmp/tarot-ios-harness-simulator.lock')
+LOCK_FDS = ()
 
 
 class Failure(Exception):
@@ -29,7 +34,7 @@ def execute(args, run, name, allow_failure=False):
         commands.write(json.dumps(args) + '\n')
     try:
         with (run / f'{name}.log').open('w') as log:
-            process = subprocess.run(args, cwd=ROOT, stdout=log, stderr=subprocess.STDOUT)
+            process = subprocess.run(args, cwd=ROOT, stdout=log, stderr=subprocess.STDOUT, pass_fds=LOCK_FDS)
         output = (run / f'{name}.log').read_text(errors='replace')
     except OSError as error:
         raise Failure(f'Cannot run {args[0]}: {error}. Install/select prerequisites manually.', 2) from error
@@ -44,6 +49,43 @@ def json_output(args, run, name):
         return json.loads(output)
     except ValueError as error:
         raise Failure(f'{name} returned invalid JSON; see its raw log.') from error
+
+
+@contextmanager
+def simulator_lock(summary):
+    global LOCK_FDS
+    timing = {'path': str(SIMULATOR_LOCK), 'requested': datetime.datetime.now(datetime.timezone.utc).isoformat()}
+    summary['simulator_lock'] = timing
+    print(f'Waiting for simulator lock: {SIMULATOR_LOCK}', flush=True)
+    # Keep the file in place: unlinking it could give another caller a different lock.
+    with SIMULATOR_LOCK.open('a') as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        timing['acquired'] = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        print('Simulator lock acquired.', flush=True)
+        # Apple tools retain the lock if the harness process is killed before they exit.
+        LOCK_FDS = (lock.fileno(),)
+        try:
+            yield
+        finally:
+            LOCK_FDS = ()
+            timing['released'] = datetime.datetime.now(datetime.timezone.utc).isoformat()
+
+
+def dedicated_device(run, candidates):
+    name = 'iPhone Tarot Harness ' + hashlib.sha256(os.fsencode(ROOT)).hexdigest()[:16]
+    owned = [device for device in candidates if device['name'] == name]
+    if len(owned) > 1:
+        raise Failure(f'Multiple available simulators named {name}; select one with --device. See devices.log.', 2)
+    if owned:
+        return owned[0]
+    # Reuse only the model/runtime, never another simulator's data or boot state.
+    template = next((device for device in candidates if device.get('deviceTypeIdentifier')), None)
+    if template is None:
+        raise Failure('No available iPhone model/runtime to create a dedicated simulator. Add one in Xcode. See devices.log.', 2)
+    _, output = execute(['xcrun', 'simctl', 'create', name, template['deviceTypeIdentifier'], template['runtime']], run, 'device-create')
+    udid = str(uuid.UUID(output.strip())).upper()
+    return {'name': name, 'udid': udid, 'runtime': template['runtime'],
+            'deviceTypeIdentifier': template['deviceTypeIdentifier'], 'isAvailable': True, 'state': 'Shutdown'}
 
 
 def prerequisites(run, requested):
@@ -68,8 +110,8 @@ def prerequisites(run, requested):
             if device.get('isAvailable') and device.get('name', '').startswith('iPhone'):
                 candidates.append(dict(device, runtime=runtime))
     # Stable selection; no assumption that a particular model/runtime exists.
-    candidates.sort(key=lambda d: (d.get('state') != 'Booted', d['runtime'], d['name'], d['udid']))
-    selected = next((d for d in candidates if d['udid'] == requested), None) if requested else next(iter(candidates), None)
+    candidates.sort(key=lambda d: (d['runtime'], d['name'], d['udid']))
+    selected = next((d for d in candidates if d['udid'] == requested), None) if requested else dedicated_device(run, candidates)
     if selected is None:
         raise Failure('No matching available iPhone simulator. Add an iOS runtime/device in Xcode, or pass --device with an available iPhone UDID. See devices.log.', 2)
     metadata.update(xcode=version.strip(), device=selected)
@@ -283,7 +325,7 @@ def inspect_evidence(which):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('command', choices=['doctor', 'build', 'launch', 'test', 'check', 'evidence'])
-    parser.add_argument('--device', help='Available iPhone simulator UDID; otherwise prefer a booted iPhone, then stable alphabetical order')
+    parser.add_argument('--device', help='Available iPhone simulator UDID; otherwise create/reuse a simulator dedicated to this checkout')
     parser.add_argument('--run', help='Run directory to inspect (evidence only; defaults to latest)')
     parser.add_argument('--require-all-screenshots', action='store_true', help='Fail test/check if any screen reference lacks its main screenshot')
     args = parser.parse_args()
@@ -311,14 +353,15 @@ def main():
         if args.command == 'check':
             execute([sys.executable, '-m', 'unittest', 'discover', '-s', 'tests', '-v'], run, 'command-tests')
             execute([sys.executable, str(ROOT / 'scripts/design_rules.py')], run, 'design-rules')
-        device = prerequisites(run, args.device)
-        summary['device'] = device
-        if args.command in ('test', 'check'):
-            test_ios(run, device, summary, args.require_all_screenshots)
-        elif args.command == 'build':
-            execute(build_args('build', run, device), run, 'build')
-        elif args.command == 'launch':
-            launch(run, device)
+        with simulator_lock(summary):
+            device = prerequisites(run, args.device)
+            summary['device'] = device
+            if args.command in ('test', 'check'):
+                test_ios(run, device, summary, args.require_all_screenshots)
+            elif args.command == 'build':
+                execute(build_args('build', run, device), run, 'build')
+            elif args.command == 'launch':
+                launch(run, device)
         summary['status'] = 'passed'
         code = 0
     except Failure as error:
