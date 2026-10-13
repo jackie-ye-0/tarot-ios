@@ -1161,19 +1161,15 @@ struct QuestionField: View {
             .tint(Design.Palette.ink)
             .lineLimit(4...6)
             .focused($focused)
+            .submitLabel(.done)
+            .onSubmit { focused = false }
             .padding(Design.Space.group)
             .frame(minHeight: 132, alignment: .topLeading)
             .background(Design.Palette.surface, in: RoundedRectangle(cornerRadius: 20))
             .overlay { RoundedRectangle(cornerRadius: 20).strokeBorder(Design.Palette.ink, lineWidth: 1.5) }
             .accessibilityLabel("Your question")
             .accessibilityIdentifier("question-field")
-            .toolbar {
-                ToolbarItem(placement: .keyboard) {
-                    Button("Done") { focused = false }
-                        .typeRole(.label).foregroundStyle(Design.Palette.ink)
-                        .accessibilityIdentifier("keyboard-done")
-                }
-            }
+
     }
 }
 

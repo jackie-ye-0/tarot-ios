@@ -59,8 +59,10 @@ final class HarnessShellUITests: XCTestCase {
     }
 
     // Capture the requested stop, then audit overlapping stops until every deferred element is covered.
-    private func auditAndCapture(_ app: XCUIApplication, _ name: String, today: Bool = false) throws {
+    private func auditAndCapture(_ app: XCUIApplication, _ name: String, today: Bool = false,
+                                 expecting elements: XCUIElement...) throws {
         XCTAssertTrue(app.launchArguments.contains("--test-reduce-motion"), "Audit fixtures must disable animations")
+        if !elements.isEmpty { waitForSettled(elements) }
         if today {
             let viewport = visibleFrame(in: app)
             let card = app.buttons["today-card"].frame
@@ -214,6 +216,25 @@ final class HarnessShellUITests: XCTestCase {
         XCTAssertEqual(XCTWaiter.wait(for: [settled], timeout: 5), .completed, "Visible frames must settle")
     }
 
+    private func waitForSettled(_ elements: [XCUIElement], file: StaticString = #filePath, line: UInt = #line) {
+        XCTAssertFalse(elements.isEmpty, file: file, line: line)
+        var previousFrames: [CGRect]?
+        let settled = NSPredicate { _, _ in
+            guard elements.allSatisfy({ $0.exists }) else { previousFrames = nil; return false }
+            let frames = elements.map(\.frame)
+            guard frames.allSatisfy({ !$0.isEmpty && !$0.isInfinite && !$0.isNull }) else {
+                previousFrames = nil
+                return false
+            }
+            let unchanged = frames == previousFrames
+            previousFrames = frames
+            return unchanged
+        }
+        let expectation = XCTNSPredicateExpectation(predicate: settled, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [expectation], timeout: 5), .completed,
+                       "Expected screen elements must exist with unchanged frames across two reads", file: file, line: line)
+    }
+
     private func capture(_ app: XCUIApplication, _ name: String) {
         waitForRitualToSettle(app)
         waitForStableFrames(app)
@@ -235,6 +256,8 @@ final class HarnessShellUITests: XCTestCase {
         XCTAssertFalse(viewport.isEmpty, "The test safe-area viewport must have completed layout")
         let footer = app.otherElements["screen-footer"]
         var bottom = abovePinnedFooter && footer.exists ? min(viewport.maxY, footer.frame.minY) : viewport.maxY
+        let keyboard = app.keyboards.firstMatch
+        if keyboard.exists { bottom = min(bottom, keyboard.frame.minY) }
         let tabs = app.otherElements["resting-tabs"]
         if tabs.exists { bottom = min(bottom, tabs.frame.minY) }
         return CGRect(x: viewport.minX, y: viewport.minY, width: viewport.width, height: bottom - viewport.minY)
@@ -409,7 +432,7 @@ final class HarnessShellUITests: XCTestCase {
             if let precedingLane { XCTAssertLessThanOrEqual(precedingLane.maxX, card.frame.minX + 0.5) }
             precedingLane = card.frame
         }
-        try auditAndCapture(app, "02-draw")
+        try auditAndCapture(app, "02-draw", expecting: app.staticTexts["draw-title"], app.buttons["draw-card-3"])
         let fanFrame = app.buttons["draw-card-3"].frame
         app.buttons["draw-card-3"].tap()
         XCTAssertTrue(app.buttons["turn-over"].waitForExistence(timeout: 5))
@@ -417,7 +440,7 @@ final class HarnessShellUITests: XCTestCase {
         XCTAssertTrue(app.buttons["draw-card-3"].isSelected)
         XCTAssertEqual(app.buttons["draw-card-3"].frame.midY, fanFrame.midY, accuracy: 0.5,
                        "Selection must preserve the fan/disc anchor to within pixel rounding")
-        try auditAndCapture(app, "02-draw-card-chosen")
+        try auditAndCapture(app, "02-draw-card-chosen", expecting: app.staticTexts["draw-title"], app.buttons["turn-over"])
         app.buttons["turn-over"].tap()
         XCTAssertTrue(app.staticTexts["card-name"].waitForExistence(timeout: 5))
         XCTAssertEqual(app.staticTexts["card-name"].label, "The Star")
@@ -429,7 +452,7 @@ final class HarnessShellUITests: XCTestCase {
             assertVisible(app.staticTexts[identifier], in: app, abovePinnedFooter: true)
         }
         assertVisible(app.buttons["see-meaning"], in: app)
-        try auditAndCapture(app, "03-reveal")
+        try auditAndCapture(app, "03-reveal", expecting: app.staticTexts["card-name"], app.buttons["see-meaning"])
         app.buttons["see-meaning"].tap()
         XCTAssertTrue(app.staticTexts["core-interpretation"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["core-interpretation"].label.contains("Hope may feel more useful"))
@@ -438,7 +461,8 @@ final class HarnessShellUITests: XCTestCase {
             assertVisible(app.descendants(matching: .any)[identifier].firstMatch, in: app)
         }
         assertTodayContent(app)
-        try auditAndCapture(app, "04-today", today: true)
+        try auditAndCapture(app, "04-today", today: true,
+                            expecting: app.staticTexts["core-interpretation"], app.buttons["today-ask"])
         positionTodayAuditBelowCard(app, revealing: app.staticTexts["line-social"])
         try auditAndCapture(app, "04-today--bottom", today: true)
         scrollTo(app.staticTexts["next-card-arrival"], in: app)
@@ -763,7 +787,7 @@ final class HarnessShellUITests: XCTestCase {
         XCTAssertEqual(app.staticTexts["card-name"].label, "The Star")
         XCTAssertEqual(app.staticTexts["card-details"].label, "Reversed · Major Arcana XVII")
         XCTAssertEqual(app.descendants(matching: .any)["revealed-card"].label, "The Star, Reversed")
-        try auditAndCapture(app, "03-reveal--reversed")
+        try auditAndCapture(app, "03-reveal--reversed", expecting: app.staticTexts["card-name"], app.buttons["see-meaning"])
         app.buttons["see-meaning"].tap()
         XCTAssertTrue(app.staticTexts["core-interpretation"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.staticTexts["core-interpretation"].label.contains("Hope may feel more useful"))
@@ -783,7 +807,7 @@ final class HarnessShellUITests: XCTestCase {
         let failed = app(extra: ["--test-storage-open-failure"], audit: true)
         XCTAssertTrue(failed.staticTexts["storage-error-title"].waitForExistence(timeout: 5))
         XCTAssertTrue(failed.buttons["storage-retry"].isHittable)
-        try auditAndCapture(failed, "storage-open-failure")
+        try auditAndCapture(failed, "storage-open-failure", expecting: failed.staticTexts["storage-error-title"], failed.buttons["storage-retry"])
         failed.buttons["storage-retry"].tap()
         XCTAssertTrue(failed.staticTexts["draw-title"].waitForExistence(timeout: 5))
         failed.terminate()
@@ -971,7 +995,7 @@ final class HarnessShellUITests: XCTestCase {
     }
 
     func testAskSuggestionsComposerPickReadingAndDesignEvidence() throws {
-        let app = app(extra: fixedSpread)
+        let app = app(extra: fixedSpread, audit: true)
         reachAsk(app)
         var suggestions = Set<String>()
         for area in ["career", "social", "relationship"] {
@@ -984,35 +1008,35 @@ final class HarnessShellUITests: XCTestCase {
                 XCTAssertTrue(suggestions.insert(suggestion.label).inserted)
             }
         }
-        try auditAndCapture(app, "05-ask")
+        try auditAndCapture(app, "05-ask", expecting: app.staticTexts["ask-title"], app.buttons["suggestion-0"])
         app.buttons["tab-today"].tap()
         XCTAssertTrue(app.staticTexts["today-title"].exists)
         app.buttons["tab-ask"].tap()
         app.buttons["ask-question-entry"].tap()
         XCTAssertFalse(app.buttons["tab-ask"].exists)
         XCTAssertFalse(app.buttons["submit-question"].isEnabled)
-        try auditAndCapture(app, "06-composer")
+        try auditAndCapture(app, "06-composer", expecting: app.descendants(matching: .any)["question-field"].firstMatch, app.buttons["submit-question"])
         app.buttons["suggestion-0"].tap()
         XCTAssertTrue(app.buttons["submit-question"].isEnabled)
         XCTAssertEqual(app.descendants(matching: .any)["question-field"].firstMatch.value as? String, "Where is this going?")
-        try auditAndCapture(app, "06-composer-question-entered")
+        try auditAndCapture(app, "06-composer-question-entered", expecting: app.staticTexts["Or start from one of these"], app.buttons["submit-question"])
         app.buttons["submit-question"].tap()
         XCTAssertEqual(app.staticTexts["spread-question"].label, "“Where is this going?”")
         XCTAssertFalse(app.buttons["tab-ask"].exists)
         for position in ["situation", "action", "outcome"] {
             XCTAssertTrue(app.descendants(matching: .any)["spread-slot-\(position)"].firstMatch.label.contains("empty"))
         }
-        try auditAndCapture(app, "08-three-card-pick")
+        try auditAndCapture(app, "08-three-card-pick", expecting: app.staticTexts["spread-question"], app.buttons["draw-card-3"])
         chooseSpread(app)
         XCTAssertEqual(app.descendants(matching: .any)["spread-slot-situation"].firstMatch.label, "Situation, The Star, Upright")
         XCTAssertEqual(app.descendants(matching: .any)["spread-slot-action"].firstMatch.label, "Action, The Sun, Reversed")
         XCTAssertEqual(app.descendants(matching: .any)["spread-slot-outcome"].firstMatch.label, "Outcome, The Fool, Upright")
-        try auditAndCapture(app, "08-three-card-pick-complete")
+        try auditAndCapture(app, "08-three-card-pick-complete", expecting: app.staticTexts["spread-complete-title"], app.buttons["read-spread"])
         app.buttons["read-spread"].tap()
         XCTAssertTrue(app.staticTexts["reading-saved"].waitForExistence(timeout: 5))
         XCTAssertEqual(app.staticTexts["reading-saved"].label, "Relationship · Saved on this phone")
         XCTAssertFalse(app.buttons["tab-ask"].exists)
-        try auditAndCapture(app, "09-reading")
+        try auditAndCapture(app, "09-reading", expecting: app.staticTexts["reading-saved"], app.staticTexts["reading-situation"], app.buttons["reading-done"])
         for identifier in ["reading-situation", "reading-action", "reading-outcome", "reading-lens"] {
             XCTAssertFalse(app.staticTexts[identifier].label.isEmpty)
         }
@@ -1022,7 +1046,7 @@ final class HarnessShellUITests: XCTestCase {
         capture(app, "09-reading--outcome")
         scrollTo(app.staticTexts["reflection-question"], in: app)
         XCTAssertTrue(app.staticTexts["reflection-question"].label.hasSuffix("?"))
-        try auditAndCapture(app, "09-reading--bottom")
+        try auditAndCapture(app, "09-reading--bottom", expecting: app.staticTexts["reflection-question"], app.buttons["reading-done"])
         app.buttons["reading-done"].tap()
         XCTAssertTrue(app.staticTexts["today-title"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["tab-today"].exists)
@@ -1039,7 +1063,8 @@ final class HarnessShellUITests: XCTestCase {
         XCTAssertFalse(app.buttons["submit-question"].isEnabled)
         field.typeText("How can I make room to learn?")
         XCTAssertTrue(app.buttons["submit-question"].isEnabled)
-        app.buttons["keyboard-done"].tap()
+        app.keyboards.buttons["Done"].tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
         app.buttons["submit-question"].tap()
         chooseSpread(app)
         app.buttons["read-spread"].tap()
@@ -1126,6 +1151,33 @@ final class HarnessShellUITests: XCTestCase {
         capture(reduced, "08-three-card-pick--reduce-motion")
         chooseSpread(reduced)
         capture(reduced, "08-three-card-pick-complete--reduce-motion")
+    }
+
+    func testComposerKeyboardLayoutEvidence() {
+        for largest in [false, true] {
+            let app = app(extra: fixedSpread + ["--test-reduce-motion"] + (largest ? ["--test-largest-text"] : []))
+            reachAsk(app, largest: largest)
+            if largest { scrollTo(app.buttons["ask-question-entry"], in: app) }
+            app.buttons["ask-question-entry"].tap()
+            let field = app.descendants(matching: .any)["question-field"].firstMatch
+            if largest { scrollTo(field, in: app) }
+            field.tap()
+            XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
+            field.typeText("Where can I grow?")
+            waitForSettled([field, app.keyboards.firstMatch])
+            capture(app, largest ? "06-composer-question-entered--largest-text-keyboard" : "06-composer-question-entered--keyboard")
+            XCTAssertTrue(app.keyboards.buttons["Done"].exists)
+            app.keyboards.buttons["Done"].tap()
+            XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
+            for index in 0..<3 { scrollTo(app.buttons["suggestion-\(index)"], in: app) }
+            scrollTo(app.buttons["submit-question"], in: app)
+            XCTAssertTrue(app.buttons["submit-question"].isEnabled)
+            capture(app, largest ? "06-composer-question-entered--largest-text-keyboard-dismissed" : "06-composer-question-entered--keyboard-dismissed")
+            app.buttons["submit-question"].tap()
+            XCTAssertTrue(app.staticTexts["spread-question"].waitForExistence(timeout: 5))
+            XCTAssertEqual(app.staticTexts["spread-question"].label, "“Where can I grow?”")
+            app.terminate()
+        }
     }
 
 }
