@@ -1,14 +1,14 @@
 # Local iOS coding harness
 
-A native Swift/SwiftUI technical shell and local feedback loop for a future iOS tarot app. The screen increments an in-memory count; it has no tarot or AI features. Codex is the initial client under verification. Firstmate is optional and not needed by any repository command.
+A local-first native Swift/SwiftUI tarot app. The foundation slice (#7) opens on five face-down cards, reveals the selected daily card, then shows a basic Today with its core interpretation. The card and orientation are fixed by the installation seed and local date, and saved on-device with SwiftData. Reopening on the same date goes straight to Today.
 
-**Status:** native build/launch, command-contract tests, four real XCTest tests and passing-test screenshot inspection are verified. One independent standalone Codex repair exercise and a separate clean-commit rerun also passed. See [verification report](docs/verification.md) for actual evidence rather than inferring readiness from this scaffold.
+The starter library contains six cards in both orientations with original draft writing. No account, network, AI, analytics or paid service is used. Content needs editorial review before release to real users. Later issues add Welcome, the full library, ritual motion, richer Today, day rollover, Ask and History.
 
 ## Setup
 
 Use macOS with full Xcode, completed first-launch setup, the iOS SDK, an available iPhone simulator/runtime, Git and Python 3. No package manager, project generator, cloud account, paid service or additional SDK is required. Command Line Tools alone cannot build iOS apps. This is source-portable between appropriately equipped Macs, not a bundled toolchain or a Linux/Windows iOS build environment.
 
-Open `HarnessShell.xcodeproj` in Xcode if you prefer its interface. The shared scheme is `HarnessShell`. The fixture targets iPhone with iOS 17 or newer; actual validated toolchain/runtime versions are recorded in the verification report. Simulator verification does not need signing or an Apple Developer subscription.
+Open `HarnessShell.xcodeproj` in Xcode if you prefer its interface. The shared scheme is `HarnessShell`. The app targets iPhone with iOS 17 or newer; actual validated toolchain/runtime versions are recorded in the verification report. Simulator verification does not need signing or an Apple Developer subscription.
 
 If Xcode is not the machine-wide selection, prefix each command with your installed developer directory, for example:
 
@@ -25,7 +25,7 @@ Run from the repository root. Checkout paths containing spaces are supported.
 | Command | Purpose |
 | --- | --- |
 | `./scripts/harness doctor` | Probe Xcode/tools/SDKs; discover and record an available iPhone simulator |
-| `./scripts/harness build` | Build the technical app for that simulator |
+| `./scripts/harness build` | Build the app for that simulator |
 | `./scripts/harness launch` | Build, boot if needed, install, launch and capture a simulator image |
 | `./scripts/harness test` | Run unit and UI tests; export result summary and retained attachments |
 | `./scripts/harness check` | Run command-contract tests, then the full iOS test/evidence loop |
@@ -36,7 +36,7 @@ Use `--device <UDID>` on doctor/build/launch/test/check to choose an available i
 
 Use `./scripts/harness evidence --run ".harness/runs/<run-id>"` for a particular run. Every invocation has a distinct timestamp/UUID directory containing `summary.txt`, `summary.json`, raw logs, command arguments, toolchain/device metadata once prerequisites succeed, and Git head/dirty-state information. Build output lives in that run's `DerivedData/` with `Build.xcresult` for builds/launches; tests retain `Tests.xcresult` and exported `attachments/`. A successful test requires at least four executed tests, all passing with no skips, plus an exported image. Inspect the image visually; its existence does not prove layout quality. Launch images are immediate diagnostics and may capture the startup screen before rendering completes. Use the UI test attachment taken after successful interaction for visual verification.
 
-The launch command uses `simctl`; open the Simulator app yourself to watch the device. It installs only the technical fixture in the selected simulator and leaves that device running. Run directories can be large: delete obsolete directories under `.harness/runs/` when finished, retaining evidence you still need. Nothing is automatically uploaded or cleaned. Copy a complete run directory to preserve/share its evidence; review local paths and logs before sharing. Results are ignored by Git, so a fresh clone contains code/docs, not another Mac's results.
+The launch command uses `simctl`; open the Simulator app yourself to watch the device. It installs only the app in the selected simulator and leaves that device running. Run directories can be large: delete obsolete directories under `.harness/runs/` when finished, retaining evidence you still need. Nothing is automatically uploaded or cleaned. Copy a complete run directory to preserve/share its evidence; review local paths and logs before sharing. Results are ignored by Git, so a fresh clone contains code/docs, not another Mac's results.
 
 ### Screenshot names and design comparison
 
@@ -52,7 +52,7 @@ Missing screens are reported without failing an ordinary run, so the current tec
 ./scripts/harness check --require-all-screenshots
 ```
 
-This option also works with `test` and fails if any screen reference is missing its main capture, or if no screen references are available. It does not weaken the existing test-count, failure, skip or screenshot requirements. Coverage proves a named capture exists; follow the [design check](docs/design.md#12-design-check) to assess its contents and accessibility. The current shell's `Passing counter interaction` capture appears without a design reference and does not stand in for a product screen.
+This option also works with `test` and fails if any screen reference is missing its main capture, or if no screen references are available. It does not weaken the existing test-count, failure, skip or screenshot requirements. Coverage proves a named capture exists; follow the [design check](docs/design.md#12-design-check) to assess its contents and accessibility. Issue #7 captures `02-draw`, `02-draw-card-chosen`, `03-reveal` and `04-today`, plus large-text and Reduce Motion variants. The remaining screen references belong to later issues.
 
 ## Structure and limitations
 
@@ -64,4 +64,20 @@ This option also works with `test` and fails if any screen reference is missing 
 - [Learning notes](LEARNING.md): concepts introduced here.
 - [Verification](docs/verification.md): observed checks and pending gates.
 
-No app icon, production interface, persistence/export of app data, AI/provider integration, CI, remote enforcement, device signing or App Store delivery is implemented. The shell deliberately has no valuable personal data. Real-device behaviour and accessibility beyond this fixture need later validation. The optional `CLAUDE.md` pointer shares guidance only; Claude and other clients are not verified by this setup. Prose instructions cannot enforce compliance or guarantee future agent behaviour.
+No app icon, AI/provider integration, hosted CI, device signing or App Store delivery is implemented. Valuable free-text data is not collected in this foundation slice; export and deletion arrive with Settings. Real-device behaviour and VoiceOver reading order still need a manual pass.
+
+## Debug test configuration
+
+Only Debug builds, with `--test-mode`, read these launch arguments:
+
+- `--test-date <ISO-8601 instant>` and `--test-time-zone <IANA zone>` fix the clock and date key.
+- `--test-seed <string>` supplies the seed when the store has no installation identity.
+- `--test-memory-store` starts with an empty temporary SwiftData store on each launch.
+- `--test-store-id <UUID>` uses an isolated on-device test store that survives process relaunch. UI tests use a new UUID per test; synthetic stores remain in the simulator app container until it is removed.
+- `--test-largest-text` and `--test-reduce-motion` set the largest SwiftUI Dynamic Type size and disable animations in the root transaction, without changing simulator settings. The app also honours the real system Reduce Motion setting.
+
+Release builds ignore all these arguments. Normal launches always use the saved installation seed and on-device store. Storage failures surface a retry, never a silent reset or temporary substitute.
+
+`./scripts/harness check` also runs the design-role source guard from `scripts/design_rules.py`. Its lexical checks reject raw colour/font/radius primitives and modifiers outside `DesignSystem.swift`; they are a guardrail, not a complete Swift parser. XCTest accessibility audits and visual comparison remain required.
+
+Bundled font provenance and licences are in [Fonts](HarnessShell/Resources/Fonts/README.md). See [foundation verification](docs/foundation-verification.md) for the #7 evidence and accepted reference differences.

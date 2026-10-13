@@ -6,7 +6,7 @@ Start a standalone Codex session from the repository root. Ask it to read reposi
 
 For screenshot review, `./scripts/harness evidence` lists reference coverage and the run's `design-comparison.html` path. Open that page: reference left, built screen right, variants under the same screen. Inspect images as well as names; a match is not visual approval. Missing main captures are informational during incremental work. Use `./scripts/harness check --require-all-screenshots` for the final pass; variants cannot fill a missing main capture. Follow the [capture naming contract](../README.md#screenshot-names-and-design-comparison) and [design check](design.md#12-design-check), and report the page inspected and any missing screens or accepted differences.
 
-For internal tooling/fixture changes, review the diff and make a coherent commit. Push/open a PR only when the task authorises it. Product changes are outside initial scope and require a human decision and review of the configured delivery gate. Repository prose and file-existence checks are not enforcement. No remote ruleset or CI gate has been verified here.
+For internal tooling/fixture changes, review the diff and make a coherent commit. Push/open a PR only when the task authorises it. Product changes follow the approved build scope and the assigned issue; new scope requires a human decision and review of the configured delivery gate. Repository prose and file-existence checks are not enforcement. No remote ruleset or CI gate has been verified here.
 
 ## Improve from observed friction
 
