@@ -37,9 +37,9 @@ enum Design {
         static let disabled = colour(0xdcc6bc)
         static let disabledInk = colour(0x5f4740)
         static let surfaceHairline = colour(0xefe2dc)
-        static let careerLabel = colour(0x4f6b80)
-        static let relationshipLabel = colour(0x9a543b)
-        static let socialLabel = colour(0x566847)
+        static let careerLabel = colour(0x415c70)
+        static let relationshipLabel = colour(0x88452f)
+        static let socialLabel = colour(0x4b5b3e)
         static let dailyCareerLabel = colour(0x3f596d)
         static let dailyRelationshipLabel = colour(0x8a4a33)
         static let dailySocialLabel = colour(0x4d5e3d)
@@ -59,7 +59,6 @@ enum Design {
             case .social: dailySocialLabel
             }
         }
-
         static func areaLabel(_ area: ReadingArea) -> Color {
             switch area {
             case .career: careerLabel
@@ -1169,8 +1168,7 @@ struct QuestionField: View {
             .accessibilityLabel("Your question")
             .accessibilityIdentifier("question-field")
             .toolbar {
-                ToolbarItemGroup(placement: .keyboard) {
-                    Spacer()
+                ToolbarItem(placement: .keyboard) {
                     Button("Done") { focused = false }
                         .typeRole(.label).foregroundStyle(Design.Palette.ink)
                         .accessibilityIdentifier("keyboard-done")
@@ -1245,9 +1243,12 @@ struct EmptySpreadSlot: View {
     let width: CGFloat
 
     var body: some View {
-        RoundedRectangle(cornerRadius: width / 10)
-            .strokeBorder(active ? Design.Palette.gold : Design.Palette.nightSecondary.opacity(0.4),
-                          style: StrokeStyle(lineWidth: 1.5, dash: [3, 3]))
+        let shape = RoundedRectangle(cornerRadius: width / 10)
+        shape.fill(Design.Palette.night)
+            .overlay {
+                shape.strokeBorder(active ? Design.Palette.gold : Design.Palette.nightSecondary.opacity(0.4),
+                                   style: StrokeStyle(lineWidth: 1.5, dash: [3, 3]))
+            }
             .overlay {
                 Text(String(number)).typeRole(.section).foregroundStyle(Design.Palette.gold)
             }

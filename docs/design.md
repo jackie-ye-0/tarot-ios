@@ -57,9 +57,9 @@ Each area owns one accent, used the same way everywhere. Raw accents fail contra
 
 | Area | Accent (fills) | Label on ground | Tint panel | Text on tint |
 |---|---|---|---|---|
-| Career | Blue `#6f8ca2` | `#4f6b80` | `#dfe5ea` | `#3f596d` |
-| Relationship | Clay `#b0654a` | `#9a543b` | `#f0d6cb` | `#8a4a33` |
-| Social | Sage `#7d8f6a` | `#566847` | `#e2e6d9` | `#4d5e3d` |
+| Career | Blue `#6f8ca2` | `#415c70` | `#dfe5ea` | `#3f596d` |
+| Relationship | Clay `#b0654a` | `#88452f` | `#f0d6cb` | `#8a4a33` |
+| Social | Sage `#7d8f6a` | `#4b5b3e` | `#e2e6d9` | `#4d5e3d` |
 
 On the textured native screens, area labels use the existing **Text on tint** partners, including on ground and surface. The flatter reference label colours have too little contrast margin once the grain is rendered; the darker partners preserve the area hues and pass the 4.5:1 floor. Accent fills stay unchanged.
 
@@ -71,7 +71,7 @@ Every screen carries a fine risograph-style grain over the ground: about 16% str
 
 ### Contrast
 
-Text must reach at least 4.5:1 against what it sits on. Measured pairs: ink on ground 10.0, secondary on ground 5.8, placeholder 5.4, disabled label 5.2, area labels 4.5 to 4.9, cream on night 15.1, secondary on night 9.8. Re-measure any new pair before using it.
+Text must reach at least 4.5:1 against what it sits on. Measured pairs: ink on ground 10.0, secondary on ground 5.8, placeholder 5.4, disabled label 5.2, area labels 5.7 to 5.9, cream on night 15.1, secondary on night 9.8. The area labels retain their hues but are darker than the reference labels: their previous 4.5 to 4.9 ratios left too little headroom for grain, and the reading's native contrast audit rejected the relationship heading. Re-measure any new pair before using it.
 
 ## 3. Typography
 
@@ -113,8 +113,7 @@ Sizes are the default-size reference in points. In SwiftUI map each role to a Dy
 - **Text field.** Surface fill with a 1.5 ink border when it is the main entry on the screen. A single-line entry is a 60 high pill; a multi-line one uses radius 20. It must look like a field, with placeholder text and a character count where there is a limit.
 - **Card back.** Card-back fill, gold outline, a thinner inner frame and a half-sun-on-horizon motif. Identical everywhere.
 - **Card front.** Surface fill with an ink outline (gold outline when shown on night). Art is layered flat pastel shapes with ink linework, abstract rather than illustrative. Reversed cards are rotated 180 degrees and say "reversed" in text as well.
-
-- **Empty slot.** Dashed outline in the card shape with its number. The slot being filled has a gold outline and a slow pulse.
+- **Empty slot.** Night-ground fill, dashed outline in the card shape and a gold number. The explicit fill keeps the numeral's background consistent over the ritual disc. The slot being filled has a gold outline and a slow pulse.
 - **Score strip.** The three area scores sit in one row: area label, numeral, and a 6 point rounded bar in the area's accent on a neutral track. Numbers are always shown as text; the bar never carries the value alone.
 - **List rows.** 60 to 76 high inside a surface group, hairline between rows, chevron at the right when the row navigates.
 - **Destructive actions** live inside a More menu, never beside Share or Done.
