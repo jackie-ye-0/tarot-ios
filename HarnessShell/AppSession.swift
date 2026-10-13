@@ -126,7 +126,10 @@ final class AppSession {
     }
 
     func refreshDay() {
-        do { _ = try updateDay(); dayRefreshFailed = false }
+        do {
+            _ = try updateDay()
+            if dayRefreshFailed { dayRefreshFailed = false }
+        }
         catch { dayRefreshFailed = true }
     }
 
@@ -135,16 +138,15 @@ final class AppSession {
         let now = clock.now
         let zone = clock.timeZone
         let key = ReadingEngine.dateKey(for: now, timeZone: zone)
-        let changed = key != dateKey
-        if changed {
-            let saved = try store.draw(for: key)
-            screen = saved.map(Screen.today) ?? .draw
-            dateKey = key
-            saveFailed = false
-        }
+        // A same-date foreground or time-zone event must leave the current ritual untouched.
+        guard key != dateKey else { return false }
+        let saved = try store.draw(for: key)
+        screen = saved.map(Screen.today) ?? .draw
+        dateKey = key
+        saveFailed = false
         date = now
         timeZone = zone
-        return changed
+        return true
     }
 }
 

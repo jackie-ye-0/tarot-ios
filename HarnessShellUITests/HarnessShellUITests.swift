@@ -162,6 +162,10 @@ final class HarnessShellUITests: XCTestCase {
         let app = app()
         app.buttons["draw-card-1"].tap()
         app.buttons["draw-card-5"].tap()
+        XCUIDevice.shared.press(.home)
+        app.activate()
+        XCTAssertTrue(app.buttons["draw-card-5"].isSelected)
+        XCTAssertTrue(app.buttons["turn-over"].exists)
         app.buttons["turn-over"].tap()
         XCTAssertEqual(app.staticTexts["draw-position"].label, "You picked card 5 of five")
     }
