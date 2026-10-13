@@ -59,8 +59,14 @@ final class HarnessShellUITests: XCTestCase {
     }
 
     // Capture the requested stop, then audit overlapping stops until every deferred element is covered.
-    private func auditAndCapture(_ app: XCUIApplication, _ name: String) throws {
+    private func auditAndCapture(_ app: XCUIApplication, _ name: String, today: Bool = false) throws {
         XCTAssertTrue(app.launchArguments.contains("--test-reduce-motion"), "Audit fixtures must disable animations")
+        if today {
+            let viewport = visibleFrame(in: app)
+            let card = app.buttons["today-card"].frame
+            XCTAssertTrue(viewport.contains(card) || card.maxY <= viewport.minY,
+                          "Today audits must not start with a cropped card illustration")
+        }
         capture(app, name)
         var records: [[String: String]] = []
         defer {
@@ -128,9 +134,13 @@ final class HarnessShellUITests: XCTestCase {
                 return !deferredAtThisStop.contains($0) && element.exists && !element.frame.isEmpty && viewport.contains(element.frame)
             })
             if !covered.isEmpty { print("Audit fully visible: \(covered.sorted())") }
-            guard let key = deferred.keys.sorted().first(where: { !covered.contains($0) }) else { return }
+            guard let key = deferred.keys.sorted().first(where: { !covered.contains($0) }) else { break }
             let target = deferred[key]!
             XCTAssertTrue(target.exists, "Deferred audit element disappeared: \(key)")
+            if today {
+                positionTodayAuditBelowCard(app, revealing: target)
+                continue
+            }
             let distance = viewport.height * 0.45 * (target.frame.minY < viewport.minY ? -1 : 1)
             let origin = app.coordinate(withNormalizedOffset: .zero)
             let start = origin.withOffset(CGVector(dx: viewport.midX, dy: viewport.midY + distance / 2))
@@ -138,6 +148,36 @@ final class HarnessShellUITests: XCTestCase {
             start.press(forDuration: 0.05, thenDragTo: end, withVelocity: .slow, thenHoldForDuration: 0.1)
         }
         try requireAuditCoverage(Set(deferred.keys), covered: covered)
+        // The native scaling audit can still be restoring layout when it returns.
+        waitForStableFrames(app)
+    }
+
+    private func positionTodayAuditBelowCard(_ app: XCUIApplication, revealing target: XCUIElement) {
+        let card = app.buttons["today-card"]
+        let reading = app.staticTexts["core-interpretation"]
+        XCTAssertTrue(card.exists && reading.exists && target.exists)
+        for _ in 0..<10 {
+            let viewport = visibleFrame(in: app)
+            let cardFrame = card.frame
+            let readingFrame = reading.frame
+            let targetFrame = target.frame
+            // Put the viewport edge in the gap after the illustration, never through its artwork.
+            let gap = max(0, readingFrame.minY - cardFrame.maxY)
+            let readingTop = viewport.minY + gap / 2
+            let distance = max(readingFrame.minY - readingTop, targetFrame.maxY - viewport.maxY)
+            if abs(distance) < 1 { break }
+            // Cross the scroll view's touch threshold, then remeasure the actual result.
+            let drag = min(abs(distance) + 12, viewport.height - 2) * (distance > 0 ? 1 : -1)
+            let origin = app.coordinate(withNormalizedOffset: .zero)
+            let start = origin.withOffset(CGVector(dx: viewport.midX, dy: viewport.midY + drag / 2))
+            let end = origin.withOffset(CGVector(dx: viewport.midX, dy: viewport.midY - drag / 2))
+            start.press(forDuration: 0.05, thenDragTo: end, withVelocity: .slow, thenHoldForDuration: 0.1)
+        }
+        let viewport = visibleFrame(in: app)
+        XCTAssertLessThanOrEqual(card.frame.maxY, viewport.minY,
+                                 "Later Today audits must place the entire illustration above the viewport")
+        assertVisible(target, in: app)
+        print("Today audit stop: card \(card.frame), reading \(reading.frame), viewport \(viewport)")
     }
 
     private func waitForRitualToSettle(_ app: XCUIApplication,
@@ -153,16 +193,20 @@ final class HarnessShellUITests: XCTestCase {
                        "Ritual must finish rendering before an audit or capture", file: file, line: line)
     }
 
-    private func capture(_ app: XCUIApplication, _ name: String) {
-        waitForRitualToSettle(app)
+    private func waitForStableFrames(_ app: XCUIApplication) {
         let elements = app.descendants(matching: .any).allElementsBoundByIndex.filter { $0.isHittable }
         var previous: [CGRect]?
         let settled = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
             let frames = elements.map(\.frame)
             defer { previous = frames }
-            return !frames.isEmpty && frames == previous
+            return !frames.isEmpty && frames.allSatisfy { !$0.isEmpty } && frames == previous
         }, object: nil)
-        XCTAssertEqual(XCTWaiter.wait(for: [settled], timeout: 5), .completed, "Capture frames must settle")
+        XCTAssertEqual(XCTWaiter.wait(for: [settled], timeout: 5), .completed, "Visible frames must settle")
+    }
+
+    private func capture(_ app: XCUIApplication, _ name: String) {
+        waitForRitualToSettle(app)
+        waitForStableFrames(app)
         // Accessibility frames settle before the compositor after a colour-scheme change.
         Thread.sleep(forTimeInterval: 0.3)
         let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
@@ -305,9 +349,9 @@ final class HarnessShellUITests: XCTestCase {
             assertVisible(app.descendants(matching: .any)[identifier].firstMatch, in: app)
         }
         assertTodayContent(app)
-        try auditAndCapture(app, "04-today")
-        scrollTo(app.staticTexts["line-social"], in: app)
-        try auditAndCapture(app, "04-today--bottom")
+        try auditAndCapture(app, "04-today", today: true)
+        positionTodayAuditBelowCard(app, revealing: app.staticTexts["line-social"])
+        try auditAndCapture(app, "04-today--bottom", today: true)
         scrollTo(app.staticTexts["next-card-arrival"], in: app)
         XCTAssertEqual(app.staticTexts["next-card-arrival"].label, "Your next card arrives at midnight")
         capture(app, "04-today--midnight")
@@ -427,7 +471,7 @@ final class HarnessShellUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["core-interpretation"].label.contains("Hope may feel more useful"))
         XCTAssertTrue(app.staticTexts["This earlier draw has no saved extras or area readings."].exists)
         XCTAssertFalse(app.descendants(matching: .any)["daily-colour"].firstMatch.exists)
-        try auditAndCapture(app, "04-today--earlier-snapshot")
+        try auditAndCapture(app, "04-today--earlier-snapshot", today: true)
         app.terminate()
         let largest = self.app(extra: ["--test-earlier-snapshot", "--test-largest-text"])
         capture(largest, "04-today--earlier-snapshot-largest-text")
@@ -638,8 +682,7 @@ final class HarnessShellUITests: XCTestCase {
         XCTAssertEqual(app.descendants(matching: .any)["score-career"].firstMatch.label, "Career, 54 out of 100")
         XCTAssertEqual(app.staticTexts["line-relationship"].label, "Name a need without asking for an instant answer.")
         capture(app, "04-today--reversed")
-        scrollTo(app.staticTexts["line-social"], in: app)
-        dragContent(app, up: true)
+        positionTodayAuditBelowCard(app, revealing: app.staticTexts["line-social"])
         for area in ["career", "relationship", "social"] {
             assertVisible(app.staticTexts["area-label-\(area)"], in: app)
             assertVisible(app.staticTexts["line-\(area)"], in: app)

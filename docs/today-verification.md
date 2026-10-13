@@ -4,9 +4,11 @@
 
 ## Final local run
 
-`lockf /tmp/tarot-ios-harness.lock ./scripts/harness check --device C72D8E04-B2B4-4658-900A-77040AD8206F` passed in `.harness/runs/20261013T182958.770640Z-check-2c76c8e9`: **21/21 iOS tests** (9 engine/font and 12 UI), zero failures, skips or expected failures, **32 command tests**, and the unchanged design-role guard. Xcode 27.0 (27A266a), iOS 26.5, iPhone 17e Tarot 2, 390 × 844 points.
+`lockf /tmp/tarot-ios-harness.lock ./scripts/harness check --device C72D8E04-B2B4-4658-900A-77040AD8206F` passed in `.harness/runs/20261013T223433.048445Z-check-4fa252c6`: **23/23 iOS tests** (9 engine/font and 14 UI), zero failures, skips or expected failures, **34 command tests**, and the unchanged design-role guard. Xcode 27.0 (27A266a), iOS 26.5, iPhone 17e Tarot 2, 390 × 844 points. This run includes the audit-positioning and post-audit settling changes described below.
 
-`./scripts/harness evidence --run .harness/runs/20261013T182958.770640Z-check-2c76c8e9` was read. The latest run exported **43 kept screenshots**. After the review fixes, the upright/reversed/earlier-snapshot thumbnails, both affected largest-text thumbnail states, the new reversed bottom and the Today reference pair were inspected. All 42 screenshots from the preceding run `20261013T175245.672261Z-check-f87f554b`, including Today/Reveal reference pairs, had already been inspected by the author and the independent reviewer. The main screenshots are `02-draw`, `02-draw-card-chosen`, `03-reveal` and `04-today`; missing references belong to later issues. The task evidence packet is kept outside the repository under `tarot-9-today-full/post-review-evidence/`; the original independently reviewed packet remains in `final-evidence/`.
+`./scripts/harness evidence --run .harness/runs/20261013T223433.048445Z-check-4fa252c6` was read. All **46 exported screenshots** were inspected, including Today/Reveal reference comparisons, upright/reversed bottom states, earlier snapshots, largest text and Reduce Motion. Both normal-size bottom captures show all three complete area sentences and the rounded group bottom; the thumbnail is wholly above the viewport. The main screenshots are `02-draw`, `02-draw-card-chosen`, `03-reveal` and `04-today`; missing references belong to later issues. No new visual difference needs acceptance beyond those listed below. The latest complete evidence packet is outside the repository under `tarot-9-today-full/revalidation-evidence/`.
+
+The independent reviewer inspected the 42-image run `20261013T175245.672261Z-check-f87f554b`; its packet remains in `final-evidence/`. The author inspected the corrected 43-image run `20261013T182958.770640Z-check-2c76c8e9`, retained in `post-review-evidence/`, and rechecked those states in the latest run. These earlier successful runs do not replace the strict-audit revalidation below.
 
 A separate Release build also passed in `.harness/release-marker-1791906819/Build.xcresult`; the test viewport identifier was absent from the entire Release app bundle, with the Debug binary as a positive control. The viewport regression additionally verifies the marker is absent from an ordinary Debug launch.
 
@@ -29,7 +31,7 @@ Implementation: colour name/swatch, object and best hour above a three-area scor
 - Modal receives the current Dynamic Type size explicitly; a geometry assertion prevents a standard-size image from being mislabelled as largest text.
 - Decorative expansion and back symbols keep their designed dimensions at large text; the button targets stay accessible.
 - Area labels use the manifest's existing darker text partners after unfiltered native contrast audits exposed insufficient margin over grain. Accent fills remain unchanged.
-- The shared accessibility audit records deferred and covered elements in the test log. Every category stays enabled and strict. Following Firstmate instructions 006–007, fully visible plain-text contrast flags are measured from their own screenshot and dismissed only at 4.5:1 or above, with identifier, label, image and ratio kept as attachments. The shared measurement and synthetic self-checks come verbatim from the supplied f3d895e patch; no Ask code or palette changes were imported. Audit fixtures disable animations; captures wait for the ritual signal and two identical accessibility-frame reads, then pause 0.3 seconds for the compositor after colour-scheme changes.
+- The shared accessibility audit records deferred and covered elements in the test log. Every category stays enabled and strict. Following Firstmate instructions 006–007, fully visible plain-text contrast flags are measured from their own screenshot and dismissed only at 4.5:1 or above, with identifier, label, image and ratio kept as attachments. The shared measurement and synthetic self-checks come verbatim from the supplied f3d895e patch; no Ask code or palette changes were imported. Audit fixtures disable animations; captures wait for the ritual signal and two identical, non-empty accessibility-frame reads, then pause 0.3 seconds for the compositor after colour-scheme changes. The shared audit helper also waits for stable frames before returning to its caller; that post-audit wait adds no fixed sleep.
 - Image inspection added an overlapping reading-opening capture for the earlier-snapshot largest-text state and made the largest-text bottom capture reach the surface group’s rounded bottom edge.
 - Modal metadata query is scoped to Reveal's existing scroll view so XCTest cannot match Today behind it.
 
@@ -45,7 +47,7 @@ Largest text: thumbnail/details, extras and scores stack; sentences wrap and all
 
 ## Independent comparison
 
-A fresh session that did not write or inspect the implementation compared all 42 pre-fix screenshots with the manifest and applicable references on 14 October 2026. Its verdict was **“pass after the listed must-fix items”**: T01 and V02. The following dispositions incorporate Firstmate's instruction 009. The author inspected the corrected/new images from the passing post-review run recorded above; no must-fix item remains. One independent round is sufficient under that instruction.
+A fresh session that did not write or inspect the implementation compared all 42 pre-fix screenshots with the manifest and applicable references on 14 October 2026. Its verdict was **“pass after the listed must-fix items”**: T01 and V02. The following dispositions incorporate Firstmate's instruction 009. The author inspected the corrected/new images from the passing post-review run and rechecked them in the latest full run recorded above; no must-fix item remains. One independent round is sufficient under that instruction.
 
 | Finding | Disposition and reason |
 | --- | --- |
@@ -81,6 +83,27 @@ Instruction 008 required source and runtime evidence for native text-detection f
 
 Native element-detection findings are strict at every audit stop; the exposed-label check above is supplementary evidence, not an exception. The final run recorded **zero** unattributed text-detection cases. Its initial Today audit deferred only the partly clipped `area-label-career` and wholly offscreen `line-career` contrast findings; both subsequently passed fully visible, as recorded in the test log. The earlier failing run identified an unattributed text-detection issue and failed as intended.
 
+## Audit-stop revalidation
+
+Strict native text detection failed at the same partly scrolled Today state in `20261013T170850.579277Z-check-69451d55` and `20261013T203010.328132Z-check-7022c77c`. The latter passed 22 of 23 iOS tests and failed only the unnamed “Potentially inaccessible text” finding. Both failed results remain retained; neither counts as verification. The exposure test passed and showed the actual reading strings in the accessibility hierarchy.
+
+Firstmate's hypothesis was that the partially cropped card illustration, leaving a star tip and small circles at the viewport edge, could be mistaken for inaccessible text. The change positions the first Today audit at rest with the whole thumbnail visible, and every later stop with the whole thumbnail above the viewport. Positioning uses the measured card, interpretation, target and safe-area frames, with assertions for card position and full target visibility. The reversed bottom capture uses the same helper; earlier-snapshot audits use the same Today guard. The native categories, fully-visible coverage obligation, offscreen contrast deferral and measured plain-text contrast treatment are unchanged. No text-detection bypass was added.
+
+The focused experiment ran `testDrawRevealTodayAndDesignEvidence` with a separately retained result bundle per attempt in `.harness/audit-positioning-focused/`:
+
+| Attempt | Result | Today audit finding | Post-audit stable-frame wait |
+| --- | --- | --- | --- |
+| `iteration-1` | Passed, 134.067 seconds | None | Before the settling change |
+| `iteration-2` | Passed, 134.324 seconds | None | Before the settling change |
+| `iteration-3` | Failed before Today, 50.168 seconds; excluded | Today audits not reached | Before the settling change |
+| `iteration-4` | Passed, 155.712 seconds | None | Included |
+| `iteration-5` | Passed, 156.980 seconds | None | Included |
+| `iteration-6` | Passed, 155.596 seconds | None | Included |
+
+Attempt 3 tapped the Reveal action immediately after its native audit returned, but the reading did not appear within five seconds. Its post-tap hierarchy remained on Reveal. Firstmate's instruction 015 identified the same audit-restoration timing artefact already reproduced in sibling ticket #13: the scaling audit can return while layout is still being restored. The shared `auditAndCapture` helper now waits for the existing stable-frame predicate at its common exit, after coverage validation and before any caller can tap. It requires non-empty frames matching the previous sample and adds no fixed sleep or per-call-site workaround. The first two completed Today runs were retained as instructed, and three more completed without needing a repeat. The excluded failure, tap event, hierarchy and video remain in the evidence packet.
+
+Result: **zero unnamed text-detection findings in five completed Today audit iterations**, followed by the single passing full check recorded above. No measured contrast dismissal occurred in the focused passes or final full run. The later upright stops consistently put the thumbnail bottom at 35 points, above the safe viewport's 47-point top, with the interpretation starting at 63 points. Previously deferred Career elements were audited fully visible. This supports the stop-position hypothesis; it does not identify the native detector's internal cause. The experiment records and all attempts are retained under the task's `audit-positioning-evidence/` folder.
+
 ## Contrast evidence
 
 The archived fully visible core-reading failure from check 12 measures 9.062926109939994:1 with the shared function (background luminance 0.7186824644654574; text 0.03481614603724787). Source inspection found no dimming on the reading. The final passing run had **zero measured contrast dismissals**. For completeness, these are every dismissal retained in the earlier diagnostic run `20261013T170850.579277Z-check-69451d55`, which subsequently failed on the separate text-detection finding; its log and element images remain in the task's `text-detection-evidence/` packet:
@@ -93,7 +116,7 @@ The archived fully visible core-reading failure from check 12 measures 9.0629261
 | empty identifier, `48:label:After 3 pm` | 9.05828150967682:1 |
 | `score-label-career` | 5.373034934775932:1 |
 
-All five were fully inside the true safe-area viewport and above the 4.5:1 manifest floor. No colour was changed to handle those native flags.
+All five were fully inside the true safe-area viewport and above the 4.5:1 manifest floor. The later failed run `20261013T203010.328132Z-check-7022c77c` retained the same five measured dismissals and ratios before failing on text detection; its evidence is in `recovery-evidence/`. No colour was changed to handle those native flags.
 
 ## Limits
 
