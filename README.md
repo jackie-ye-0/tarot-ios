@@ -2,7 +2,7 @@
 
 A local-first native Swift/SwiftUI tarot app. The foundation slice (#7) opens on five face-down cards, reveals the selected daily card, then shows a basic Today with its core interpretation. The card and orientation are fixed by the installation seed and local date, and saved on-device with SwiftData. Reopening on the same date goes straight to Today.
 
-The starter library contains six cards in both orientations with original draft writing. No account, network, AI, analytics or paid service is used. Content needs editorial review before release to real users. Draw shuffles into a fan and Reveal turns the card as the screen warms to dawn; both remain interruptible and honour Reduce Motion. Later issues add Welcome, the full library, richer Today, day rollover, Ask and History.
+The starter library contains six cards in both orientations with original draft writing. No account, network, AI, analytics or paid service is used. Content needs editorial review before release to real users. Draw shuffles into a fan and Reveal turns the card as the screen warms to dawn; both remain interruptible and honour Reduce Motion. Local-day changes route to Draw, or restore Today when that date already has a saved card. Recent card identities trigger up to three salted retries, then the last result is accepted. This bounded rule cannot guarantee fourteen repeat-free days with the six-card starter. Later issues add Welcome, the full library, richer Today, Ask and History.
 
 ## Setup
 
@@ -82,6 +82,7 @@ Only Debug builds, with `--test-mode`, read these launch arguments:
 - `--test-disable-animations` independently switches animations off for deterministic UI checks. Motion-specific tests leave it off.
 - `--test-hold-shuffle` holds the first wash phase for a deterministic interruption test. Tapping any card still resolves it immediately; Reduce Motion and animation-off bypass the hold entirely. This avoids racing XCTest’s automatic animation-idle wait.
 - `--test-storage-open-failure` makes the first store-opening attempt fail so UI tests can verify the error and retry path.
+- `--test-controls` adds a Debug-only test menu for advancing the configured clock to the next local midnight, arming a date advance while backgrounded, and switching Sydney/Honolulu. Clock changes emit the same notifications the app observes in production; background advancement waits for the real foreground lifecycle to refresh. Ordinary design captures omit this menu. No simulator setting is changed.
 
 In Debug test mode, the Draw title and Reveal card also expose a `settled` accessibility value after SwiftUI reports that their animations have been removed. UI audits and captures wait on this value; it does not add visible test controls.
 

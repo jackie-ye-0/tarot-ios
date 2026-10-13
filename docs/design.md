@@ -1,6 +1,6 @@
 # Design manifest
 
-11 October 2026 · Adopted by Jackie as the visual and interaction direction for the tarot app. This is the single source of truth for how the app looks and behaves on screen. Follow it for any design or UI work; change the app's look by changing this file first. Updated 12 October 2026: Settings matches the build spec, and the reference images and design check (§12) were added.
+11 October 2026 · Adopted by Jackie as the visual and interaction direction for the tarot app. This is the single source of truth for how the app looks and behaves on screen. Follow it for any design or UI work; change the app's look by changing this file first. Updated 14 October 2026: shuffle/reveal motion (§7), completed Reduce Motion states, local-day routing and the Today midnight footer (§11) are documented.
 
 **What this does not do.** It does not approve building product features. [Decisions and scope](decisions.md) still governs what may be implemented. Issue #7 implements Draw, Reveal and a basic Today; later screens remain reference designs.
 
@@ -170,6 +170,8 @@ The reference screens also change the flow, not only the look. Jackie adopted th
 Issue #7 starts directly at Draw. It implements the static fan and selection, explicit Reveal and a basic Today containing the card, name, orientation, keywords and core interpretation. Issue #10 adds shuffle/reveal motion (§7). Welcome, History, Share, Settings, tabs, Today extras and Ask are later slices; their controls are omitted rather than made inert. The unselected Draw footer now offers the shuffle action and helper (§7). The five non-overlapping tap lanes remain available when a card is selected. At standard size the two Draw states share the same disc/fan anchor; the chosen card grows and rises inside it. The title reserves the two-line instruction’s space so selecting a card does not shift the whole composition. This minimum does not cap larger text. At accessibility text sizes, Today stacks its card above its details. Every screen scrolls. The shared reading-screen layout pins its footer only at standard text sizes; at accessibility sizes it places the action and helper/disclaimer text inline after the content, so they remain reachable without taking space from the reading. Text is never capped or shrunk to fit. This rule also applies to any later screen using a pinned footer.
 
 A storage-open failure uses dawn ground, a screen title explaining that readings could not be opened, body copy saying nothing has been replaced, and a "Try again" primary action. A save failure leaves the chosen card in place and shows a native alert explaining how to retry; it never silently switches to a temporary store or deletes saved data.
+
+Issue #11 refreshes the local date at midnight, after clock/time-zone changes and on foreground return. A new undrawn date opens an unselected Draw; a date with a saved card opens Today with that snapshot. A time-zone change within the same date leaves the current ritual in place. Today ends with the quiet, non-interactive caption “Your next card arrives at midnight”, centred in secondary ink after its reading content (after the last area row when the fuller Today lands). If the new day's saved card cannot be read, a native alert explains that saved cards are unchanged and offers “Try again”.
 
 ## 11a. Not yet designed
 
