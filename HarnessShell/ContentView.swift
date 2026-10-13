@@ -11,16 +11,15 @@ struct ContentView: View {
             switch session.screen {
             case .draw:
                 DrawScreen(session: session, animationsEnabled: animationsEnabled,
-                           holdShuffle: holdShuffle, testMode: testMode).id("draw")
+                           holdShuffle: holdShuffle, testMode: testMode).id("draw-\(session.dateKey)")
             case .reveal(let draw):
                 RevealScreen(draw: draw, animationsEnabled: animationsEnabled, testMode: testMode) {
                     session.showToday(draw)
-                }.id("reveal")
+                }.id("reveal-\(draw.dateKey)")
             case .today(let draw):
-                TodayScreen(draw: draw, dateLabel: session.dateLabel).id("today")
+                TodayScreen(draw: draw, dateLabel: session.dateLabel).id("today-\(draw.dateKey)")
             }
         }
-        .id(session.dateKey)
         .alert("Your card could not be saved", isPresented: $session.saveFailed) {
             Button("OK", role: .cancel) { }
         } message: {
