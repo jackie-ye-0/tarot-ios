@@ -2,7 +2,7 @@
 
 A native Swift/SwiftUI technical shell and local feedback loop for a future iOS tarot app. The screen increments an in-memory count; it has no tarot or AI features. Codex is the initial client under verification. Firstmate is optional and not needed by any repository command.
 
-**Status:** native build/launch, 16 command-contract tests, four real XCTest tests and passing-test screenshot inspection are verified. One independent standalone Codex repair exercise and a separate clean-commit rerun also passed. See [verification report](docs/verification.md) for actual evidence rather than inferring readiness from this scaffold.
+**Status:** native build/launch, command-contract tests, four real XCTest tests and passing-test screenshot inspection are verified. One independent standalone Codex repair exercise and a separate clean-commit rerun also passed. See [verification report](docs/verification.md) for actual evidence rather than inferring readiness from this scaffold.
 
 ## Setup
 
@@ -37,6 +37,22 @@ Use `--device <UDID>` on doctor/build/launch/test/check to choose an available i
 Use `./scripts/harness evidence --run ".harness/runs/<run-id>"` for a particular run. Every invocation has a distinct timestamp/UUID directory containing `summary.txt`, `summary.json`, raw logs, command arguments, toolchain/device metadata once prerequisites succeed, and Git head/dirty-state information. Build output lives in that run's `DerivedData/` with `Build.xcresult` for builds/launches; tests retain `Tests.xcresult` and exported `attachments/`. A successful test requires at least four executed tests, all passing with no skips, plus an exported image. Inspect the image visually; its existence does not prove layout quality. Launch images are immediate diagnostics and may capture the startup screen before rendering completes. Use the UI test attachment taken after successful interaction for visual verification.
 
 The launch command uses `simctl`; open the Simulator app yourself to watch the device. It installs only the technical fixture in the selected simulator and leaves that device running. Run directories can be large: delete obsolete directories under `.harness/runs/` when finished, retaining evidence you still need. Nothing is automatically uploaded or cleaned. Copy a complete run directory to preserve/share its evidence; review local paths and logs before sharing. Results are ignored by Git, so a fresh clone contains code/docs, not another Mac's results.
+
+### Screenshot names and design comparison
+
+After `test` or `check`, open `<run>/design-comparison.html` in a browser. `./scripts/harness evidence` prints its full path, each matched or missing reference, and captures without a reference. The page places the design reference on the left and the built screen on the right, with both filenames visible. Missing main captures remain visible beside their references. References are copied into the run, so the page also works when the complete run folder is moved.
+
+Set each UI test's kept `XCTAttachment.name` to the reference's filename without its extension, such as `04-today` or `02-draw-card-chosen`. The harness reads Xcode's attachment manifest and exports `screenshots/04-today.png`, preserving spaces and the original image format. Raw exports and their manifest remain in `attachments/`. A repeated screenshot name anywhere in a run fails verification and names the duplicate; case-only differences also fail to avoid overwriting files on macOS.
+
+Reserve `--` for capture variants: `04-today--largest-text`, `02-draw--reduce-motion`, or `09-reading--bottom`. Variants appear under their screen and never satisfy its main screenshot requirement. For scrolling screens, use the unsuffixed name for the top and `--bottom` for the bottom. Reference states such as `04-today-first-day` are separate main screenshots, because each has its own reference image. The `00-flow-map.png` diagram is linked as context and excluded from screen coverage.
+
+Missing screens are reported without failing an ordinary run, so the current technical shell can pass while product screens are unbuilt. For the final full-screen pass, run:
+
+```sh
+./scripts/harness check --require-all-screenshots
+```
+
+This option also works with `test` and fails if any screen reference is missing its main capture, or if no screen references are available. It does not weaken the existing test-count, failure, skip or screenshot requirements. Coverage proves a named capture exists; follow the [design check](docs/design.md#12-design-check) to assess its contents and accessibility. The current shell's `Passing counter interaction` capture appears without a design reference and does not stand in for a product screen.
 
 ## Structure and limitations
 
