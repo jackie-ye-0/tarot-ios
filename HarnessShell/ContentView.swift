@@ -31,18 +31,18 @@ struct DrawScreen: View {
         ReadingScreenLayout(night: true, fillsAvailableHeight: true) {
             VStack(spacing: Design.Space.section) {
                 Text(session.dateLabel)
-                    .typeRole(.secondary)
+                    .typeRole(Design.TypeRole.secondary)
                     .foregroundStyle(Design.Palette.nightSecondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.bottom, Design.Space.related)
                 VStack(spacing: Design.Space.related) {
                     Text(selected == nil ? "Pick the one that pulls at you" : "This one is yours")
-                        .typeRole(.title)
+                        .typeRole(Design.TypeRole.title)
                         .foregroundStyle(Design.Palette.cream)
                         .accessibilityIdentifier("draw-title")
                         .frame(maxWidth: selected == nil && !textSize.isAccessibilitySize ? Design.Space.titleWidth : .infinity)
                     Text(selected.map { "Card \($0) of five. Ready when you are." } ?? "Tap any card. Trust the first tug.")
-                        .typeRole(.body)
+                        .typeRole(Design.TypeRole.body)
                         .foregroundStyle(Design.Palette.nightSecondary)
                 }
                 .multilineTextAlignment(.center)
@@ -61,7 +61,7 @@ struct DrawScreen: View {
                     QuietAction(title: "Choose a different card") { self.selected = nil }
                 } else {
                     Text("Choose a card to begin")
-                        .typeRole(.caption)
+                        .typeRole(Design.TypeRole.caption)
                         .foregroundStyle(Design.Palette.nightSecondary)
                         .frame(minHeight: Design.Space.target)
                 }
@@ -78,7 +78,7 @@ struct RevealScreen: View {
         ReadingScreenLayout {
             VStack(spacing: Design.Space.large) {
                 Text("You picked card \(draw.position) of five")
-                    .typeRole(.secondary)
+                    .typeRole(Design.TypeRole.secondary)
                     .foregroundStyle(Design.Palette.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .accessibilityIdentifier("draw-position")
@@ -109,7 +109,7 @@ struct RevealScreen: View {
                 PrimaryAction(title: "See what it means today", arrow: true, action: continueAction)
                     .accessibilityIdentifier("see-meaning")
                 Text("For entertainment and reflection")
-                    .typeRole(.caption)
+                    .typeRole(Design.TypeRole.caption)
                     .foregroundStyle(Design.Palette.secondary)
                     .multilineTextAlignment(.center)
                     .accessibilityIdentifier("reveal-disclaimer")
@@ -134,7 +134,7 @@ struct TodayScreen: View {
                     HStack(spacing: Design.Space.page) { card; details }
                 }
                 Text(draw.meaning.interpretation)
-                    .typeRole(.body)
+                    .typeRole(Design.TypeRole.body)
                     .lineSpacing(Design.Space.readingLeading)
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("core-interpretation")
@@ -158,7 +158,7 @@ struct TodayScreen: View {
             Text("\(draw.orientation.label) · \(draw.card.arcana)")
                 .typeRole(.metadata).accessibilityIdentifier("card-details")
             Text(draw.meaning.keywords.joined(separator: ", "))
-                .typeRole(.secondary).foregroundStyle(Design.Palette.secondary)
+                .typeRole(Design.TypeRole.secondary).foregroundStyle(Design.Palette.secondary)
         }
         .fixedSize(horizontal: false, vertical: true)
     }

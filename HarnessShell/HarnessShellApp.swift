@@ -23,10 +23,10 @@ struct LaunchView: View {
                 ReadingScreenLayout {
                     VStack(alignment: .leading, spacing: Design.Space.section) {
                         Text("Your readings could not be opened")
-                            .typeRole(.title)
+                            .typeRole(Design.TypeRole.title)
                             .accessibilityIdentifier("storage-error-title")
                         Text("Nothing has been replaced. Try again after checking the free space on your phone.")
-                            .typeRole(.body)
+                            .typeRole(Design.TypeRole.body)
                     }
                     .foregroundStyle(Design.Palette.ink)
                     .padding(.horizontal, Design.Space.page)
