@@ -10,10 +10,11 @@ import unittest
 
 ROOT = Path(__file__).resolve().parent.parent
 FAKE = r'''#!PYTHON
-import json, os, pathlib, sys
+import json, os, pathlib, sys, time, uuid
 args = sys.argv[1:]
 tool = pathlib.Path(sys.argv[0]).name
 case = os.environ.get('FAKE_CASE', '')
+state = pathlib.Path(os.environ['FAKE_DEVICES'])
 if tool == 'xcode-select':
     print('/Example Xcode.app/Contents/Developer')
 elif tool == 'xcodebuild':
@@ -21,6 +22,14 @@ elif tool == 'xcodebuild':
         print('Full Xcode required' if case == 'missing-xcode' else 'Xcode FAKE\nBuild version TEST')
         sys.exit(72 if case == 'missing-xcode' else 0)
     if args and args[0] in ('test', 'build'):
+        if case == 'slow-tools':
+            active = state.with_suffix('.active')
+            try:
+                with active.open('x'):
+                    time.sleep(0.3)
+            except FileExistsError:
+                print('Concurrent Apple tool execution'); sys.exit(75)
+            active.unlink()
         if '-resultBundlePath' in args:
             pathlib.Path(args[args.index('-resultBundlePath')+1]).mkdir()
         sys.exit(65 if case in ('failed-tests', 'failed-build') else 0)
@@ -30,7 +39,18 @@ elif args[:2] == ['simctl', 'list']:
         {'name':'iPhone Booted', 'udid':'BOOTED', 'isAvailable':True, 'state':'Booted'},
         {'name':'iPhone Missing', 'udid':'MISSING', 'isAvailable':False, 'state':'Shutdown'},
         {'name':'iPad Fake', 'udid':'IPAD', 'isAvailable':True, 'state':'Booted'}]
+    for device in devices:
+        device['deviceTypeIdentifier'] = 'com.apple.CoreSimulator.SimDeviceType.iPhone-Fake'
+    if state.exists(): devices.extend(json.loads(state.read_text()))
     print(json.dumps({'devices':{'com.apple.CoreSimulator.SimRuntime.iOS-26-0':devices}}))
+elif args[:2] == ['simctl', 'create']:
+    if case == 'create-fails': sys.exit(73)
+    devices = json.loads(state.read_text()) if state.exists() else []
+    device = {'name':args[2], 'udid':str(uuid.uuid4()).upper(), 'deviceTypeIdentifier':args[3],
+              'isAvailable':True, 'state':'Shutdown'}
+    devices.append(device)
+    state.write_text(json.dumps(devices))
+    print(device['udid'])
 elif args[:4] == ['xcresulttool', 'get', 'test-results', 'summary']:
     if case == 'bad-json':
         print('not JSON'); sys.exit()
@@ -74,6 +94,10 @@ class HarnessCommandTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory(prefix='checkout with spaces ', dir=scratch)
         self.root = Path(self.temp.name).resolve()
         shutil.copytree(ROOT / 'scripts', self.root / 'scripts')
+        # Fake-tool checks must never queue behind or contend with a real iOS run.
+        harness = self.root / 'scripts/harness.py'
+        harness.write_text(harness.read_text().replace(
+            "Path('/tmp/tarot-ios-harness-simulator.lock')", f"Path({str(self.root / 'simulator.lock')!r})"))
         self.references = self.root / 'docs/design-reference'
         self.references.mkdir(parents=True)
         for name in ('00-flow-map.png', '04 today.jpg', '05-ask.jpg'):
@@ -84,7 +108,8 @@ class HarnessCommandTests(unittest.TestCase):
             path = self.bin / name
             path.write_text(FAKE.replace('PYTHON', sys.executable, 1))
             path.chmod(0o755)
-        self.env = dict(os.environ, PATH=str(self.bin)+os.pathsep+os.environ['PATH'])
+        self.env = dict(os.environ, PATH=str(self.bin)+os.pathsep+os.environ['PATH'],
+                        FAKE_DEVICES=str(self.root / 'devices.json'))
         self.env.pop('DEVELOPER_DIR', None)
 
     def tearDown(self):
@@ -104,7 +129,8 @@ class HarnessCommandTests(unittest.TestCase):
         self.assertTrue(summary['screenshots'])
         run = Path(summary['run'])
         self.assertTrue((run/'test.log').exists())
-        self.assertEqual(json.loads((run/'metadata.json').read_text())['device']['udid'], 'BOOTED')
+        self.assertTrue(json.loads((run/'metadata.json').read_text())['device']['name'].startswith('iPhone Tarot Harness '))
+        self.assertNotIn(summary['device']['udid'], ('BOOTED', 'PHONE'))
         commands = [json.loads(line) for line in (run/'commands.jsonl').read_text().splitlines()]
         build = next(c for c in commands if c[:2] == ['xcodebuild', 'test'])
         self.assertEqual(build[build.index('-project')+1], str(self.root/'HarnessShell.xcodeproj'))
@@ -284,6 +310,53 @@ class HarnessCommandTests(unittest.TestCase):
         result, summary = self.invoke('build', extra=('--device', 'PHONE'))
         self.assertEqual(result.returncode, 0)
         self.assertEqual(summary['device']['udid'], 'PHONE')
+        self.assertFalse(Path(self.env['FAKE_DEVICES']).exists())
+
+    def test_default_device_is_reused_and_create_failure_is_preserved(self):
+        first, one = self.invoke('doctor')
+        second, two = self.invoke('doctor')
+        self.assertEqual(first.returncode, 0, first.stdout+first.stderr)
+        self.assertEqual(second.returncode, 0, second.stdout+second.stderr)
+        self.assertEqual(one['device']['udid'], two['device']['udid'])
+        self.assertEqual(len(json.loads(Path(self.env['FAKE_DEVICES']).read_text())), 1)
+        Path(self.env['FAKE_DEVICES']).unlink()
+        failed, summary = self.invoke('doctor', 'create-fails')
+        self.assertEqual(failed.returncode, 73)
+        self.assertIn('device-create failed', summary['error'])
+        recovered, _ = self.invoke('doctor')
+        self.assertEqual(recovered.returncode, 0, recovered.stdout+recovered.stderr)
+
+    def test_concurrent_checks_isolate_devices_and_serialise_tools(self):
+        other = self.root / 'second checkout'
+        shutil.copytree(self.root / 'scripts', other / 'scripts')
+        for root in (self.root, other):
+            (root / 'tests').mkdir()
+        processes = []
+        try:
+            for root in (self.root, other):
+                processes.append(subprocess.Popen([str(root / 'scripts/harness'), 'check'],
+                    cwd=root, env=dict(self.env, FAKE_CASE='slow-tools'),
+                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True))
+            for process in processes:
+                stdout, stderr = process.communicate(timeout=30)
+                self.assertEqual(process.returncode, 0, stdout+stderr)
+        finally:
+            for process in processes:
+                if process.poll() is None:
+                    process.kill()
+                process.communicate()
+        summaries = [json.loads(next(root.glob('.harness/runs/*/summary.json')).read_text())
+                     for root in (self.root, other)]
+        self.assertNotEqual(summaries[0]['device']['udid'], summaries[1]['device']['udid'])
+        self.assertNotEqual(summaries[0]['device']['name'], summaries[1]['device']['name'])
+        timings = sorted((summary['simulator_lock'] for summary in summaries), key=lambda t: t['acquired'])
+        self.assertLessEqual(timings[0]['released'], timings[1]['acquired'])
+        self.assertLess(timings[1]['requested'], timings[0]['released'])
+        for summary in summaries:
+            commands = [json.loads(line) for line in (Path(summary['run']) / 'commands.jsonl').read_text().splitlines()]
+            build = next(c for c in commands if c[:2] == ['xcodebuild', 'test'])
+            self.assertIn('platform=iOS Simulator,id=' + summary['device']['udid'], build)
+            self.assertFalse(any(c[1:3] in (['simctl', 'shutdown'], ['simctl', 'erase'], ['simctl', 'delete']) for c in commands))
 
     def test_build_failure_propagates(self):
         result, _ = self.invoke('build', 'failed-build')
