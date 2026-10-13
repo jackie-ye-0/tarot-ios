@@ -8,6 +8,8 @@ For screenshot review, `./scripts/harness evidence` lists reference coverage and
 
 For internal tooling/fixture changes, review the diff and make a coherent commit. Push/open a PR only when the task authorises it. Product changes follow the approved build scope and the assigned issue; new scope requires a human decision and review of the configured delivery gate. Repository prose and file-existence checks are not enforcement. No remote ruleset or CI gate has been verified here.
 
+The repository-root `.no-mistakes.yaml` declares `no_ci: true`; once on the trusted default branch, this lets no-mistakes treat a PR with no registered remote checks as ready while local harness verification remains required.
+
 ## Improve from observed friction
 
 1. Capture a concrete failure or repeated slowdown in `docs/friction.md`: scenario, command, run path, expected/actual behaviour and impact. Use synthetic examples and remove private information.
