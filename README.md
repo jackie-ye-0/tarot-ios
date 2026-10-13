@@ -90,6 +90,8 @@ In Debug test mode, the Draw title and Reveal card also expose a `settled` acces
 
 Release builds ignore all these arguments. Normal launches always use the saved installation seed and on-device store. Storage failures surface a retry, never a silent reset or temporary substitute.
 
+Debug test mode also exposes an empty, non-interactive `test-safe-viewport` container sized from the window's actual safe area. It is not a VoiceOver content element. UI geometry checks and the overlapping accessibility audit use its frame instead of guessed screen insets; a missing marker fails the test. The marker is absent from normal Debug runs and compiled out of Release.
+
 `./scripts/harness check` also runs the design-role source guard from `scripts/design_rules.py`. Outside `DesignSystem.swift`, this lexical check rejects the raw colour, font, font-modifier, rounded-shape and corner-radius vocabulary, plus unqualified system colour and text-style values. It does not parse Swift, follow aliases or inspect code inside string interpolation, and cannot catch contextual forms such as `.environment(\.font, .system(size: 17))` or Canvas `.color(.init(red: 1, green: 0, blue: 0))`, so XCTest accessibility audits and visual comparison remain required.
 
-Bundled font provenance and licences are in [Fonts](HarnessShell/Resources/Fonts/README.md). See [foundation verification](docs/foundation-verification.md) for the #7 evidence and accepted reference differences.
+Bundled font provenance and licences are in [Fonts](HarnessShell/Resources/Fonts/README.md). See [foundation verification](docs/foundation-verification.md) for the #7 evidence and accepted reference differences, and [Today verification](docs/today-verification.md) for #9.

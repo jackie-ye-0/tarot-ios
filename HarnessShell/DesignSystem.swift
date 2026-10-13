@@ -448,6 +448,7 @@ struct DailyScoreStrip: View {
                 let score = daily.reading(for: area).score
                 VStack(alignment: .leading, spacing: Design.Space.small) {
                     Text(area.label).typeRole(.label).foregroundStyle(Design.Palette.label(for: area))
+                        .accessibilityIdentifier("score-label-\(area.rawValue)")
                     Text(score.formatted()).typeRole(.title)
                     GeometryReader { geometry in
                         Capsule().fill(Design.Palette.accent(for: area))
@@ -478,6 +479,7 @@ struct DailyAreaLines: View {
                         Circle().fill(Design.Palette.accent(for: area)).frame(width: 8, height: 8)
                             .accessibilityHidden(true)
                         Text(area.label).typeRole(.label).foregroundStyle(Design.Palette.label(for: area))
+                            .accessibilityIdentifier("area-label-\(area.rawValue)")
                     }
                     Text(daily.reading(for: area).line).typeRole(.body)
                         .fixedSize(horizontal: false, vertical: true)
