@@ -47,7 +47,7 @@ struct LaunchView: View {
         }
         #if DEBUG
         .background {
-            if configuration.exposesTestViewport { TestSafeAreaViewport() }
+            if configuration.testMode { TestSafeAreaViewport() }
         }
         #endif
         .environment(\.dynamicTypeSize, configuration.largestText ? .accessibility5 : systemTextSize)

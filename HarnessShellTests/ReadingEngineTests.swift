@@ -201,6 +201,14 @@ final class ReadingEngineTests: XCTestCase {
         XCTAssertThrowsError(try CardLibrary.decode(JSONSerialization.data(withJSONObject: library)))
     }
 
+    func testDailyContentDecodeRejectsMalformedColour() throws {
+        let daily = try XCTUnwrap(try CardLibrary.load().cards[0].upright.daily)
+        var encoded = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(daily)) as? [String: Any])
+        encoded["colourHex"] = "#12345G"
+
+        XCTAssertThrowsError(try JSONDecoder().decode(DailyContent.self, from: JSONSerialization.data(withJSONObject: encoded)))
+    }
+
     func testEarlierSnapshotOpensWithoutBackfillingNewContent() throws {
         let draw = ReadingEngine.dailyDraw(seed: "reference-1", dateKey: "2026-10-11", position: 3, library: try CardLibrary.load())
         var snapshot = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(draw)) as? [String: Any])

@@ -3,9 +3,6 @@ import Observation
 import SwiftData
 
 struct LaunchConfiguration {
-    #if DEBUG
-    var exposesTestViewport = false
-    #endif
     var fixedDate: Date?
     var timeZone: TimeZone?
     var seed: String?
@@ -27,7 +24,6 @@ struct LaunchConfiguration {
         let arguments = ProcessInfo.processInfo.arguments
         guard arguments.contains("--test-mode") else { return result }
         result.testMode = true
-        result.exposesTestViewport = true
         func value(_ key: String) -> String? {
             guard let index = arguments.firstIndex(of: key), index + 1 < arguments.count else { return nil }
             return arguments[index + 1]
@@ -186,10 +182,10 @@ enum AppLaunch {
         #if DEBUG
         if configuration.revisedContent {
             let meaning = CardMeaning(keywords: ["Revised", "test", "content"], interpretation: "A revised library. For snapshot testing only.",
-                                      daily: DailyContent(colourName: "Clay", colourHex: "#b0654a", object: "A test bookmark", bestHour: "After 6 pm",
-                                                          career: AreaReading(score: 10, line: "Revised work line."),
-                                                          relationship: AreaReading(score: 20, line: "Revised connection line."),
-                                                          social: AreaReading(score: 30, line: "Revised social line.")))
+                                      daily: try DailyContent(colourName: "Clay", colourHex: "#b0654a", object: "A test bookmark", bestHour: "After 6 pm",
+                                                              career: AreaReading(score: 10, line: "Revised work line."),
+                                                              relationship: AreaReading(score: 20, line: "Revised connection line."),
+                                                              social: AreaReading(score: 30, line: "Revised social line.")))
             library = CardLibrary(version: library.version + 1, editorialStatus: library.editorialStatus,
                                   cards: library.cards.map {
                 TarotCard(id: $0.id, name: "Revised \($0.name)", arcana: $0.arcana, suit: $0.suit, rank: $0.rank,

@@ -52,9 +52,8 @@ enum Design {
             }
         }
 
-        static func swatch(hex: String) -> Color {
-            // Library validation requires a six-digit hex; saved values retain that colour.
-            colour(UInt32(hex.dropFirst(), radix: 16) ?? 0x43302b)
+        static func swatch(_ colour: DailyColour) -> Color {
+            self.colour(colour.rgb)
         }
 
         private static func colour(_ value: UInt32) -> Color {
@@ -406,7 +405,7 @@ struct DailyExtrasView: View {
             layout {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 4) {
-                        Circle().fill(Design.Palette.swatch(hex: daily.colourHex)).frame(width: 10, height: 10)
+                        Circle().fill(Design.Palette.swatch(daily.colour)).frame(width: 10, height: 10)
                         Text("Colour").typeRole(.caption).foregroundStyle(Design.Palette.secondary)
                     }
                     Text(daily.colourName).typeRole(.metadata)

@@ -18,14 +18,66 @@ struct AreaReading: Codable, Equatable {
     let line: String
 }
 
+struct DailyColour: Codable, Equatable {
+    private enum ValidationError: Error { case invalidHex }
+
+    let hex: String
+    let rgb: UInt32
+
+    init(hex: String) throws {
+        guard let rgb = Self.parse(hex) else { throw ValidationError.invalidHex }
+        self.hex = hex
+        self.rgb = rgb
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let hex = try container.decode(String.self)
+        guard let rgb = Self.parse(hex) else {
+            throw DecodingError.dataCorruptedError(in: container, debugDescription: "Expected a six-digit hex colour")
+        }
+        self.hex = hex
+        self.rgb = rgb
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(hex)
+    }
+
+    private static func parse(_ hex: String) -> UInt32? {
+        guard hex.count == 7, hex.first == "#" else { return nil }
+        return UInt32(hex.dropFirst(), radix: 16)
+    }
+}
+
 struct DailyContent: Codable, Equatable {
     let colourName: String
-    let colourHex: String
+    let colour: DailyColour
     let object: String
     let bestHour: String
     let career: AreaReading
     let relationship: AreaReading
     let social: AreaReading
+
+    private enum CodingKeys: String, CodingKey {
+        case colourName
+        case colour = "colourHex"
+        case object, bestHour, career, relationship, social
+    }
+
+    init(colourName: String, colourHex: String, object: String, bestHour: String,
+         career: AreaReading, relationship: AreaReading, social: AreaReading) throws {
+        self.colourName = colourName
+        colour = try DailyColour(hex: colourHex)
+        self.object = object
+        self.bestHour = bestHour
+        self.career = career
+        self.relationship = relationship
+        self.social = social
+    }
+
+    var colourHex: String { colour.hex }
 
     func reading(for area: ReadingArea) -> AreaReading {
         switch area {
@@ -38,8 +90,6 @@ struct DailyContent: Codable, Equatable {
     var isComplete: Bool {
         let readings = ReadingArea.allCases.map { reading(for: $0) }
         return [colourName, object, bestHour].allSatisfy { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
-            && colourHex.count == 7
-            && colourHex.range(of: "^#[0-9a-fA-F]{6}$", options: .regularExpression) != nil
             && readings.allSatisfy { (0...100).contains($0.score) && !$0.line.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
             && Set(readings.map { $0.line.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }).count == 3
     }
