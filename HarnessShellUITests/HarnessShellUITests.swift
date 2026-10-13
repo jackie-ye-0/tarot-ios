@@ -325,7 +325,8 @@ final class HarnessShellUITests: XCTestCase {
             let footer = app.otherElements["screen-footer"]
             let isFooterElement = !element.identifier.isEmpty &&
                 footer.descendants(matching: .any).matching(identifier: element.identifier).firstMatch.exists
-            if footer.exists && isFooterElement && footer.frame.minY >= viewport.maxY - 0.5 && footer.frame.contains(frame) {
+            if footer.exists && isFooterElement && footer.frame.minY >= viewport.maxY - 0.5 &&
+                footer.frame.contains(frame) && visibleFrame(in: app).contains(frame) {
                 assertVisible(element, in: app, file: file, line: line)
                 return
             }
