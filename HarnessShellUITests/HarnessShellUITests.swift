@@ -165,8 +165,11 @@ final class HarnessShellUITests: XCTestCase {
         XCUIDevice.shared.press(.home)
         app.activate()
         XCTAssertTrue(app.buttons["draw-card-5"].isSelected)
-        XCTAssertTrue(app.buttons["turn-over"].exists)
-        app.buttons["turn-over"].tap()
+        let turnOver = app.buttons["turn-over"]
+        let ready = XCTNSPredicateExpectation(predicate: NSPredicate(format: "hittable == true"), object: turnOver)
+        XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 5), .completed)
+        turnOver.tap()
+        XCTAssertTrue(app.staticTexts["draw-position"].waitForExistence(timeout: 5))
         XCTAssertEqual(app.staticTexts["draw-position"].label, "You picked card 5 of five")
     }
 
