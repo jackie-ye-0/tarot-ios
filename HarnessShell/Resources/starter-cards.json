@@ -33,6 +33,11 @@
             "score": 64,
             "line": "Notice who gives you space to be yourself."
           }
+        },
+        "questionPositions": {
+          "situation": "You may be finding room for hope after a period of uncertainty. Notice what already gives you a little steadiness.",
+          "action": "Give one hopeful idea a small, practical expression. You could begin with a conversation or a little time set aside.",
+          "outcome": "Renewal may look like a gentler relationship with uncertainty. Notice the signs of progress without asking them to promise an ending."
         }
       },
       "reversed": {
@@ -60,6 +65,11 @@
             "score": 58,
             "line": "Reach out to someone who helps you feel at ease."
           }
+        },
+        "questionPositions": {
+          "situation": "Reassurance may feel distant, even when something worthwhile is taking shape. Notice which expectations are making it hard to see what is here.",
+          "action": "Make room for rest and one source of support you trust. You do not need to force confidence before taking a small step.",
+          "outcome": "A quieter kind of hope may become available when certainty is no longer the test. Consider what would help you recognise it."
         }
       }
     },
@@ -94,6 +104,11 @@
             "score": 88,
             "line": "Invite someone into a moment you are enjoying."
           }
+        },
+        "questionPositions": {
+          "situation": "Something in this situation may feel open, warm or easy to name. Notice what becomes clearer when you let a good moment be simple.",
+          "action": "Say what matters plainly and leave room for an honest response. A little openness may be more useful than trying to impress.",
+          "outcome": "The Sun offers an image of warmth and being seen. Consider how openness might shape your next step, without treating it as a promise."
         }
       },
       "reversed": {
@@ -121,6 +136,11 @@
             "score": 57,
             "line": "Choose company where you do not have to perform."
           }
+        },
+        "questionPositions": {
+          "situation": "You may feel pressure to make this look brighter than it feels. Notice the difference between a pleasant appearance and your own experience.",
+          "action": "Let yourself name what is difficult alongside what is good. An honest pause may make room for a more comfortable pace.",
+          "outcome": "Ease may take a quieter form than you expected. Notice whether a smaller, more honest version of enjoyment would be enough."
         }
       }
     },
@@ -154,6 +174,11 @@
             "score": 82,
             "line": "Make space for a conversation outside your routine."
           }
+        },
+        "questionPositions": {
+          "situation": "You may be at a beginning, with more possibility than certainty. Notice what draws your curiosity and what you still need to learn.",
+          "action": "Try one manageable step that leaves room to reconsider. Curiosity works best here with attention to your limits.",
+          "outcome": "A new perspective may come from experience rather than planning alone. Consider what you would like to learn, whatever the result."
         }
       },
       "reversed": {
@@ -180,6 +205,11 @@
             "score": 59,
             "line": "Leave room to reconsider an invitation."
           }
+        },
+        "questionPositions": {
+          "situation": "Momentum may be outrunning your attention. Notice which parts of this situation you have not yet had time to understand.",
+          "action": "Pause long enough to ask one useful question or check an assumption. Preparation can support a beginning without removing all uncertainty.",
+          "outcome": "A more considered start may feel less dramatic but more workable. Notice what would let you move at your own pace."
         }
       }
     },
@@ -213,6 +243,11 @@
             "score": 70,
             "line": "Offer something useful without taking over."
           }
+        },
+        "questionPositions": {
+          "situation": "You may have more to work with than you first noticed. Consider which skills, time or support are already within reach.",
+          "action": "Choose one intention and put a resource you already have to use. A clear, modest action can help turn attention into practice.",
+          "outcome": "Focused practice may reveal what is useful and what needs adjusting. Notice what you can shape without claiming control over everything."
         }
       },
       "reversed": {
@@ -239,6 +274,11 @@
             "score": 55,
             "line": "Notice where you are promising more than you want."
           }
+        },
+        "questionPositions": {
+          "situation": "Your attention may be pulled between several intentions. Notice where a persuasive idea is missing a clear purpose for you.",
+          "action": "Name the limit of what you can do, then choose one task inside it. You do not need to make every possibility real at once.",
+          "outcome": "Clarity may come from doing less with greater intention. Consider which result would feel meaningful enough to keep working towards."
         }
       }
     },
@@ -272,6 +312,11 @@
             "score": 51,
             "line": "Choose one thoughtful exchange over a busy room."
           }
+        },
+        "questionPositions": {
+          "situation": "You may need room to hear your own view. Notice which outside expectations have become louder than your own questions.",
+          "action": "Take a little quiet time and write down what matters before seeking more opinions. You can return to others with a clearer question.",
+          "outcome": "Reflection may help you recognise a direction that fits your values. Consider how to carry that understanding back into everyday contact."
         }
       },
       "reversed": {
@@ -298,6 +343,11 @@
             "score": 68,
             "line": "Try a small conversation without a big agenda."
           }
+        },
+        "questionPositions": {
+          "situation": "Useful solitude may be turning into distance. Notice whether being alone is giving perspective or keeping a question out of reach.",
+          "action": "Invite a small conversation with someone you trust. You can ask for perspective while keeping the decision your own.",
+          "outcome": "Connection and space may be able to coexist. Consider what balance would help you remain both supported and true to yourself."
         }
       }
     },
@@ -331,6 +381,11 @@
             "score": 72,
             "line": "Make room for a quieter voice in the group."
           }
+        },
+        "questionPositions": {
+          "situation": "This situation may be asking for patience rather than force. Notice where gentleness already helps you stay present.",
+          "action": "Respond with care and a clear boundary. Courage can mean staying with a difficult conversation without pushing it to a quick conclusion.",
+          "outcome": "A steadier response may leave more room for understanding. Consider what strength would look like if it included kindness to yourself."
         }
       },
       "reversed": {
@@ -357,8 +412,45 @@
             "score": 60,
             "line": "Accept a smaller plan if it leaves you more ease."
           }
+        },
+        "questionPositions": {
+          "situation": "You may be stretching past a limit in an effort to hold everything together. Notice what that effort is asking of you.",
+          "action": "Give one limit a name and allow yourself to respect it. A gentler next step may be more sustainable than another push.",
+          "outcome": "Renewal may begin with asking less of yourself for a while. Consider what support would make a patient approach possible."
         }
       }
     }
-  ]
+  ],
+  "questions": {
+    "career": {
+      "suggestions": [
+        "What deserves my focus at work?",
+        "How can I approach a difficult work conversation?",
+        "What could I learn from this next step?"
+      ],
+      "lens": "Read together, these cards invite you to consider your work through what is happening, what you can influence and what you hope to learn. Notice the part that belongs to your own choices, and one practical step that fits your capacity."
+    },
+    "relationship": {
+      "suggestions": [
+        "Where is this going?",
+        "What am I not saying?",
+        "What do I actually want?"
+      ],
+      "lens": "Read together, these cards invite you to notice how you make room for closeness, boundaries and honest expression. Whether you are exploring a connection or reflecting on what you want, consider what you can say or choose without assuming how another person feels."
+    },
+    "social": {
+      "suggestions": [
+        "How can I feel more connected to my friends?",
+        "What boundary would help me show up honestly?",
+        "What can I bring to this community?"
+      ],
+      "lens": "Read together, these cards invite you to reflect on belonging and the give and take between you and the people around you. Notice where a small gesture, a conversation or a boundary might make your connections feel more mutual."
+    },
+    "reflections": [
+      "What would you say if you were less worried about how it lands?",
+      "What small choice would feel most honest to you now?",
+      "What are you noticing that you had not made room for before?",
+      "What would a kinder next step look like?"
+    ]
+  }
 }

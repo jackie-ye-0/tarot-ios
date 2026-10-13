@@ -234,7 +234,9 @@ final class HarnessShellUITests: XCTestCase {
         let viewport = marker.frame
         XCTAssertFalse(viewport.isEmpty, "The test safe-area viewport must have completed layout")
         let footer = app.otherElements["screen-footer"]
-        let bottom = abovePinnedFooter && footer.exists ? min(viewport.maxY, footer.frame.minY) : viewport.maxY
+        var bottom = abovePinnedFooter && footer.exists ? min(viewport.maxY, footer.frame.minY) : viewport.maxY
+        let tabs = app.otherElements["resting-tabs"]
+        if tabs.exists { bottom = min(bottom, tabs.frame.minY) }
         return CGRect(x: viewport.minX, y: viewport.minY, width: viewport.width, height: bottom - viewport.minY)
     }
 
@@ -299,7 +301,13 @@ final class HarnessShellUITests: XCTestCase {
             let frame = element.frame
             let viewport = visibleFrame(in: app, abovePinnedFooter: abovePinnedFooter)
             if !frame.isEmpty && viewport.contains(frame) { break }
-            dragContent(app, up: frame.maxY > viewport.maxY, abovePinnedFooter: abovePinnedFooter)
+            let delta = frame.maxY > viewport.maxY
+                ? min(viewport.height / 2, frame.maxY - viewport.maxY + 24)
+                : -min(viewport.height / 2, viewport.minY - frame.minY + 24)
+            let origin = app.coordinate(withNormalizedOffset: .zero)
+            let start = origin.withOffset(CGVector(dx: viewport.midX, dy: viewport.midY + delta / 2))
+            let end = origin.withOffset(CGVector(dx: viewport.midX, dy: viewport.midY - delta / 2))
+            start.press(forDuration: 0.05, thenDragTo: end)
         }
         assertVisible(element, in: app, abovePinnedFooter: abovePinnedFooter, file: file, line: line)
     }
@@ -928,4 +936,196 @@ final class HarnessShellUITests: XCTestCase {
             if expected == 3 { XCTAssertLessThan(measured?.ratio ?? .infinity, 4.5) }
         }
     }
+
+    private let fixedSpread = ["--test-random-indices", "0,0,0,1,0,0"]
+
+    private func reachAsk(_ app: XCUIApplication, largest: Bool = false) {
+        XCTAssertFalse(app.buttons["tab-ask"].exists)
+        if largest {
+            scrollTo(app.buttons["draw-card-3"], in: app)
+            app.buttons["draw-card-3"].tap()
+            scrollTo(app.buttons["turn-over"], in: app)
+            app.buttons["turn-over"].tap()
+            scrollTo(app.buttons["see-meaning"], in: app)
+        } else { reveal(app) }
+        XCTAssertFalse(app.buttons["tab-ask"].exists)
+        app.buttons["see-meaning"].tap()
+        scrollTo(app.buttons["today-ask"], in: app)
+        XCTAssertTrue(app.buttons["tab-today"].exists)
+        XCTAssertTrue(app.buttons["tab-ask"].exists)
+        app.buttons["today-ask"].tap()
+        XCTAssertTrue(app.staticTexts["ask-title"].waitForExistence(timeout: 5))
+    }
+
+    private func chooseSpread(_ app: XCUIApplication, largest: Bool = false) {
+        for (index, position) in ["situation", "action", "outcome"].enumerated() {
+            if largest { scrollTo(app.buttons["draw-card-3"], in: app) }
+            XCTAssertTrue(app.buttons["draw-card-3"].isHittable)
+            app.buttons["draw-card-3"].tap()
+            let slot = app.descendants(matching: .any)["spread-slot-\(position)"].firstMatch
+            XCTAssertFalse(slot.label.contains("empty"))
+            if index < 2 { XCTAssertFalse(app.buttons["read-spread"].exists) }
+        }
+        XCTAssertFalse(app.buttons["draw-card-3"].exists)
+        if largest { scrollTo(app.buttons["read-spread"], in: app) }
+    }
+
+    func testAskSuggestionsComposerPickReadingAndDesignEvidence() throws {
+        let app = app(extra: fixedSpread)
+        reachAsk(app)
+        var suggestions = Set<String>()
+        for area in ["career", "social", "relationship"] {
+            let button = app.buttons["area-\(area)"]
+            XCTAssertTrue(button.isHittable)
+            button.tap()
+            for index in 0..<3 {
+                let suggestion = app.buttons["suggestion-\(index)"]
+                XCTAssertTrue(suggestion.label.hasSuffix("?"))
+                XCTAssertTrue(suggestions.insert(suggestion.label).inserted)
+            }
+        }
+        try auditAndCapture(app, "05-ask")
+        app.buttons["tab-today"].tap()
+        XCTAssertTrue(app.staticTexts["today-title"].exists)
+        app.buttons["tab-ask"].tap()
+        app.buttons["ask-question-entry"].tap()
+        XCTAssertFalse(app.buttons["tab-ask"].exists)
+        XCTAssertFalse(app.buttons["submit-question"].isEnabled)
+        try auditAndCapture(app, "06-composer")
+        app.buttons["suggestion-0"].tap()
+        XCTAssertTrue(app.buttons["submit-question"].isEnabled)
+        XCTAssertEqual(app.descendants(matching: .any)["question-field"].firstMatch.value as? String, "Where is this going?")
+        try auditAndCapture(app, "06-composer-question-entered")
+        app.buttons["submit-question"].tap()
+        XCTAssertEqual(app.staticTexts["spread-question"].label, "“Where is this going?”")
+        XCTAssertFalse(app.buttons["tab-ask"].exists)
+        for position in ["situation", "action", "outcome"] {
+            XCTAssertTrue(app.descendants(matching: .any)["spread-slot-\(position)"].firstMatch.label.contains("empty"))
+        }
+        try auditAndCapture(app, "08-three-card-pick")
+        chooseSpread(app)
+        XCTAssertEqual(app.descendants(matching: .any)["spread-slot-situation"].firstMatch.label, "Situation, The Star, Upright")
+        XCTAssertEqual(app.descendants(matching: .any)["spread-slot-action"].firstMatch.label, "Action, The Sun, Reversed")
+        XCTAssertEqual(app.descendants(matching: .any)["spread-slot-outcome"].firstMatch.label, "Outcome, The Fool, Upright")
+        try auditAndCapture(app, "08-three-card-pick-complete")
+        app.buttons["read-spread"].tap()
+        XCTAssertTrue(app.staticTexts["reading-saved"].waitForExistence(timeout: 5))
+        XCTAssertEqual(app.staticTexts["reading-saved"].label, "Relationship · Saved on this phone")
+        XCTAssertFalse(app.buttons["tab-ask"].exists)
+        try auditAndCapture(app, "09-reading")
+        for identifier in ["reading-situation", "reading-action", "reading-outcome", "reading-lens"] {
+            XCTAssertFalse(app.staticTexts[identifier].label.isEmpty)
+        }
+        scrollTo(app.staticTexts["reading-action"], in: app)
+        capture(app, "09-reading--action")
+        scrollTo(app.staticTexts["reading-outcome"], in: app)
+        capture(app, "09-reading--outcome")
+        scrollTo(app.staticTexts["reflection-question"], in: app)
+        XCTAssertTrue(app.staticTexts["reflection-question"].label.hasSuffix("?"))
+        try auditAndCapture(app, "09-reading--bottom")
+        app.buttons["reading-done"].tap()
+        XCTAssertTrue(app.staticTexts["today-title"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["tab-today"].exists)
+    }
+
+    func testTypedQuestionWhitespaceAndSavedReadingSurvivesRelaunch() throws {
+        let app = app(extra: fixedSpread + ["--test-store-id", UUID().uuidString], memory: false)
+        reachAsk(app)
+        app.buttons["area-career"].tap()
+        app.buttons["ask-question-entry"].tap()
+        let field = app.descendants(matching: .any)["question-field"].firstMatch
+        field.tap()
+        field.typeText("   ")
+        XCTAssertFalse(app.buttons["submit-question"].isEnabled)
+        field.typeText("How can I make room to learn?")
+        XCTAssertTrue(app.buttons["submit-question"].isEnabled)
+        app.buttons["keyboard-done"].tap()
+        app.buttons["submit-question"].tap()
+        chooseSpread(app)
+        app.buttons["read-spread"].tap()
+        XCTAssertEqual(app.staticTexts["reading-question"].label, "“How can I make room to learn?”")
+        let identifiers = ["reading-question", "reading-saved", "reading-situation", "reading-action", "reading-outcome", "reading-lens", "reflection-question"]
+        let original = identifiers.map { app.staticTexts[$0].label }
+        XCTAssertTrue(app.staticTexts["reading-lens"].label.contains("your work"))
+        app.terminate()
+        let random = app.launchArguments.firstIndex(of: "--test-random-indices")!
+        app.launchArguments[random + 1] = "5,1,4,0,3,1"
+        app.launchArguments.append("--test-open-saved-reading")
+        app.launch()
+        XCTAssertTrue(app.staticTexts["reading-saved"].waitForExistence(timeout: 5))
+        XCTAssertEqual(identifiers.map { app.staticTexts[$0].label }, original)
+        app.buttons["close-reading"].tap()
+        XCTAssertTrue(app.staticTexts["today-title"].waitForExistence(timeout: 5))
+    }
+
+    func testAskSuggestedQuestionOpensComposerAndSocialLens() {
+        let app = app(extra: fixedSpread)
+        reachAsk(app)
+        app.buttons["area-social"].tap()
+        let question = app.buttons["suggestion-0"].label
+        app.buttons["suggestion-0"].tap()
+        XCTAssertEqual(app.descendants(matching: .any)["question-field"].firstMatch.value as? String, question)
+        XCTAssertTrue(app.buttons["submit-question"].isEnabled)
+        app.buttons["submit-question"].tap()
+        chooseSpread(app)
+        app.buttons["read-spread"].tap()
+        XCTAssertEqual(app.staticTexts["reading-saved"].label, "Social · Saved on this phone")
+        XCTAssertTrue(app.staticTexts["reading-lens"].label.contains("belonging"))
+    }
+
+    func testAskLargestTextAndPickReduceMotionEvidence() throws {
+        let app = app(extra: fixedSpread + ["--test-largest-text", "--test-reduce-motion"])
+        reachAsk(app, largest: true)
+        scrollTo(app.staticTexts["ask-title"], in: app)
+        capture(app, "05-ask--largest-text")
+        scrollTo(app.buttons["suggestion-2"], in: app)
+        capture(app, "05-ask--largest-text-bottom")
+        scrollTo(app.buttons["ask-question-entry"], in: app)
+        app.buttons["ask-question-entry"].tap()
+        scrollTo(app.buttons["area-relationship"], in: app)
+        capture(app, "06-composer--largest-text")
+        scrollTo(app.buttons["submit-question"], in: app)
+        XCTAssertFalse(app.buttons["submit-question"].isEnabled)
+        capture(app, "06-composer--largest-text-bottom")
+        scrollTo(app.buttons["suggestion-0"], in: app)
+        app.buttons["suggestion-0"].tap()
+        scrollTo(app.descendants(matching: .any)["question-field"].firstMatch, in: app)
+        capture(app, "06-composer-question-entered--largest-text")
+        scrollTo(app.buttons["submit-question"], in: app)
+        capture(app, "06-composer-question-entered--largest-text-bottom")
+        app.buttons["submit-question"].tap()
+        scrollTo(app.staticTexts["spread-question"], in: app)
+        capture(app, "08-three-card-pick--largest-text")
+        scrollTo(app.buttons["draw-card-3"], in: app)
+        capture(app, "08-three-card-pick--largest-text-bottom")
+        chooseSpread(app, largest: true)
+        capture(app, "08-three-card-pick-complete--largest-text-bottom")
+        scrollTo(app.staticTexts["spread-question"], in: app)
+        capture(app, "08-three-card-pick-complete--largest-text")
+        scrollTo(app.buttons["read-spread"], in: app)
+        app.buttons["read-spread"].tap()
+        scrollTo(app.staticTexts["reading-question"], in: app)
+        capture(app, "09-reading--largest-text")
+        // Paragraphs can exceed the viewport; overlapping captures expose every line.
+        for index in 0..<14 {
+            if app.buttons["reading-done"].isHittable { break }
+            dragContent(app, up: true)
+            capture(app, "09-reading--largest-text-scroll-\(index)")
+        }
+        scrollTo(app.staticTexts["reading-disclaimer"], in: app)
+        assertVisible(app.buttons["reading-done"], in: app)
+        capture(app, "09-reading--largest-text-bottom")
+        app.buttons["reading-done"].tap()
+        XCTAssertTrue(app.buttons["tab-today"].exists)
+        app.terminate()
+        let reduced = self.app(extra: fixedSpread + ["--test-reduce-motion"])
+        reachAsk(reduced)
+        reduced.buttons["suggestion-0"].tap()
+        reduced.buttons["submit-question"].tap()
+        XCTAssertTrue(reduced.buttons["draw-card-3"].isHittable)
+        capture(reduced, "08-three-card-pick--reduce-motion")
+        chooseSpread(reduced)
+        capture(reduced, "08-three-card-pick-complete--reduce-motion")
+    }
+
 }

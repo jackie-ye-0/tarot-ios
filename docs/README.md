@@ -31,6 +31,7 @@ Add future research to `docs/research/`, using descriptive, lower-case hyphenate
 - [Ritual motion verification](ritual-motion-verification.md): issue #10 motion, test coverage and design evidence.
 - [Today verification](today-verification.md): issue #9 acceptance checks, screenshot comparison and audit evidence.
 - [Card face verification](card-faces-verification.md): issue #12 full-deck identity, rendering evidence and design comparison.
+- [Ask foundation verification](ask-verification.md): issue #13 behaviour, design evidence and scope differences.
 - [Harness principles](harness.md)
 
 Add a link here when adding a document. Keep each document's status clear and record approved scope changes in [decisions](decisions.md).

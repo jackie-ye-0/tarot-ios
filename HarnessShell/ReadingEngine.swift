@@ -5,12 +5,9 @@ struct CardMeaning: Codable, Equatable {
     let keywords: [String]
     let interpretation: String
     // Absent only in snapshots saved before the full Today content shipped.
-    let daily: DailyContent?
-}
-
-enum ReadingArea: String, Codable, CaseIterable {
-    case career, relationship, social
-    var label: String { rawValue.capitalized }
+    var daily: DailyContent? = nil
+    // Absent only in snapshots saved before Ask was added.
+    var questionPositions: QuestionPositionMeanings? = nil
 }
 
 struct AreaReading: Codable, Equatable {
@@ -118,6 +115,7 @@ struct CardLibrary: Codable {
     let version: Int
     let editorialStatus: String
     let cards: [TarotCard]
+    let questions: QuestionContent
 
     static func load() throws -> CardLibrary {
         guard let url = Bundle.main.url(forResource: "starter-cards", withExtension: "json") else {
@@ -133,9 +131,11 @@ struct CardLibrary: Codable {
               library.cards.allSatisfy({ card in
                   !card.name.isEmpty && !card.arcana.isEmpty &&
                   [card.upright, card.reversed].allSatisfy {
-                      (3...4).contains($0.keywords.count) && !$0.interpretation.isEmpty && $0.daily?.isComplete == true
+                      (3...4).contains($0.keywords.count) && !$0.interpretation.isEmpty &&
+                      $0.daily?.isComplete == true &&
+                      $0.questionPositions?.isComplete == true
                   }
-              }) else { throw CocoaError(.coderReadCorrupt) }
+              }), library.questions.isComplete else { throw CocoaError(.coderReadCorrupt) }
         return library
     }
 }

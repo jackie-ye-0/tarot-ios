@@ -7,7 +7,7 @@ struct ContentView: View {
     var testMode = false
 
     var body: some View {
-        Group {
+        ZStack {
             switch session.screen {
             case .draw:
                 DrawScreen(session: session, animationsEnabled: animationsEnabled,
@@ -18,7 +18,23 @@ struct ContentView: View {
                 }.id("reveal-\(draw.dateKey)")
             case .today(let draw):
                 TodayScreen(draw: draw, dateLabel: session.dateLabel,
-                            animationsEnabled: animationsEnabled, testMode: testMode).id("today-\(draw.dateKey)")
+                            animationsEnabled: animationsEnabled, testMode: testMode,
+                            ask: { session.screen = .ask }).id("today-\(draw.dateKey)")
+            case .ask:
+                AskScreen(session: session).id("ask")
+            case .composer:
+                QuestionComposerScreen(session: session).id("composer")
+            case .pick:
+                ThreeCardPickScreen(session: session).id("pick")
+            case .reading(let reading):
+                QuestionReadingScreen(reading: reading, done: session.goToToday).id("reading")
+            }
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            switch session.screen {
+            case .today, .ask:
+                RestingTabBar(askSelected: isAsk, today: session.goToToday, ask: { session.screen = .ask })
+            default: EmptyView()
             }
         }
         .alert("Your card could not be saved", isPresented: $session.saveFailed) {
@@ -31,7 +47,14 @@ struct ContentView: View {
         } message: {
             Text("Your saved cards are unchanged. Try again after checking the free space on your phone.")
         }
+        .alert("Your spread could not be saved", isPresented: $session.readingSaveFailed) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("Your three cards are still here. Free some space on your phone if needed, then tap Read my spread to try again.")
+        }
     }
+
+    private var isAsk: Bool { if case .ask = session.screen { true } else { false } }
 }
 
 struct DrawScreen: View {
@@ -265,6 +288,7 @@ struct TodayScreen: View {
     let dateLabel: String
     let animationsEnabled: Bool
     let testMode: Bool
+    let ask: () -> Void
     @Environment(\.dynamicTypeSize) private var textSize
     @State private var showsReveal = false
 
@@ -297,6 +321,8 @@ struct TodayScreen: View {
                     Text("This earlier draw has no saved extras or area readings.")
                         .typeRole(Design.TypeRole.caption).foregroundStyle(Design.Palette.secondary)
                 }
+                QuestionEntry(title: "Ask the cards", action: ask)
+                    .accessibilityIdentifier("today-ask")
                 Text("Your next card arrives at midnight")
                     .typeRole(Design.TypeRole.caption)
                     .foregroundStyle(Design.Palette.secondary)

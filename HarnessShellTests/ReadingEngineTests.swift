@@ -269,4 +269,98 @@ final class ReadingEngineTests: XCTestCase {
             XCTAssertEqual(font.fontName, name)
         }
     }
+
+    func testSpreadPicksConsumeInjectedRandomnessOnlyAtEachPickWithoutReplacement() throws {
+        let library = try CardLibrary.load()
+        var supplied = [0, 0, 0, 1, 0, 0]
+        var bounds: [Int] = []
+        var picks: [SpreadPick] = []
+        let source: (Int) -> Int = { bound in
+            bounds.append(bound)
+            return supplied.removeFirst()
+        }
+        XCTAssertTrue(bounds.isEmpty)
+        for count in 1...3 {
+            let before = picks
+            picks.append(try XCTUnwrap(ReadingEngine.nextPick(after: picks, library: library, randomIndex: source)))
+            XCTAssertEqual(Array(picks.dropLast()), before)
+            XCTAssertEqual(bounds.count, count * 2)
+            XCTAssertEqual(Set(picks.map { $0.card.id }).count, count)
+        }
+        XCTAssertEqual(bounds, [library.cards.count, 2, library.cards.count - 1, 2, library.cards.count - 2, 2])
+        XCTAssertEqual(picks.map(\.position), [.situation, .action, .outcome])
+        XCTAssertEqual(picks.map { $0.card.id }, Array(library.cards.prefix(3)).map(\.id))
+        XCTAssertEqual(picks.map(\.orientation), [.upright, .reversed, .upright])
+        XCTAssertNil(ReadingEngine.nextPick(after: picks, library: library, randomIndex: source))
+        XCTAssertEqual(bounds.count, 6)
+    }
+
+    func testEveryStarterPositionMeaningAndQuestionAreaIsComplete() throws {
+        let library = try CardLibrary.load()
+        XCTAssertTrue(library.questions.isComplete)
+        for card in library.cards {
+            for meaning in [card.upright, card.reversed] {
+                let positions = try XCTUnwrap(meaning.questionPositions)
+                XCTAssertTrue(positions.isComplete)
+                XCTAssertEqual(Set(QuestionPosition.allCases.map { positions.text(for: $0) }).count, 3)
+            }
+        }
+        let suggestions = ReadingArea.allCases.flatMap { library.questions.content(for: $0).suggestions }
+        XCTAssertEqual(Set(suggestions).count, suggestions.count)
+        XCTAssertTrue(suggestions.allSatisfy { $0.hasSuffix("?") })
+        XCTAssertEqual(Set(ReadingArea.allCases.map { library.questions.content(for: $0).lens }).count, 3)
+    }
+
+    func testCompositionUsesEveryPositionOrientationAndAreaLensDeterministically() throws {
+        let library = try CardLibrary.load()
+        let picks = zip(QuestionPosition.allCases, library.cards.prefix(3)).map { position, card in
+            SpreadPick(position: position, card: card, orientation: position == .action ? .reversed : .upright)
+        }
+        let id = UUID()
+        let date = Date(timeIntervalSince1970: 1234)
+        for area in ReadingArea.allCases {
+            let reading = try ReadingEngine.compose(id: id, createdAt: date, area: area, question: "What matters now?",
+                                                    picks: picks, library: library)
+            XCTAssertEqual(reading.question, "What matters now?")
+            XCTAssertEqual(reading.area, area)
+            XCTAssertEqual(reading.picks, picks)
+            XCTAssertEqual(reading.sections.map(\.text), picks.map {
+                $0.card.meaning($0.orientation).questionPositions!.text(for: $0.position)
+            })
+            XCTAssertEqual(reading.connectingPassage, library.questions.content(for: area).lens)
+            XCTAssertTrue(library.questions.reflections.contains(reading.reflectionQuestion))
+            XCTAssertTrue(reading.reflectionQuestion.hasSuffix("?"))
+            XCTAssertEqual(reading, try ReadingEngine.compose(id: id, createdAt: date, area: area,
+                                                              question: "What matters now?", picks: picks, library: library))
+            XCTAssertEqual(reading, try JSONDecoder().decode(QuestionReading.self, from: JSONEncoder().encode(reading)))
+        }
+    }
+
+    func testEmptyQuestionsIncompleteAndRepeatedSpreadsCannotCreateReadings() throws {
+        let library = try CardLibrary.load()
+        for question in ["", "   ", "\n\t "] { XCTAssertFalse(ReadingEngine.canSubmit(question: question)) }
+        XCTAssertTrue(ReadingEngine.canSubmit(question: "  How can I begin?  "))
+        let invalid = QuestionPosition.allCases.map { SpreadPick(position: $0, card: library.cards[0], orientation: .upright) }
+        for picks in [[], Array(invalid.prefix(2)), invalid] {
+            XCTAssertThrowsError(try ReadingEngine.compose(id: UUID(), createdAt: Date(), area: .career,
+                                                           question: "How can I begin?", picks: picks, library: library))
+        }
+    }
+
+    func testDailySnapshotFromBeforeQuestionContentStillDecodes() throws {
+        let draw = ReadingEngine.dailyDraw(seed: "old", dateKey: "2026-10-11", position: 1, library: try CardLibrary.load())
+        var json = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(draw)) as? [String: Any])
+        var card = try XCTUnwrap(json["card"] as? [String: Any])
+        for orientation in ["upright", "reversed"] {
+            var meaning = try XCTUnwrap(card[orientation] as? [String: Any])
+            meaning.removeValue(forKey: "questionPositions")
+            card[orientation] = meaning
+        }
+        json["card"] = card
+        let old = try JSONDecoder().decode(DailyDraw.self, from: JSONSerialization.data(withJSONObject: json))
+        XCTAssertEqual(old.meaning.interpretation, draw.meaning.interpretation)
+        XCTAssertEqual(old.card.id, draw.card.id)
+        XCTAssertNil(old.meaning.questionPositions)
+    }
+
 }
