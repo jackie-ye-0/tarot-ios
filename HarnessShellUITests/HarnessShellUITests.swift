@@ -72,7 +72,9 @@ final class HarnessShellUITests: XCTestCase {
         XCTAssertGreaterThanOrEqual(card.frame.width, 44)
         XCTAssertGreaterThanOrEqual(card.frame.height, 44)
         card.tap()
-        app.buttons["turn-over"].tap()
+        let turnOver = app.buttons["turn-over"]
+        XCTAssertTrue(turnOver.waitForExistence(timeout: 5))
+        turnOver.tap()
         XCTAssertTrue(app.buttons["see-meaning"].waitForExistence(timeout: 5))
     }
 

@@ -23,7 +23,7 @@ OpenAI, Ryan Lopopolo, [Harness engineering: leveraging Codex in an agent-first 
 
 ## What good means here
 
-A useful harness lets standalone Codex discover the approved task boundary, run the technical fixture, diagnose failures and produce inspectable evidence. Firstmate is optional; repository commands must remain usable without a supervisor or shared daemon.
+A useful harness lets standalone Codex discover the approved task boundary, run the app, diagnose failures and produce inspectable evidence. Firstmate is optional; repository commands must remain usable without a supervisor or shared daemon.
 
 The current foundation is native Swift/SwiftUI, Apple tools and shell/Python, with synthetic data and local ignored output. Product work is limited to the approved scope in the decisions document. Existing approval rules still apply: internal work uses direct PRs under `no-mistakes-prod-only`, yolo off; pushing requires task authorisation and merging requires approval. This reference grants no additional autonomy or permission to weaken checks.
 
@@ -32,7 +32,7 @@ The current foundation is native Swift/SwiftUI, Apple tools and shell/Python, wi
 Start from the concrete difficulty and consult these existing owners before proposing a bounded improvement:
 
 - [README commands](../README.md#commands): prerequisites, invocation and evidence access.
-- [Architecture](architecture.md): fixture, runner and evidence boundaries. Separate run directories do not establish isolated simulator runtimes per change.
+- [Architecture](architecture.md): app, runner and evidence boundaries. Separate run directories do not establish isolated simulator runtimes per change.
 - [Workflow](workflow.md): improvement process, replay and human decision boundaries.
 - [Friction](friction.md): observed problems and their resolutions.
 - [Decisions](decisions.md): approved scope, technology choices and unresolved product questions.

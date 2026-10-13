@@ -46,7 +46,7 @@ Set each UI test's kept `XCTAttachment.name` to the reference's filename without
 
 Reserve `--` for capture variants: `04-today--largest-text`, `02-draw--reduce-motion`, or `09-reading--bottom`. Variants appear under their screen and never satisfy its main screenshot requirement. For scrolling screens, use the unsuffixed name for the top and `--bottom` for the bottom. Reference states such as `04-today-first-day` are separate main screenshots, because each has its own reference image. The `00-flow-map.png` diagram is linked as context and excluded from screen coverage.
 
-Missing screens are reported without failing an ordinary run, so the current technical shell can pass while product screens are unbuilt. For the final full-screen pass, run:
+Missing screens are reported without failing an ordinary run, so the current app can pass while later product screens are unbuilt. For the final full-screen pass, run:
 
 ```sh
 ./scripts/harness check --require-all-screenshots
