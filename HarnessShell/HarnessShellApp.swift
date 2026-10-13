@@ -18,7 +18,10 @@ struct LaunchView: View {
 
     var body: some View {
         Group {
-            if let session { ContentView(session: session) }
+            if let session {
+                ContentView(session: session, animationsEnabled: animationsEnabled,
+                            holdShuffle: configuration.holdShuffle, testMode: configuration.testMode)
+            }
             else if failed {
                 ReadingScreenLayout {
                     VStack(alignment: .leading, spacing: Design.Space.section) {
@@ -40,12 +43,16 @@ struct LaunchView: View {
         }
         .environment(\.dynamicTypeSize, configuration.largestText ? .accessibility5 : systemTextSize)
         .transaction { transaction in
-            if configuration.reduceMotion || systemReduceMotion {
+            if !animationsEnabled {
                 transaction.animation = nil
                 transaction.disablesAnimations = true
             }
         }
         .onAppear { if session == nil && !failed { load() } }
+    }
+
+    private var animationsEnabled: Bool {
+        !configuration.disableAnimations && !configuration.reduceMotion && !systemReduceMotion
     }
 
     private func load() {

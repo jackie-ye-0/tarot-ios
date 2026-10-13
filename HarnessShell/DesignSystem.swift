@@ -2,6 +2,18 @@ import SwiftUI
 
 // All visual primitives live here; screens choose semantic roles and shared components.
 enum Design {
+    enum Motion {
+        static let washDuration = 0.45
+        static let fanDuration = 0.8
+        static let wash = Animation.easeInOut(duration: washDuration)
+        static let fanOut = Animation.timingCurve(0.16, 1, 0.3, 1, duration: fanDuration)
+        static let entrance = Animation.timingCurve(0.16, 1, 0.3, 1, duration: 0.65)
+        static let flip = Animation.easeInOut(duration: 1.1)
+        static let dawn = Animation.easeInOut(duration: 1.6)
+        static let textDelay = 0.85
+        static let stagger = 0.08
+    }
+
     enum Palette {
         static let ground = colour(0xf3e4dc)
         static let surface = colour(0xfbf4ef)
@@ -63,6 +75,15 @@ enum Design {
 }
 
 extension View {
+    @ViewBuilder func testMotionState(enabled: Bool, settled: Bool) -> some View {
+        #if DEBUG
+        if enabled { accessibilityValue(settled ? "settled" : "animating") }
+        else { self }
+        #else
+        self
+        #endif
+    }
+
     func typeRole(_ role: Design.TypeRole) -> some View {
         font(role.font).tracking(role.tracking)
     }
@@ -111,6 +132,103 @@ struct ScreenGround: View {
     }
 }
 
+struct RevealGround: View {
+    var progress: Double
+    var body: some View {
+        ScreenGround(night: true)
+            .overlay { ScreenGround().opacity(progress) }
+            .accessibilityHidden(true)
+    }
+}
+
+/// A thin glyph halo keeps the persistent copy readable while the ground crosses mid-tones.
+/// Switch complete contrast pairs rather than interpolating foreground through the ground.
+struct RevealPersistentCopy: ViewModifier, Animatable {
+    var progress: Double
+    var animatableData: Double {
+        get { progress }
+        set { progress = newValue }
+    }
+
+    func body(content: Content) -> some View {
+        let dawn = progress >= 0.5
+        let halo = min(1, min(progress / 0.15, (1 - progress) / 0.04))
+        let backing = (dawn ? Design.Palette.ground : Design.Palette.night).opacity(max(0, halo))
+        content
+            .foregroundStyle(dawn ? Design.Palette.secondary : Design.Palette.nightSecondary)
+            // Raster shadows preserve a single text/accessibility element.
+            .shadow(color: backing, radius: 0, x: 1)
+            .shadow(color: backing, radius: 0, x: -1)
+            .shadow(color: backing, radius: 0, y: 1)
+            .shadow(color: backing, radius: 0, y: -1)
+            // Progress already interpolates this modifier. Never tween the pair itself.
+            .transaction { $0.animation = nil; $0.disablesAnimations = true }
+    }
+}
+
+struct RevealStatusBar: ViewModifier, Animatable {
+    var progress: Double
+    var animatableData: Double {
+        get { progress }
+        set { progress = newValue }
+    }
+
+    func body(content: Content) -> some View {
+        content.preferredColorScheme(progress < 0.47 ? .dark : .light)
+    }
+}
+
+struct RevealSun: View {
+    let risen: Bool
+    var body: some View {
+        Circle()
+            .fill(RadialGradient(colors: [Design.Palette.ochre.opacity(0.28), Design.Palette.ochre.opacity(0)],
+                                 center: .center, startRadius: 50, endRadius: 180))
+            .frame(width: 360, height: 360)
+            .offset(y: risen ? -30 : 60)
+            .opacity(risen ? 1 : 0)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+    }
+}
+
+struct RevealTextRise: ViewModifier {
+    let visible: Bool
+    let animated: Bool
+    let index: Int
+
+    func body(content: Content) -> some View {
+        content
+            .opacity(visible ? 1 : 0)
+            .offset(y: visible ? 0 : Design.Space.related)
+            .animation(animated ? Design.Motion.entrance.delay(Design.Motion.textDelay + Double(index) * Design.Motion.stagger) : nil,
+                       value: visible)
+    }
+}
+
+/// Both faces share one interpolated angle, switching only when the card is edge-on.
+struct TurningTarotCard: View, Animatable {
+    let draw: DailyDraw
+    var progress: Double
+    let width: CGFloat
+    var animatableData: Double {
+        get { progress }
+        set { progress = newValue }
+    }
+
+    var body: some View {
+        ZStack {
+            TarotCardView(card: nil, width: width).opacity(progress < 0.5 ? 1 : 0)
+            TarotCardView(card: draw.card, orientation: draw.orientation, width: width)
+                .rotation3DEffect(.degrees(180), axis: (x: 0, y: 1, z: 0))
+                .opacity(progress < 0.5 ? 0 : 1)
+        }
+        .rotation3DEffect(.degrees(progress * 180), axis: (x: 0, y: 1, z: 0), perspective: 0.35)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(draw.card.name), \(draw.orientation.label)")
+    }
+}
+
 struct ActionPressStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label.opacity(configuration.isPressed ? 0.75 : 1)
@@ -121,6 +239,8 @@ struct ActionPressStyle: ButtonStyle {
 struct ReadingScreenLayout<Content: View, Footer: View>: View {
     var night = false
     var fillsAvailableHeight = false
+    var dawnProgress: Double? = nil
+    var dawnAnimation: Animation? = nil
     @ViewBuilder var content: () -> Content
     @ViewBuilder var footer: () -> Footer
     @Environment(\.dynamicTypeSize) private var textSize
@@ -144,8 +264,9 @@ struct ReadingScreenLayout<Content: View, Footer: View>: View {
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if !textSize.isAccessibilitySize { actions }
         }
-        .background { ScreenGround(night: night) }
-        .preferredColorScheme(night ? .dark : .light)
+        .background { ground }
+        .modifier(RevealStatusBar(progress: dawnProgress ?? (night ? 0 : 1)))
+        .animation(dawnAnimation, value: dawnProgress)
     }
 
     private var actions: some View {
@@ -154,7 +275,13 @@ struct ReadingScreenLayout<Content: View, Footer: View>: View {
             .padding(.bottom, Design.Space.related)
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("screen-footer")
-            .background { ScreenGround(night: night) }
+            .background { ground }
+    }
+
+    @ViewBuilder private var ground: some View {
+        if let dawnProgress {
+            RevealGround(progress: dawnProgress).animation(dawnAnimation, value: dawnProgress)
+        } else { ScreenGround(night: night) }
     }
 }
 
@@ -186,12 +313,23 @@ struct PrimaryAction: View {
 
 struct QuietAction: View {
     let title: String
+    var underlined = false
     let action: () -> Void
     var body: some View {
         Button(action: action) {
             Text(title)
-                .typeRole(.secondary)
-                .foregroundStyle(Design.Palette.nightSecondary)
+                .typeRole(underlined ? .button : .secondary)
+                .foregroundStyle(underlined ? Design.Palette.cream : Design.Palette.nightSecondary)
+                // Keep the gold rule separate so the contrast audit can assess the text colour.
+                .overlay(alignment: .bottom) {
+                    if underlined {
+                        Rectangle().fill(Design.Palette.gold)
+                            .frame(height: 1)
+                            .offset(y: 3)
+                            .allowsHitTesting(false)
+                            .accessibilityHidden(true)
+                    }
+                }
                 .frame(minWidth: Design.Space.target, minHeight: Design.Space.target)
                 .contentShape(Rectangle())
         }
@@ -329,28 +467,38 @@ struct TarotCardView: View {
     }
 }
 
+enum FanPhase {
+    case gathered, washLeft, washRight, fanned
+}
+
 struct CardFan: View {
-    @Binding var selected: Int?
+    let selected: Int?
+    var phase = FanPhase.fanned
+    var order = Array(1...5)
+    let choose: (Int) -> Void
     var body: some View {
         GeometryReader { geometry in
             let width = geometry.size.width
             let cardWidth = min(112, width * 0.33)
             let selectedWidth = min(124, width * 0.365)
             ZStack {
-                ForEach(1...5, id: \.self) { position in
+                ForEach(1...5, id: \.self) { identity in
+                    let position = (order.firstIndex(of: identity) ?? 0) + 1
                     let distance = CGFloat(position - 3)
-                    TarotCardView(card: nil, width: selected == position ? selectedWidth : cardWidth)
-                        .rotationEffect(.degrees(selected == position ? 0 : Double(distance) * 8))
-                        .offset(x: distance * width * 0.20,
-                                y: selected == position ? -27 : abs(distance) * 18 + (selected == nil ? 20 : 0))
+                    TarotCardView(card: nil, width: cardWidth)
+                        .scaleEffect(selected == position ? selectedWidth / cardWidth : 1)
+                        .rotationEffect(.degrees(rotation(distance: distance, selected: selected == position)))
+                        .offset(x: horizontalOffset(distance: distance, width: width),
+                                y: verticalOffset(distance: distance, selected: selected == position))
                         .opacity(selected == nil || selected == position ? 1 : 0.32)
-                        .zIndex(selected == position ? 1 : 0)
+                        .zIndex(selected == position ? 6 : Double(position))
+                        .allowsHitTesting(false)
                         .accessibilityHidden(true)
                 }
                 // Separate, non-overlapping hit lanes preserve all five targets through selection.
                 HStack(spacing: 0) {
                     ForEach(1...5, id: \.self) { position in
-                        Button { selected = position } label: {
+                        Button { choose(position) } label: {
                             Rectangle().fill(.clear)
                                 .frame(maxWidth: .infinity, minHeight: 240)
                                 .contentShape(Rectangle())
@@ -361,6 +509,7 @@ struct CardFan: View {
                         .accessibilityAddTraits(selected == position ? .isSelected : [])
                     }
                 }
+                .zIndex(10) // The fixed controls stay above every animated decorative card.
             }
             .frame(width: width, height: geometry.size.height)
             .background {
@@ -370,5 +519,32 @@ struct CardFan: View {
             }
         }
         .frame(height: 360)
+    }
+
+    private func horizontalOffset(distance: CGFloat, width: CGFloat) -> CGFloat {
+        switch phase {
+        case .gathered: distance * width * 0.04
+        case .washLeft: -distance * width * 0.12
+        case .washRight: distance * width * 0.15
+        case .fanned: distance * width * 0.20
+        }
+    }
+
+    private func verticalOffset(distance: CGFloat, selected chosen: Bool) -> CGFloat {
+        switch phase {
+        case .gathered: abs(distance) * 4 + 20
+        case .washLeft: distance * 12 + 20
+        case .washRight: -distance * 12 + 20
+        case .fanned: chosen ? -27 : abs(distance) * 18 + (selected == nil ? 20 : 0)
+        }
+    }
+
+    private func rotation(distance: CGFloat, selected chosen: Bool) -> Double {
+        switch phase {
+        case .gathered: Double(distance) * 3
+        case .washLeft: Double(-distance) * 12
+        case .washRight: Double(distance) * 12
+        case .fanned: chosen ? 0 : Double(distance) * 8
+        }
     }
 }

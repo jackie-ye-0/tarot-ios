@@ -3,11 +3,12 @@ import XCTest
 final class HarnessShellUITests: XCTestCase {
     override func setUpWithError() throws { continueAfterFailure = false }
 
-    private func app(extra: [String] = [], memory: Bool = true, seed: String = "reference-1", date: String = "2026-10-11T00:00:00Z") -> XCUIApplication {
+    private func app(extra: [String] = [], memory: Bool = true, seed: String = "reference-1", date: String = "2026-10-11T00:00:00Z", animations: Bool = false) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = ["--test-mode", "--test-date", date,
                                "--test-time-zone", "Australia/Sydney", "--test-seed", seed]
         if memory { app.launchArguments.append("--test-memory-store") }
+        if !animations { app.launchArguments.append("--test-disable-animations") }
         app.launchArguments += extra
         app.launch()
         return app
@@ -15,11 +16,32 @@ final class HarnessShellUITests: XCTestCase {
 
     // Reused by every screen test; no ignored audit categories or issue exceptions.
     private func auditAndCapture(_ app: XCUIApplication, _ name: String) throws {
-        try app.performAccessibilityAudit()
+        waitForRitualToSettle(app)
+        try app.performAccessibilityAudit { issue in
+            let detail = XCTAttachment(string: "\(issue.detailedDescription)\n\(issue.element?.debugDescription ?? "No element exposed")")
+            detail.name = "Audit detail - \(name)"
+            detail.lifetime = .keepAlways
+            self.add(detail)
+            return false // Retain diagnostics; every issue still fails the audit.
+        }
         capture(app, name)
     }
 
+    private func waitForRitualToSettle(_ app: XCUIApplication,
+                                      file: StaticString = #filePath, line: UInt = #line) {
+        let title = app.staticTexts["draw-title"]
+        let card = app.descendants(matching: .any)["revealed-card"]
+        let signal: XCUIElement
+        if title.exists { signal = title }
+        else if card.exists { signal = card }
+        else { return } // These screens have no ritual animation.
+        let settled = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", "settled"), object: signal)
+        XCTAssertEqual(XCTWaiter.wait(for: [settled], timeout: 10), .completed,
+                       "Ritual must finish rendering before an audit or capture", file: file, line: line)
+    }
+
     private func capture(_ app: XCUIApplication, _ name: String) {
+        waitForRitualToSettle(app)
         // Accessibility frames settle before the compositor after a colour-scheme change.
         Thread.sleep(forTimeInterval: 0.3)
         let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
@@ -79,8 +101,9 @@ final class HarnessShellUITests: XCTestCase {
     }
 
     func testDrawRevealTodayAndDesignEvidence() throws {
-        let app = app()
+        let app = app(animations: true)
         XCTAssertTrue(app.staticTexts["draw-title"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Pick the one that pulls at you"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["turn-over"].exists)
         var precedingLane: CGRect?
         for position in 1...5 {
@@ -93,6 +116,9 @@ final class HarnessShellUITests: XCTestCase {
         try auditAndCapture(app, "02-draw")
         let fanFrame = app.buttons["draw-card-3"].frame
         app.buttons["draw-card-3"].tap()
+        XCTAssertTrue(app.buttons["turn-over"].waitForExistence(timeout: 5))
+        XCTAssertEqual(app.staticTexts["draw-title"].label, "This one is yours")
+        XCTAssertTrue(app.buttons["draw-card-3"].isSelected)
         XCTAssertEqual(app.buttons["draw-card-3"].frame.midY, fanFrame.midY, accuracy: 0.5,
                        "Selection must preserve the fan/disc anchor to within pixel rounding")
         try auditAndCapture(app, "02-draw-card-chosen")
@@ -135,6 +161,57 @@ final class HarnessShellUITests: XCTestCase {
         app.buttons["draw-card-5"].tap()
         app.buttons["turn-over"].tap()
         XCTAssertEqual(app.staticTexts["draw-position"].label, "You picked card 5 of five")
+    }
+
+    func testShuffleInterruptionReplayUndoAndSameDailyCard() throws {
+        let app = app(extra: ["--test-hold-shuffle"], animations: true)
+        XCTAssertTrue(app.staticTexts["Washing the cards…"].waitForExistence(timeout: 5))
+        for position in 1...5 { XCTAssertTrue(app.buttons["draw-card-\(position)"].isHittable) }
+        XCTAssertEqual(app.staticTexts["shuffle-helper"].label, "Shuffling changes the order, not your card.")
+        try auditAndCapture(app, "02-draw--washing-cards")
+        app.buttons["draw-card-1"].tap()
+        XCTAssertEqual(app.staticTexts["draw-title"].label, "This one is yours")
+        XCTAssertTrue(app.buttons["turn-over"].isHittable)
+        XCTAssertTrue(app.buttons["draw-card-1"].isSelected)
+        app.buttons["choose-different"].tap()
+        XCTAssertFalse(app.buttons["turn-over"].exists)
+        XCTAssertEqual(app.staticTexts["draw-title"].label, "Pick the one that pulls at you")
+        // A second shuffle interrupts/replaces the held first run without stale completion.
+        for _ in 0..<2 {
+            app.buttons["shuffle-again"].tap()
+            XCTAssertEqual(app.staticTexts["draw-title"].label, "Washing the cards…")
+        }
+        app.buttons["draw-card-5"].tap()
+        XCTAssertTrue(app.buttons["draw-card-5"].isSelected)
+        app.buttons["turn-over"].tap()
+        XCTAssertTrue(app.buttons["see-meaning"].waitForExistence(timeout: 5))
+        XCTAssertEqual(app.staticTexts["draw-position"].label, "You picked card 5 of five")
+        let name = app.staticTexts["card-name"].label
+        let details = app.staticTexts["card-details"].label
+        waitForRitualToSettle(app)
+        XCTAssertFalse(app.staticTexts["today-title"].waitForExistence(timeout: 2),
+                       "Reveal must remain until the meaning action, including after the warming finishes")
+        app.terminate()
+        let unshuffled = self.app()
+        reveal(unshuffled, position: 2)
+        XCTAssertEqual(unshuffled.staticTexts["card-name"].label, name)
+        XCTAssertEqual(unshuffled.staticTexts["card-details"].label, details)
+    }
+
+    func testAnimationOffSkipsEvenHeldShuffle() {
+        let app = app(extra: ["--test-hold-shuffle"])
+        XCTAssertEqual(app.staticTexts["draw-title"].value as? String, "settled")
+        XCTAssertEqual(app.staticTexts["draw-title"].label, "Pick the one that pulls at you")
+        for position in 1...5 { XCTAssertTrue(app.buttons["draw-card-\(position)"].isHittable) }
+        app.buttons["shuffle-again"].tap()
+        XCTAssertEqual(app.staticTexts["draw-title"].label, "Pick the one that pulls at you")
+        reveal(app)
+        XCTAssertEqual(app.descendants(matching: .any)["revealed-card"].value as? String, "settled")
+        for identifier in ["card-name", "card-details", "card-keywords", "reveal-disclaimer"] {
+            assertVisible(app.staticTexts[identifier], in: app, abovePinnedFooter: identifier != "reveal-disclaimer")
+        }
+        app.buttons["see-meaning"].tap()
+        XCTAssertTrue(app.staticTexts["today-title"].waitForExistence(timeout: 5))
     }
 
     func testSavedDrawAndInstallSeedSurviveRelaunch() {
@@ -195,11 +272,15 @@ final class HarnessShellUITests: XCTestCase {
     }
 
     func testLargestTextAndReduceMotion() throws {
-        let app = app(extra: ["--test-largest-text", "--test-reduce-motion"])
+        let app = app(extra: ["--test-largest-text", "--test-reduce-motion"], animations: true)
         scrollTo(app.staticTexts["draw-title"], in: app)
         capture(app, "02-draw--largest-text")
         scrollTo(app.buttons["draw-card-3"], in: app)
+        capture(app, "02-draw--largest-text-fan")
+        scrollTo(app.staticTexts["shuffle-helper"], in: app)
+        assertVisible(app.buttons["shuffle-again"], in: app)
         capture(app, "02-draw--largest-text-bottom")
+        scrollTo(app.buttons["draw-card-3"], in: app)
         app.buttons["draw-card-3"].tap()
         scrollTo(app.staticTexts["draw-title"], in: app)
         capture(app, "02-draw-card-chosen--largest-text")
@@ -250,12 +331,24 @@ final class HarnessShellUITests: XCTestCase {
         XCTAssertLessThanOrEqual(interpretation.frame.maxX, viewport.maxX)
         capture(app, "04-today--largest-text-bottom")
         app.terminate()
-        let reduced = self.app(extra: ["--test-reduce-motion"])
+        let reduced = self.app(extra: ["--test-reduce-motion", "--test-hold-shuffle"], animations: true)
         XCTAssertTrue(reduced.buttons["draw-card-3"].waitForExistence(timeout: 5))
-        assertVisible(reduced.buttons["draw-card-3"], in: reduced, abovePinnedFooter: true)
+        XCTAssertEqual(reduced.staticTexts["draw-title"].label, "Pick the one that pulls at you")
+        XCTAssertEqual(reduced.staticTexts["draw-title"].value as? String, "settled")
+        for position in 1...5 {
+            XCTAssertTrue(reduced.buttons["draw-card-\(position)"].isHittable)
+            assertVisible(reduced.buttons["draw-card-\(position)"], in: reduced, abovePinnedFooter: true)
+        }
         capture(reduced, "02-draw--reduce-motion")
-        reveal(reduced)
-        assertVisible(reduced.staticTexts["card-name"], in: reduced, abovePinnedFooter: true)
+        reduced.buttons["shuffle-again"].tap()
+        XCTAssertEqual(reduced.staticTexts["draw-title"].label, "Pick the one that pulls at you")
+        reduced.buttons["draw-card-3"].tap()
+        capture(reduced, "02-draw-card-chosen--reduce-motion")
+        reduced.buttons["turn-over"].tap()
+        XCTAssertEqual(reduced.descendants(matching: .any)["revealed-card"].value as? String, "settled")
+        for identifier in ["card-name", "card-details", "card-keywords", "reveal-disclaimer"] {
+            assertVisible(reduced.staticTexts[identifier], in: reduced, abovePinnedFooter: identifier != "reveal-disclaimer")
+        }
         capture(reduced, "03-reveal--reduce-motion")
     }
 }

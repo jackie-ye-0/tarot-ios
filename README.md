@@ -2,7 +2,7 @@
 
 A local-first native Swift/SwiftUI tarot app. The foundation slice (#7) opens on five face-down cards, reveals the selected daily card, then shows a basic Today with its core interpretation. The card and orientation are fixed by the installation seed and local date, and saved on-device with SwiftData. Reopening on the same date goes straight to Today.
 
-The starter library contains six cards in both orientations with original draft writing. No account, network, AI, analytics or paid service is used. Content needs editorial review before release to real users. Later issues add Welcome, the full library, ritual motion, richer Today, day rollover, Ask and History.
+The starter library contains six cards in both orientations with original draft writing. No account, network, AI, analytics or paid service is used. Content needs editorial review before release to real users. Draw shuffles into a fan and Reveal turns the card as the screen warms to dawn; both remain interruptible and honour Reduce Motion. Later issues add Welcome, the full library, richer Today, day rollover, Ask and History.
 
 ## Setup
 
@@ -78,8 +78,12 @@ Only Debug builds, with `--test-mode`, read these launch arguments:
 - `--test-seed <string>` supplies the seed when the store has no installation identity.
 - `--test-memory-store` starts with an empty temporary SwiftData store on each launch.
 - `--test-store-id <UUID>` uses an isolated on-device test store that survives process relaunch. UI tests use a new UUID per test; synthetic stores remain in the simulator app container until it is removed.
-- `--test-largest-text` and `--test-reduce-motion` set the largest SwiftUI Dynamic Type size and disable animations in the root transaction, without changing simulator settings. The app also honours the real system Reduce Motion setting.
+- `--test-largest-text` sets the largest SwiftUI Dynamic Type size. `--test-reduce-motion` removes all animations and shows the final ritual states on first paint, without changing simulator settings. The app also honours the real system Reduce Motion setting.
+- `--test-disable-animations` independently switches animations off for deterministic UI checks. Motion-specific tests leave it off.
+- `--test-hold-shuffle` holds the first wash phase for a deterministic interruption test. Tapping any card still resolves it immediately; Reduce Motion and animation-off bypass the hold entirely. This avoids racing XCTest’s automatic animation-idle wait.
 - `--test-storage-open-failure` makes the first store-opening attempt fail so UI tests can verify the error and retry path.
+
+In Debug test mode, the Draw title and Reveal card also expose a `settled` accessibility value after SwiftUI reports that their animations have been removed. UI audits and captures wait on this value; it does not add visible test controls.
 
 Release builds ignore all these arguments. Normal launches always use the saved installation seed and on-device store. Storage failures surface a retry, never a silent reset or temporary substitute.
 
