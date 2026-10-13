@@ -59,7 +59,7 @@ final class HarnessShellUITests: XCTestCase {
     }
 
     // Capture the requested stop, then audit overlapping stops until every deferred element is covered.
-    private func auditAndCapture(_ app: XCUIApplication, _ name: String, startsScrolled: Bool = false) throws {
+    private func auditAndCapture(_ app: XCUIApplication, _ name: String) throws {
         XCTAssertTrue(app.launchArguments.contains("--test-reduce-motion"), "Audit fixtures must disable animations")
         capture(app, name)
         var records: [[String: String]] = []
@@ -72,8 +72,7 @@ final class HarnessShellUITests: XCTestCase {
         }
         var deferred: [String: XCUIElement] = [:]
         var covered = Set<String>()
-        for stop in 0..<12 {
-            let stopIndex = stop + (startsScrolled ? 1 : 0)
+        for _ in 0..<12 {
             let scroll = app.scrollViews.allElementsBoundByIndex.first { $0.isHittable }
             let viewport = scroll?.frame.intersection(visibleFrame(in: app)) ?? .null
             let fullyVisibleBefore = deferred.keys.filter {
@@ -82,25 +81,6 @@ final class HarnessShellUITests: XCTestCase {
             }
             var deferredAtThisStop = Set<String>()
             try app.performAccessibilityAudit(for: .all) { issue in
-                // At rest this stays strict. At scroll edges, an unattributed text
-                // detection is backed by the screen's explicit exposed-label check.
-                if stopIndex > 0 && issue.auditType == .elementDetection && issue.element == nil &&
-                    issue.compactDescription == "Potentially inaccessible text" {
-                    let record = ["stopIndex": String(stopIndex), "nativeIssue": issue.compactDescription,
-                                  "description": issue.detailedDescription, "auditType": "elementDetection",
-                                  "disposition": "recorded-unattributed-scrolled-text"]
-                    records.append(record)
-                    let evidence = XCTAttachment(screenshot: app.screenshot())
-                    evidence.name = "\(name)--text-detection-stop-\(stopIndex)-\(records.count)"
-                    evidence.lifetime = .keepAlways
-                    self.add(evidence)
-                    let detail = XCTAttachment(string: "Stop \(stopIndex): \(issue.compactDescription)\n\(issue.detailedDescription)")
-                    detail.name = "text-detection-\(name)-stop-\(stopIndex)-\(records.count)"
-                    detail.lifetime = .keepAlways
-                    self.add(detail)
-                    print("Audit recorded unattributed text detection: \(name), stop \(stopIndex), \(issue.detailedDescription)")
-                    return true
-                }
                 guard issue.auditType == .contrast, let element = issue.element,
                       element.exists, !element.frame.isEmpty else { return false }
                 let frame = element.frame
@@ -327,7 +307,7 @@ final class HarnessShellUITests: XCTestCase {
         assertTodayContent(app)
         try auditAndCapture(app, "04-today")
         scrollTo(app.staticTexts["line-social"], in: app)
-        try auditAndCapture(app, "04-today--bottom", startsScrolled: true)
+        try auditAndCapture(app, "04-today--bottom")
         scrollTo(app.staticTexts["next-card-arrival"], in: app)
         XCTAssertEqual(app.staticTexts["next-card-arrival"].label, "Your next card arrives at midnight")
         capture(app, "04-today--midnight")

@@ -29,7 +29,7 @@ Implementation: colour name/swatch, object and best hour above a three-area scor
 - Modal receives the current Dynamic Type size explicitly; a geometry assertion prevents a standard-size image from being mislabelled as largest text.
 - Decorative expansion and back symbols keep their designed dimensions at large text; the button targets stay accessible.
 - Area labels use the manifest's existing darker text partners after unfiltered native contrast audits exposed insufficient margin over grain. Accent fills remain unchanged.
-- The shared accessibility audit records deferred and covered elements in the test log. Every category stays enabled. Following Firstmate instructions 006–007, fully visible contrast flags are measured from their own screenshot and dismissed only at 4.5:1 or above, with identifier, label, image and ratio kept as attachments. The core reading additionally fails below 7:1. The shared measurement and synthetic self-checks come verbatim from the supplied f3d895e patch; no Ask code or palette changes were imported. Audit fixtures disable animations and captures wait for stable frames, with no fixed sleep.
+- The shared accessibility audit records deferred and covered elements in the test log. Every category stays enabled and strict. Following Firstmate instructions 006–007, fully visible plain-text contrast flags are measured from their own screenshot and dismissed only at 4.5:1 or above, with identifier, label, image and ratio kept as attachments. The shared measurement and synthetic self-checks come verbatim from the supplied f3d895e patch; no Ask code or palette changes were imported. Audit fixtures disable animations; captures wait for the ritual signal and two identical accessibility-frame reads, then pause 0.3 seconds for the compositor after colour-scheme changes.
 - Image inspection added an overlapping reading-opening capture for the earlier-snapshot largest-text state and made the largest-text bottom capture reach the surface group’s rounded bottom edge.
 - Modal metadata query is scoped to Reveal's existing scroll view so XCTest cannot match Today behind it.
 
@@ -77,9 +77,9 @@ The reviewer found no other internal text-box clipping, overlap or ellipsis. Scr
 
 ## Text-detection exposure check
 
-Instruction 008 required source and runtime evidence before handling unattributed native text-detection findings at scroll edges. Source inspection found no hidden or drawn reading text without an equivalent spoken label. The focused `testTodayScrolledTextIsExposed` passed in `.harness/today-exposure-1791913613.xcresult`; both its screenshots and complete accessibility hierarchies were inspected. Every fully visible string from the failed Today stop appears in an exposed label: metadata, keywords, core reading, the three extras, section headings, all area names/scores, and Career/Relationship sentences. Social is also checked while fully visible at the bottom. The same test passed again in the final suite, retaining fresh screenshots and both hierarchies.
+Instruction 008 required source and runtime evidence for native text-detection findings at scroll edges. Source inspection found no hidden or drawn reading text without an equivalent spoken label. The focused `testTodayScrolledTextIsExposed` passed in `.harness/today-exposure-1791913613.xcresult`; both its screenshots and complete accessibility hierarchies were inspected. Every fully visible string from the failed Today stop appears in an exposed label: metadata, keywords, core reading, the three extras, section headings, all area names/scores, and Career/Relationship sentences. Social is also checked while fully visible at the bottom. The same test passed again in the final suite, retaining fresh screenshots and both hierarchies.
 
-The first unscrolled audit remains strict. At later scroll stops only, `elementDetection` findings with the exact description “Potentially inaccessible text” and no element are retained with stop index, description and app screenshot instead of failing. Named-element findings retain existing treatment, contrast deferral was not widened, and every other category stays strict. This limit is explicit in design §12. The final run recorded **zero** such cases. Its initial Today audit deferred the partly clipped `area-label-career` and wholly offscreen `line-career`; both subsequently passed fully visible, as recorded in the test log. The earlier failing run identified an unattributed text-detection issue, but it was not dismissed in that run.
+Native element-detection findings are strict at every audit stop; the exposed-label check above is supplementary evidence, not an exception. The final run recorded **zero** unattributed text-detection cases. Its initial Today audit deferred only the partly clipped `area-label-career` and wholly offscreen `line-career` contrast findings; both subsequently passed fully visible, as recorded in the test log. The earlier failing run identified an unattributed text-detection issue and failed as intended.
 
 ## Contrast evidence
 
@@ -93,7 +93,7 @@ The archived fully visible core-reading failure from check 12 measures 9.0629261
 | empty identifier, `48:label:After 3 pm` | 9.05828150967682:1 |
 | `score-label-career` | 5.373034934775932:1 |
 
-All five were fully inside the true safe-area viewport and above the 4.5:1 manifest floor; the core also exceeded the separate 7:1 safety stop. No colour was changed to handle those native flags.
+All five were fully inside the true safe-area viewport and above the 4.5:1 manifest floor. No colour was changed to handle those native flags.
 
 ## Limits
 
