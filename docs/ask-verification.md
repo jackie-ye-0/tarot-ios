@@ -1,6 +1,6 @@
 # Ask foundation (#13)
 
-Scope: the first complete Today → Ask → composer → three-card pick → reading path. The independent image comparison is complete. A full check passed all 26 iOS tests on `49b2eb9`; the next full check on `3eb99a7` verified the composer helper alignment but passed 25/26 because a reflection caption was never audited fully visible. The capture stop is now corrected and awaits a fresh full check. Native control failures remain unsuppressed.
+Scope: the first complete Today → Ask → composer → three-card pick → reading path. Implementation and the independent comparison are complete, but delivery is **blocked on the strict native composer control audit**. The latest two full checks on unchanged `2c7ab55` each passed 25/26 iOS tests and failed `suggestion-0` contrast. Together with the preceding reflection-caption coverage failure, this reaches the three-consecutive-affected-check stop bound. No further rerun is planned without guidance; a separate simulator scheduling hold is also active. The last complete pass was on `49b2eb9`, before the final composer alignment and caption-test corrections.
 
 ## Behaviour and coverage
 
@@ -51,7 +51,7 @@ Every audit category stays enabled. Fixtures use the existing Debug Reduce Motio
 
 The author inspection verified the new tabs/entry, all three area labels, complete suggested questions, empty/enabled composer actions, ordered labelled slots, positions/orientations, position passages, lens, reflection and Done. Largest-text captures overlap across long text, include each spread slot, and show reachable actions. Filled-composer top captures include Back, selector and title; separate stops cover the full guidance, field, all three suggestions, footer and keyboard states. Completed-pick top captures include Back, progress and the full question. The focused field is checked and shown above the keyboard at both text sizes. No content or primary action was unreachable in the inspected captures.
 
-The original independent-review input remains preserved separately: clean code/test commit `5494309`, full passing run `20261013T180322.383990Z-check-492295a2`, 73 images (65 full-screen and eight contrast crops). The independent report refers to that original packet. The newer passing packet retains its own manifest copy, references, comparison page, screenshots, logs, result bundle, audit records and the failed-run/frequency evidence. It must not be relabelled as evidence for the pending helper correction.
+The original independent-review input remains preserved separately: clean code/test commit `5494309`, full passing run `20261013T180322.383990Z-check-492295a2`, 73 images (65 full-screen and eight contrast crops). The independent report refers to that original packet. The newer passing packet retains its own manifest copy, references, comparison page, screenshots, logs, result bundle, audit records and the failed-run/frequency evidence. It must not be relabelled as a complete pass for the subsequent helper alignment or caption-test correction.
 
 ### Measured contrast dismissals in the latest passing run
 
@@ -78,7 +78,7 @@ The fresh-session reviewer opened all 65 full-screen images, eight contrast crop
 
 | Review IDs | Disposition |
 | --- | --- |
-| C4, CE4 | Shared dawn footer padding now uses the content’s 20-point guide. Final inspection found the composer helper’s intrinsic-width text still centred about six points inside that guide; its footer stack now uses leading alignment. The primary action already met the guide. Standard empty/filled and largest filled footer captures on `3eb99a7` confirm the leading guide; the full check had a separate reading-caption coverage failure, whose correction is described below. Final complete evidence remains pending. |
+| C4, CE4 | Shared dawn footer padding now uses the content’s 20-point guide. Final inspection found the composer helper’s intrinsic-width text still centred about six points inside that guide; its footer stack now uses leading alignment. The primary action already met the guide. All 16 composer captures from `e4b78f9d` were inspected, including empty/filled, standard/largest text, keyboard and keyboard-dismissed states. They confirm the helper/action guide and reachable actions after dismissal. That full run failed the separate strict native suggestion-button audit; final complete verification remains pending. |
 | R6 | Fixed through the same dawn-footer change. Done keeps standard-size pinning and largest-text inline placement. |
 | S2 | Fixed in shared content alignment and footer spacing: short error copy aligns to the leading 20-point guide instead of centring its intrinsic width; retry shares that guide at both sizes. |
 | CE3 | Added a true filled-composer navigation-top capture, guidance stop, separate field capture and complete-suggestions stop; retained footer/keyboard evidence. |
@@ -120,7 +120,24 @@ The subsequent full strict check on `49b2eb9` passed **26/26**, including the co
 
 Run `20261013T213027.896263Z-check-760c90c0` on clean `3eb99a7` passed 32 command tests, the design guard and 25/26 iOS tests, with no skips or runtime warnings. Standard empty/filled and largest filled composer footer images confirm the leading-alignment correction. The sole failure was an unresolved deferred contrast issue on the reading's “Something to sit with” caption. Its recorded frame was `(40, 772.0667, 121, 17)` outside viewport `(0, 47, 390, 658)`. The bottom screenshot shows the question but clips the caption below the pinned footer: the test had scrolled only to `reflection-question`.
 
-The final reading audit stop now scrolls to the caption and explicitly requires the question to remain visible above the footer. It waits for both texts to settle before the audit. App layout, wording and audit policy are unchanged. This closes a coverage gap without suppressing any additional issue; a fresh full check is still required. The failed run and exact audit records are preserved. Xcode took roughly ten minutes after the test suite ended to finalise its result bundle; it was left running and completed without intervention.
+The final reading audit stop now scrolls to the caption and explicitly requires the question to remain visible above the footer. It waits for both texts to settle before the audit. App layout, wording and audit policy are unchanged. This targets the coverage gap without suppressing any additional issue. It remains unverified: both later full runs stopped at the composer audit before reaching the corrected reading stop. The failed run and exact audit records are preserved. Xcode took roughly ten minutes after the test suite ended to finalise its result bundle; it was left running and completed without intervention.
+
+### Repeated native control failures and stop bound
+
+Two subsequent full locked checks used unchanged clean commit `2c7ab55ed0e186d3f4b250a67ab8106eb2d9c5f1`:
+
+| Run | Result | Sole failure |
+| --- | --- | --- |
+| `20261013T221357.163338Z-check-73ca2848` | 32 command tests and design guard passed; 25/26 iOS tests; no skips or recorded runtime warnings | Filled-composer `suggestion-0` Button, “Where is this going?”, native `Contrast failed` |
+| `20261013T224836.297676Z-check-e4b78f9d` | 32 command tests and design guard passed; 25/26 iOS tests; no skips or recorded runtime warnings | The same native `suggestion-0` Button contrast failure |
+
+Their app and element screenshots were inspected and both result bundles, logs and exported images preserved. Both current button crops measure **11.369905:1 for text/background**, diagnostic only, identical to the original failed crop. This does not establish border contrast or qualify a control for the static-text override. The earlier focused result remains **0/5 flags**, with no other identifiers flagged; the later full-run recurrences are recorded alongside it. No colour, chip style, native-control exception, audit-category change or permanent retry loop was added.
+
+Each failed filled-composer audit also attached a crop of the plain static text “Or start from one of these” before reaching the button failure. Its final audit JSON attachment was not exported after the test stopped; the raw log and crop are preserved, and no missing record or ratio is invented. Neither run reached the corrected reading-caption audit stop. The largest-text path and keyboard tests passed independently.
+
+All 16 composer captures from `e4b78f9d` were inspected. They confirm the final C4/CE4 leading alignment across empty/filled, standard/largest-text, keyboard and keyboard-dismissed states, with full guidance/suggestions covered by overlapping stops. This visual verification does not turn the failed native control audit into a pass. No inspection of all 65 images from this failed run is claimed.
+
+The three latest full checks failed for contrast-related reasons: unresolved off-screen caption coverage (`760c90c0`), then the native button twice (`73ca2848`, `e4b78f9d`). Applying the instructed stop bound conservatively, further reruns stop here pending guidance. Inbox 012 additionally holds all further simulator runs until release. The source/test branch is committed; the report and evidence identify the remaining gap. No first completion handoff, no-mistakes run or publication has occurred.
 
 ## Remaining release limits
 
