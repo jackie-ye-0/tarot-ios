@@ -198,7 +198,7 @@ struct RevealScreen: View {
             VStack(spacing: Design.Space.large) {
                 HStack(spacing: Design.Space.small) {
                     if let backAction {
-                        BackToTodayAction(action: backAction)
+                        BackToTodayAction(progress: revealed ? 1 : 0, action: backAction)
                     }
                     Text("You picked card \(draw.position) of five")
                         .typeRole(Design.TypeRole.secondary)

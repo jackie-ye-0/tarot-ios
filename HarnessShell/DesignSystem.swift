@@ -364,12 +364,13 @@ struct QuietAction: View {
 }
 
 struct BackToTodayAction: View {
+    let progress: Double
     let action: () -> Void
     var body: some View {
         Button(action: action) {
             Image(systemName: "chevron.left")
                 .resizable().scaledToFit().frame(width: 12, height: 20)
-                .foregroundStyle(Design.Palette.ink)
+                .modifier(RevealPersistentCopy(progress: progress))
                 .frame(width: Design.Space.target, height: Design.Space.target)
                 .contentShape(Rectangle())
         }
