@@ -80,9 +80,19 @@ final class HarnessShellUITests: XCTestCase {
         let app = app()
         XCTAssertTrue(app.staticTexts["draw-title"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["turn-over"].exists)
-        for position in 1...5 { XCTAssertTrue(app.buttons["draw-card-\(position)"].isHittable) }
+        var precedingLane: CGRect?
+        for position in 1...5 {
+            let card = app.buttons["draw-card-\(position)"]
+            XCTAssertTrue(card.isHittable)
+            assertVisible(card, in: app, abovePinnedFooter: true)
+            if let precedingLane { XCTAssertLessThanOrEqual(precedingLane.maxX, card.frame.minX + 0.5) }
+            precedingLane = card.frame
+        }
         try auditAndCapture(app, "02-draw")
+        let fanFrame = app.buttons["draw-card-3"].frame
         app.buttons["draw-card-3"].tap()
+        XCTAssertEqual(app.buttons["draw-card-3"].frame.midY, fanFrame.midY, accuracy: 0.5,
+                       "Selection must preserve the fan/disc anchor to within pixel rounding")
         try auditAndCapture(app, "02-draw-card-chosen")
         app.buttons["turn-over"].tap()
         XCTAssertTrue(app.staticTexts["card-name"].waitForExistence(timeout: 5))
@@ -153,6 +163,19 @@ final class HarnessShellUITests: XCTestCase {
         XCTAssertEqual(expected.staticTexts["card-details"].label, nextDetails)
     }
 
+    func testReversedCardUsesItsOwnMeaning() throws {
+        let app = app(seed: "reference-4")
+        reveal(app)
+        XCTAssertEqual(app.staticTexts["card-name"].label, "The Star")
+        XCTAssertEqual(app.staticTexts["card-details"].label, "Reversed · Major Arcana XVII")
+        XCTAssertEqual(app.descendants(matching: .any)["revealed-card"].label, "The Star, Reversed")
+        try auditAndCapture(app, "03-reveal--reversed")
+        app.buttons["see-meaning"].tap()
+        XCTAssertTrue(app.staticTexts["core-interpretation"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.staticTexts["core-interpretation"].label.contains("Hope may feel more useful"))
+        capture(app, "04-today--reversed")
+    }
+
     func testLargestTextAndReduceMotion() throws {
         let app = app(extra: ["--test-largest-text", "--test-reduce-motion"])
         scrollTo(app.staticTexts["draw-title"], in: app)
@@ -169,7 +192,6 @@ final class HarnessShellUITests: XCTestCase {
         capture(app, "03-reveal--largest-text")
         for identifier in ["card-name", "card-details", "card-keywords"] {
             scrollTo(app.staticTexts[identifier], in: app)
-            capture(app, "03-reveal--largest-text-\(identifier)")
         }
         scrollTo(app.staticTexts["reveal-disclaimer"], in: app)
         assertVisible(app.buttons["see-meaning"], in: app)
@@ -179,11 +201,25 @@ final class HarnessShellUITests: XCTestCase {
         capture(app, "04-today--largest-text")
         for identifier in ["card-name", "card-details"] {
             scrollTo(app.staticTexts[identifier], in: app)
-            capture(app, "04-today--largest-text-\(identifier)")
         }
         let interpretation = app.staticTexts["core-interpretation"]
         XCTAssertTrue(interpretation.exists)
-        // A long paragraph exceeds one viewport. Verify its width and reachable final line.
+        // A long paragraph exceeds a viewport. Capture an overlapping opening before its end.
+        // Do not rely on isHittable: partially cropped text can still be tappable.
+        for _ in 0..<10 {
+            let viewport = visibleFrame(in: app)
+            let top = interpretation.frame.minY
+            if top >= viewport.minY + 20 && top <= viewport.midY { break }
+            let delta = max(-viewport.height / 2, min(viewport.height / 2, top - viewport.minY - 120))
+            let origin = app.coordinate(withNormalizedOffset: .zero)
+            let start = origin.withOffset(CGVector(dx: viewport.midX, dy: viewport.midY + delta / 2))
+            let end = origin.withOffset(CGVector(dx: viewport.midX, dy: viewport.midY - delta / 2))
+            start.press(forDuration: 0.1, thenDragTo: end)
+        }
+        XCTAssertGreaterThanOrEqual(interpretation.frame.minY, visibleFrame(in: app).minY + 20)
+        XCTAssertLessThanOrEqual(interpretation.frame.minY, visibleFrame(in: app).midY)
+        capture(app, "04-today--largest-text-opening")
+        // Verify the paragraph's width and reachable final line.
         for _ in 0..<10 {
             if interpretation.frame.maxY <= visibleFrame(in: app).maxY { break }
             dragContent(app, up: true)

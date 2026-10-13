@@ -87,6 +87,8 @@ Two families, both open licence (SIL OFL): **Gabarito** for display and buttons,
 | Caption | Hanken Grotesk 400 | 13 | Disclaimers, helper lines |
 | Tab label | Hanken Grotesk 600 | 12 | Smallest size allowed, tab bar only |
 
+Card names use Display: 44 on Reveal and 40 beside the Today thumbnail. Card orientation/arcana uses the 16-point body scale with weight 600; Reveal keywords use 16-point regular body text. The standard interpretation has approximately 1.5 line height.
+
 Sizes are the default-size reference in points. In SwiftUI map each role to a Dynamic Type text style so it scales with the user's setting; never fix a size that cannot grow. Emphasis comes from weight 600, not colour. No all-caps labels.
 
 ## 4. Shape, spacing and layout
@@ -159,7 +161,7 @@ The reference screens also change the flow, not only the look. Jackie adopted th
 
 ## 11. Foundation slice and states without references
 
-Issue #7 starts directly at Draw. It implements the static fan and selection, explicit Reveal and a basic Today containing the card, name, orientation, keywords and core interpretation. Welcome, shuffle/reveal motion, History, Share, Settings, tabs, Today extras and Ask are later slices; their controls are omitted rather than made inert. The unselected Draw footer says "Choose a card to begin" until shuffle is implemented. The five non-overlapping tap lanes remain available when a card is selected. At accessibility text sizes, Today stacks its card above its details. Every screen scrolls. The shared reading-screen layout pins its footer only at standard text sizes; at accessibility sizes it places the action and helper/disclaimer text inline after the content, so they remain reachable without taking space from the reading. Text is never capped or shrunk to fit. This rule also applies to any later screen using a pinned footer.
+Issue #7 starts directly at Draw. It implements the static fan and selection, explicit Reveal and a basic Today containing the card, name, orientation, keywords and core interpretation. Welcome, shuffle/reveal motion, History, Share, Settings, tabs, Today extras and Ask are later slices; their controls are omitted rather than made inert. The unselected Draw footer says "Choose a card to begin" until shuffle is implemented. The five non-overlapping tap lanes remain available when a card is selected. At standard size the two Draw states share the same disc/fan anchor; the chosen card grows and rises inside it. The title reserves the two-line instruction’s space so selecting a card does not shift the whole composition. This minimum does not cap larger text. At accessibility text sizes, Today stacks its card above its details. Every screen scrolls. The shared reading-screen layout pins its footer only at standard text sizes; at accessibility sizes it places the action and helper/disclaimer text inline after the content, so they remain reachable without taking space from the reading. Text is never capped or shrunk to fit. This rule also applies to any later screen using a pinned footer.
 
 A storage-open failure uses dawn ground, a screen title explaining that readings could not be opened, body copy saying nothing has been replaced, and a "Try again" primary action. A save failure leaves the chosen card in place and shows a native alert explaining how to retry; it never silently switches to a temporary store or deletes saved data.
 

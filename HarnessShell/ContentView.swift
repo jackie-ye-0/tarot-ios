@@ -25,6 +25,7 @@ struct ContentView: View {
 struct DrawScreen: View {
     let session: AppSession
     @State private var selected: Int?
+    @Environment(\.dynamicTypeSize) private var textSize
 
     var body: some View {
         ReadingScreenLayout(night: true, fillsAvailableHeight: true) {
@@ -33,22 +34,25 @@ struct DrawScreen: View {
                     .typeRole(.secondary)
                     .foregroundStyle(Design.Palette.nightSecondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.bottom, Design.Space.related)
                 VStack(spacing: Design.Space.related) {
                     Text(selected == nil ? "Pick the one that pulls at you" : "This one is yours")
                         .typeRole(.title)
                         .foregroundStyle(Design.Palette.cream)
                         .accessibilityIdentifier("draw-title")
-                        .frame(maxWidth: Design.Space.titleWidth)
+                        .frame(maxWidth: selected == nil && !textSize.isAccessibilitySize ? Design.Space.titleWidth : .infinity)
                     Text(selected.map { "Card \($0) of five. Ready when you are." } ?? "Tap any card. Trust the first tug.")
                         .typeRole(.body)
                         .foregroundStyle(Design.Palette.nightSecondary)
                 }
                 .multilineTextAlignment(.center)
+                .frame(minHeight: textSize.isAccessibilitySize ? nil : Design.Space.drawHeadingHeight, alignment: .top)
+                .zIndex(1) // The decorative disc can extend behind, but never cover, the heading.
                 CardFan(selected: $selected)
                 Spacer(minLength: 0)
             }
             .padding(.horizontal, Design.Space.ritual)
-            .padding(.top, Design.Space.related)
+            .padding(.top, Design.Space.page)
         } footer: {
             VStack(spacing: Design.Space.small) {
                 if let selected {
@@ -78,17 +82,18 @@ struct RevealScreen: View {
                     .foregroundStyle(Design.Palette.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .accessibilityIdentifier("draw-position")
+                    .padding(.bottom, Design.Space.small)
                 TarotCardView(card: draw.card, orientation: draw.orientation, width: 214)
                     .accessibilityIdentifier("revealed-card")
-                VStack(spacing: Design.Space.related) {
+                VStack(spacing: Design.Space.small) {
                     Text(draw.card.name)
                         .typeRole(.display)
                         .accessibilityIdentifier("card-name")
                     Text("\(draw.orientation.label) · \(draw.card.arcana)")
-                        .typeRole(.label)
+                        .typeRole(.metadata)
                         .accessibilityIdentifier("card-details")
                     Text(draw.meaning.keywords.joined(separator: ", "))
-                        .typeRole(.body)
+                        .typeRole(.keywords)
                         .foregroundStyle(Design.Palette.secondary)
                         .accessibilityIdentifier("card-keywords")
                 }
@@ -96,7 +101,7 @@ struct RevealScreen: View {
                 .foregroundStyle(Design.Palette.ink)
             }
             .padding(.horizontal, Design.Space.ritual)
-            .padding(.top, Design.Space.related)
+            .padding(.top, Design.Space.page)
             .padding(.bottom, Design.Space.section)
         }
         footer: {
@@ -130,13 +135,13 @@ struct TodayScreen: View {
                 }
                 Text(draw.meaning.interpretation)
                     .typeRole(.body)
-                    .lineSpacing(Design.Space.small)
+                    .lineSpacing(Design.Space.readingLeading)
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("core-interpretation")
             }
             .foregroundStyle(Design.Palette.ink)
             .padding(.horizontal, Design.Space.page)
-            .padding(.top, Design.Space.related)
+            .padding(.top, Design.Space.page)
             .padding(.bottom, Design.Space.large)
         }
         footer: { EmptyView() }
@@ -148,10 +153,10 @@ struct TodayScreen: View {
     }
 
     private var details: some View {
-        VStack(alignment: .leading, spacing: Design.Space.related) {
-            Text(draw.card.name).typeRole(.title).accessibilityIdentifier("card-name")
+        VStack(alignment: .leading, spacing: Design.Space.small) {
+            Text(draw.card.name).typeRole(.compactDisplay).accessibilityIdentifier("card-name")
             Text("\(draw.orientation.label) · \(draw.card.arcana)")
-                .typeRole(.label).accessibilityIdentifier("card-details")
+                .typeRole(.metadata).accessibilityIdentifier("card-details")
             Text(draw.meaning.keywords.joined(separator: ", "))
                 .typeRole(.secondary).foregroundStyle(Design.Palette.secondary)
         }

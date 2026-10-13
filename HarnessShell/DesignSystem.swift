@@ -33,27 +33,32 @@ enum Design {
         static let ritual: CGFloat = 24
         static let section: CGFloat = 28
         static let large: CGFloat = 32
-        static let titleWidth: CGFloat = 300
+        static let titleWidth: CGFloat = 260
+        static let drawHeadingHeight: CGFloat = 108
+        static let readingLeading: CGFloat = 4
         static let target: CGFloat = 44
         static let button: CGFloat = 56
     }
 
     enum TypeRole {
-        case display, title, section, button, body, secondary, label, caption
+        case display, compactDisplay, title, section, button, body, keywords, metadata, secondary, label, caption
 
         var font: Font {
             switch self {
-            case .display: .custom("Gabarito-Regular", size: 42, relativeTo: .largeTitle).weight(.bold)
+            case .display: .custom("Gabarito-Regular", size: 44, relativeTo: .largeTitle).weight(.bold)
+            case .compactDisplay: .custom("Gabarito-Regular", size: 40, relativeTo: .largeTitle).weight(.bold)
             case .title: .custom("Gabarito-Regular", size: 30, relativeTo: .title).weight(.semibold)
             case .section: .custom("Gabarito-Regular", size: 22, relativeTo: .title2).weight(.semibold)
             case .button: .custom("Gabarito-Regular", size: 18, relativeTo: .headline).weight(.semibold)
             case .body: .custom("HankenGrotesk-Regular", size: 17, relativeTo: .body)
+            case .keywords: .custom("HankenGrotesk-Regular", size: 16, relativeTo: .body)
+            case .metadata: .custom("HankenGrotesk-Regular", size: 16, relativeTo: .body).weight(.semibold)
             case .secondary: .custom("HankenGrotesk-Regular", size: 15, relativeTo: .subheadline)
             case .label: .custom("HankenGrotesk-Regular", size: 14, relativeTo: .subheadline).weight(.semibold)
             case .caption: .custom("HankenGrotesk-Regular", size: 13, relativeTo: .footnote)
             }
         }
-        var tracking: CGFloat { self == .display ? -0.84 : self == .title ? -0.3 : 0 }
+        var tracking: CGFloat { self == .display ? -0.88 : self == .compactDisplay ? -0.8 : self == .title ? -0.3 : 0 }
     }
 }
 
@@ -63,28 +68,44 @@ extension View {
     }
 }
 
+/// A reusable, deterministic fine-grain tile, generated once rather than per screen frame.
+private struct GroundGrain: View {
+    let night: Bool
+    private static let nightTile = makeTile(night: true)
+    private static let dawnTile = makeTile(night: false)
+
+    var body: some View {
+        Image(decorative: night ? Self.nightTile : Self.dawnTile, scale: 2)
+            .resizable(resizingMode: .tile)
+            .interpolation(.none)
+            .opacity(night ? 0.10 : 0.16)
+            .blendMode(night ? .screen : .multiply)
+            .accessibilityHidden(true)
+    }
+
+    private static func makeTile(night: Bool) -> CGImage {
+        let side = 192
+        var pixels = [UInt8](repeating: 0, count: side * side)
+        for index in pixels.indices {
+            var bits = UInt64(index) &+ 0x9e3779b97f4a7c15
+            bits = (bits ^ (bits >> 30)) &* 0xbf58476d1ce4e5b9
+            bits = (bits ^ (bits >> 27)) &* 0x94d049bb133111eb
+            bits ^= bits >> 31
+            pixels[index] = night ? UInt8(bits & 127) : 128 + UInt8(bits & 127)
+        }
+        let data = CGDataProvider(data: Data(pixels) as CFData)!
+        return CGImage(width: side, height: side, bitsPerComponent: 8, bitsPerPixel: 8,
+                       bytesPerRow: side, space: CGColorSpaceCreateDeviceGray(),
+                       bitmapInfo: CGBitmapInfo(rawValue: 0), provider: data,
+                       decode: nil, shouldInterpolate: false, intent: .defaultIntent)!
+    }
+}
+
 struct ScreenGround: View {
     var night = false
     var body: some View {
         (night ? Design.Palette.night : Design.Palette.ground)
-            .overlay {
-                Canvas { context, size in
-                    var speckles = Path()
-                    for i in 0..<Int(size.width * size.height * 0.12) {
-                        var bits = UInt64(i) &+ 0x9e3779b97f4a7c15
-                        bits = (bits ^ (bits >> 30)) &* 0xbf58476d1ce4e5b9
-                        bits = (bits ^ (bits >> 27)) &* 0x94d049bb133111eb
-                        bits ^= bits >> 31
-                        let x = CGFloat(bits & 65535) / 65535 * size.width
-                        let y = CGFloat((bits >> 16) & 65535) / 65535 * size.height
-                        let diameter = 0.2 + CGFloat((bits >> 32) & 255) / 255 * 0.35
-                        speckles.addEllipse(in: CGRect(x: x, y: y, width: diameter, height: diameter))
-                    }
-                    context.fill(speckles, with: .color(night ? Design.Palette.cream : Design.Palette.ink))
-                }
-                .opacity(night ? 0.10 : 0.16)
-                .blendMode(night ? .screen : .multiply)
-            }
+            .overlay { GroundGrain(night: night) }
             .ignoresSafeArea()
             .accessibilityHidden(true)
     }
@@ -197,6 +218,9 @@ struct TarotCardView: View {
         }
         .frame(width: width, height: width * 1.6)
         .rotationEffect(.degrees(orientation == .reversed ? 180 : 0))
+        .compositingGroup()
+        .shadow(color: Design.Palette.ink.opacity(card == nil ? 0 : 0.18),
+                radius: width * 0.10, x: 0, y: width * 0.08)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(card.map { "\($0.name), \(orientation.label)" } ?? "Face-down card")
     }
@@ -207,17 +231,17 @@ struct TarotCardView: View {
         let gold = Design.Palette.gold
         context.stroke(Path(roundedRect: CGRect(x: w * 0.08, y: w * 0.08, width: w * 0.84, height: h - w * 0.16),
                             cornerRadius: w * 0.065), with: .color(gold.opacity(0.45)), lineWidth: w * 0.006)
-        let centre = CGPoint(x: w * 0.5, y: h * 0.62)
-        let radius = w * 0.22
+        let centre = CGPoint(x: w * 0.5, y: h * 0.665)
+        let radius = w * 0.21
         var sun = Path()
         sun.addArc(center: centre, radius: radius, startAngle: .degrees(180), endAngle: .zero, clockwise: false)
         sun.closeSubpath()
         context.fill(sun, with: .color(gold))
         var lines = Path()
-        for i in 0...4 {
-            let angle = Double(i) * .pi / 4
+        for degrees in [20.0, 48, 90, 132, 160] {
+            let angle = degrees * .pi / 180
             let start = w * 0.29
-            let end = w * 0.39
+            let end = w * 0.41
             lines.move(to: CGPoint(x: centre.x + cos(angle) * start, y: centre.y - sin(angle) * start))
             lines.addLine(to: CGPoint(x: centre.x + cos(angle) * end, y: centre.y - sin(angle) * end))
         }
@@ -226,8 +250,8 @@ struct TarotCardView: View {
         context.stroke(lines, with: .color(gold), style: StrokeStyle(lineWidth: w * 0.014, lineCap: .round))
         var water = Path()
         for i in 1...2 {
-            water.move(to: CGPoint(x: w * (0.23 + Double(i) * 0.05), y: centre.y + Double(i) * w * 0.11))
-            water.addLine(to: CGPoint(x: w * (0.77 - Double(i) * 0.05), y: centre.y + Double(i) * w * 0.11))
+            water.move(to: CGPoint(x: w * (0.18 + Double(i) * 0.09), y: centre.y + Double(i) * w * 0.105))
+            water.addLine(to: CGPoint(x: w * (0.82 - Double(i) * 0.09), y: centre.y + Double(i) * w * 0.105))
         }
         context.stroke(water, with: .color(gold.opacity(0.5)), lineWidth: w * 0.008)
     }
@@ -237,13 +261,29 @@ struct TarotCardView: View {
         let h = size.height
         let inset = w * 0.06
         let inner = CGRect(x: inset, y: inset, width: w - inset * 2, height: h - inset * 2)
-        context.clip(to: Path(roundedRect: inner, cornerRadius: w * 0.075))
+        // Round only the sky's upper corners; the landscape ends square inside the card frame.
+        let radius = w * 0.075
+        var crop = Path()
+        crop.move(to: CGPoint(x: inner.minX, y: inner.maxY))
+        crop.addLine(to: CGPoint(x: inner.minX, y: inner.minY + radius))
+        crop.addQuadCurve(to: CGPoint(x: inner.minX + radius, y: inner.minY), control: inner.origin)
+        crop.addLine(to: CGPoint(x: inner.maxX - radius, y: inner.minY))
+        crop.addQuadCurve(to: CGPoint(x: inner.maxX, y: inner.minY + radius), control: CGPoint(x: inner.maxX, y: inner.minY))
+        crop.addLine(to: CGPoint(x: inner.maxX, y: inner.maxY))
+        crop.closeSubpath()
+        context.clip(to: crop)
         context.fill(Path(inner), with: .color(Design.Palette.blue.opacity(0.6)))
+        let horizonY = h * 0.66
+        context.fill(Path(CGRect(x: 0, y: horizonY, width: w, height: h - horizonY)), with: .color(Design.Palette.surface))
         var hills = Path()
-        hills.move(to: CGPoint(x: 0, y: h * 0.67))
-        hills.addCurve(to: CGPoint(x: w, y: h * 0.67), control1: CGPoint(x: w * 0.4, y: h * 0.56), control2: CGPoint(x: w * 0.6, y: h * 0.79))
+        hills.move(to: CGPoint(x: 0, y: horizonY))
+        hills.addCurve(to: CGPoint(x: w, y: horizonY), control1: CGPoint(x: w * 0.4, y: h * 0.59), control2: CGPoint(x: w * 0.6, y: h * 0.73))
         hills.addLine(to: CGPoint(x: w, y: h)); hills.addLine(to: CGPoint(x: 0, y: h)); hills.closeSubpath()
         context.fill(hills, with: .color(Design.Palette.sage))
+        var horizon = Path()
+        horizon.move(to: CGPoint(x: inner.minX, y: horizonY))
+        horizon.addLine(to: CGPoint(x: inner.maxX, y: horizonY))
+        context.stroke(horizon, with: .color(Design.Palette.ink), lineWidth: w * 0.009)
         var earth = Path()
         earth.move(to: CGPoint(x: 0, y: h * 0.9))
         earth.addCurve(to: CGPoint(x: w, y: h * 0.93), control1: CGPoint(x: w * 0.5, y: h * 0.77), control2: CGPoint(x: w * 0.6, y: h))
@@ -294,16 +334,15 @@ struct CardFan: View {
     var body: some View {
         GeometryReader { geometry in
             let width = geometry.size.width
-            let cardWidth = min(120, width * 0.32)
+            let cardWidth = min(112, width * 0.33)
+            let selectedWidth = min(124, width * 0.365)
             ZStack {
-                Circle().fill(Design.Palette.disc)
-                    .frame(width: width * 1.25, height: width * 1.25)
                 ForEach(1...5, id: \.self) { position in
                     let distance = CGFloat(position - 3)
-                    TarotCardView(card: nil, width: cardWidth)
+                    TarotCardView(card: nil, width: selected == position ? selectedWidth : cardWidth)
                         .rotationEffect(.degrees(selected == position ? 0 : Double(distance) * 8))
-                        .offset(x: distance * width * 0.205,
-                                y: selected == position ? -48 : abs(distance) * 13 + 16)
+                        .offset(x: distance * width * 0.20,
+                                y: selected == position ? -27 : abs(distance) * 18 + (selected == nil ? 20 : 0))
                         .opacity(selected == nil || selected == position ? 1 : 0.32)
                         .zIndex(selected == position ? 1 : 0)
                         .accessibilityHidden(true)
@@ -324,6 +363,11 @@ struct CardFan: View {
                 }
             }
             .frame(width: width, height: geometry.size.height)
+            .background {
+                Circle().fill(Design.Palette.disc)
+                    .overlay { GroundGrain(night: true).clipShape(Circle()) }
+                    .frame(width: width * 1.345, height: width * 1.345)
+            }
         }
         .frame(height: 360)
     }
