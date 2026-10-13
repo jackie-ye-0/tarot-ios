@@ -141,6 +141,43 @@ struct RevealGround: View {
     }
 }
 
+/// A thin glyph halo keeps the persistent copy readable while the ground crosses mid-tones.
+/// Switch complete contrast pairs rather than interpolating foreground through the ground.
+struct RevealPersistentCopy: ViewModifier, Animatable {
+    var progress: Double
+    var animatableData: Double {
+        get { progress }
+        set { progress = newValue }
+    }
+
+    func body(content: Content) -> some View {
+        let dawn = progress >= 0.5
+        let halo = min(1, min(progress / 0.15, (1 - progress) / 0.04))
+        let backing = (dawn ? Design.Palette.ground : Design.Palette.night).opacity(max(0, halo))
+        content
+            .foregroundStyle(dawn ? Design.Palette.secondary : Design.Palette.nightSecondary)
+            // Raster shadows preserve a single text/accessibility element.
+            .shadow(color: backing, radius: 0, x: 1)
+            .shadow(color: backing, radius: 0, x: -1)
+            .shadow(color: backing, radius: 0, y: 1)
+            .shadow(color: backing, radius: 0, y: -1)
+            // Progress already interpolates this modifier. Never tween the pair itself.
+            .transaction { $0.animation = nil; $0.disablesAnimations = true }
+    }
+}
+
+struct RevealStatusBar: ViewModifier, Animatable {
+    var progress: Double
+    var animatableData: Double {
+        get { progress }
+        set { progress = newValue }
+    }
+
+    func body(content: Content) -> some View {
+        content.preferredColorScheme(progress < 0.47 ? .dark : .light)
+    }
+}
+
 struct RevealSun: View {
     let risen: Bool
     var body: some View {
@@ -228,7 +265,8 @@ struct ReadingScreenLayout<Content: View, Footer: View>: View {
             if !textSize.isAccessibilitySize { actions }
         }
         .background { ground }
-        .preferredColorScheme(night ? .dark : .light)
+        .modifier(RevealStatusBar(progress: dawnProgress ?? (night ? 0 : 1)))
+        .animation(dawnAnimation, value: dawnProgress)
     }
 
     private var actions: some View {

@@ -188,6 +188,9 @@ final class HarnessShellUITests: XCTestCase {
         XCTAssertEqual(app.staticTexts["draw-position"].label, "You picked card 5 of five")
         let name = app.staticTexts["card-name"].label
         let details = app.staticTexts["card-details"].label
+        waitForRitualToSettle(app)
+        XCTAssertFalse(app.staticTexts["today-title"].waitForExistence(timeout: 2),
+                       "Reveal must remain until the meaning action, including after the warming finishes")
         app.terminate()
         let unshuffled = self.app()
         reveal(unshuffled, position: 2)

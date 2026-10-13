@@ -136,6 +136,8 @@ Issue #10 uses a 1.7s shuffle: two 0.45s washes, then a 0.8s opening into the fa
 
 Reveal flips over 1.1s, warms the whole ground over 1.6s and raises a soft ochre glow behind the card. Name, orientation and keywords rise 12 points with 80ms staggering, starting at 0.85s. The meaning action and disclaimer are present throughout; no timer advances the screen. These intermediate states use the existing card, type and colour roles, and have no separate reference. Reduce Motion and the Debug animation-off configuration draw the final fan, face, glow and all text on their first paint, without scheduling these sequences.
 
+The persistent selection header and disclaimer use a temporary one-point glyph halo in the matching ground role while the backdrop crosses mid-tones. The night and dawn text/halo pairs switch together, preserving their contrast rather than blending text through the ground colour. The halo is absent at rest and with Reduce Motion; no settled colours or layout change. Native status-bar appearance follows the ground's change from dark to light.
+
 ## 8. Words
 
 - Plain, calm, second person. Titles are instructions or statements ("Pick the one that pulls at you"), not feature names.

@@ -186,7 +186,7 @@ struct RevealScreen: View {
             VStack(spacing: Design.Space.large) {
                 Text("You picked card \(draw.position) of five")
                     .typeRole(Design.TypeRole.secondary)
-                    .foregroundStyle(revealed ? Design.Palette.secondary : Design.Palette.nightSecondary)
+                    .modifier(RevealPersistentCopy(progress: revealed ? 1 : 0))
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .accessibilityIdentifier("draw-position")
                     .padding(.bottom, Design.Space.small)
@@ -226,7 +226,7 @@ struct RevealScreen: View {
                     .accessibilityIdentifier("see-meaning")
                 Text("For entertainment and reflection")
                     .typeRole(Design.TypeRole.caption)
-                    .foregroundStyle(revealed ? Design.Palette.secondary : Design.Palette.nightSecondary)
+                    .modifier(RevealPersistentCopy(progress: revealed ? 1 : 0))
                     .multilineTextAlignment(.center)
                     .accessibilityIdentifier("reveal-disclaimer")
             }
