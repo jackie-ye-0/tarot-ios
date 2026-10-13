@@ -204,6 +204,17 @@ class HarnessCommandTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn('05-ask', summary['error'])
         self.assertTrue((Path(summary['run']) / 'command-tests.log').exists())
+        self.assertTrue((Path(summary['run']) / 'design-rules.log').exists())
+
+    def test_check_rejects_design_rule_violation(self):
+        (self.root / 'tests').mkdir()
+        source = self.root / 'HarnessShell/Bad.swift'
+        source.parent.mkdir()
+        source.write_text('let raw = Color.red\n')
+        result, summary = self.invoke('check')
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('design-rules failed', summary['error'])
+        self.assertIn('HarnessShell/Bad.swift:1', (Path(summary['run']) / 'design-rules.log').read_text())
 
     def test_xcode_failure_status_survives_export(self):
         result, summary = self.invoke(case='failed-tests')

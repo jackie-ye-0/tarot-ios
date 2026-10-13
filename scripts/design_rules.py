@@ -5,7 +5,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PRIMITIVES = re.compile(
-    r'\b(?:Color|UIColor|CGColor|Font|UIFont|RoundedRectangle|UnevenRoundedRectangle)\s*\('
+    r'\b(?:Color|UIColor|CGColor|Font|UIFont|RoundedRectangle|UnevenRoundedRectangle)\s*'
+    r'(?:\(|\.\s*[A-Za-z_]\w*)'
     r'|\.(?:font|fontWeight|fontDesign|cornerRadius)\s*\('
     r'|\bcornerRadius\s*:'
     r'|\.(?:foregroundStyle|foregroundColor|background|fill|stroke|tint)\s*\(\s*\.'

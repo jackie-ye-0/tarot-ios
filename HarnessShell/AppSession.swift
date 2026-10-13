@@ -10,6 +10,7 @@ struct LaunchConfiguration {
     var testStoreID: UUID?
     var largestText = false
     var reduceMotion = false
+    var forceStoreOpenFailure = false
 
     static func current() -> LaunchConfiguration {
         var result = LaunchConfiguration()
@@ -27,6 +28,7 @@ struct LaunchConfiguration {
         result.testStoreID = value("--test-store-id").flatMap(UUID.init(uuidString:))
         result.largestText = arguments.contains("--test-largest-text")
         result.reduceMotion = arguments.contains("--test-reduce-motion")
+        result.forceStoreOpenFailure = arguments.contains("--test-storage-open-failure")
         #endif
         return result
     }
@@ -77,6 +79,9 @@ final class AppSession {
 @MainActor
 enum AppLaunch {
     static func makeSession(configuration: LaunchConfiguration) throws -> AppSession {
+        #if DEBUG
+        if configuration.forceStoreOpenFailure { throw CocoaError(.fileReadNoPermission) }
+        #endif
         let modelConfiguration: ModelConfiguration
         if configuration.inMemory {
             modelConfiguration = ModelConfiguration(isStoredInMemoryOnly: true, cloudKitDatabase: .none)

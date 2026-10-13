@@ -75,6 +75,7 @@ Only Debug builds, with `--test-mode`, read these launch arguments:
 - `--test-memory-store` starts with an empty temporary SwiftData store on each launch.
 - `--test-store-id <UUID>` uses an isolated on-device test store that survives process relaunch. UI tests use a new UUID per test; synthetic stores remain in the simulator app container until it is removed.
 - `--test-largest-text` and `--test-reduce-motion` set the largest SwiftUI Dynamic Type size and disable animations in the root transaction, without changing simulator settings. The app also honours the real system Reduce Motion setting.
+- `--test-storage-open-failure` makes the first store-opening attempt fail so UI tests can verify the error and retry path.
 
 Release builds ignore all these arguments. Normal launches always use the saved installation seed and on-device store. Storage failures surface a retry, never a silent reset or temporary substitute.
 

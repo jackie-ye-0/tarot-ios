@@ -176,6 +176,22 @@ final class HarnessShellUITests: XCTestCase {
         capture(app, "04-today--reversed")
     }
 
+    func testStorageOpenFailureRecoveryAndDesignEvidence() throws {
+        let failed = app(extra: ["--test-storage-open-failure"])
+        XCTAssertTrue(failed.staticTexts["storage-error-title"].waitForExistence(timeout: 5))
+        XCTAssertTrue(failed.buttons["storage-retry"].isHittable)
+        try auditAndCapture(failed, "storage-open-failure")
+        failed.buttons["storage-retry"].tap()
+        XCTAssertTrue(failed.staticTexts["draw-title"].waitForExistence(timeout: 5))
+        failed.terminate()
+
+        let largest = app(extra: ["--test-storage-open-failure", "--test-largest-text"])
+        scrollTo(largest.staticTexts["storage-error-title"], in: largest)
+        capture(largest, "storage-open-failure--largest-text")
+        scrollTo(largest.buttons["storage-retry"], in: largest)
+        capture(largest, "storage-open-failure--largest-text-bottom")
+    }
+
     func testLargestTextAndReduceMotion() throws {
         let app = app(extra: ["--test-largest-text", "--test-reduce-motion"])
         scrollTo(app.staticTexts["draw-title"], in: app)

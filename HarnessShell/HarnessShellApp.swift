@@ -12,6 +12,7 @@ struct LaunchView: View {
     let configuration: LaunchConfiguration
     @State private var session: AppSession?
     @State private var failed = false
+    @State private var attemptedLoad = false
     @Environment(\.dynamicTypeSize) private var systemTextSize
     @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
 
@@ -19,15 +20,22 @@ struct LaunchView: View {
         Group {
             if let session { ContentView(session: session) }
             else if failed {
-                VStack(spacing: Design.Space.section) {
-                    Text("Your readings could not be opened").typeRole(.title)
-                    Text("Nothing has been replaced. Try again after checking the free space on your phone.")
-                        .typeRole(.body)
+                ReadingScreenLayout {
+                    VStack(alignment: .leading, spacing: Design.Space.section) {
+                        Text("Your readings could not be opened")
+                            .typeRole(.title)
+                            .accessibilityIdentifier("storage-error-title")
+                        Text("Nothing has been replaced. Try again after checking the free space on your phone.")
+                            .typeRole(.body)
+                    }
+                    .foregroundStyle(Design.Palette.ink)
+                    .padding(.horizontal, Design.Space.page)
+                    .padding(.top, Design.Space.page)
+                    .padding(.bottom, Design.Space.section)
+                } footer: {
                     PrimaryAction(title: "Try again", action: load)
+                        .accessibilityIdentifier("storage-retry")
                 }
-                .foregroundStyle(Design.Palette.ink)
-                .padding(Design.Space.page)
-                .background { ScreenGround() }
             } else { ScreenGround() }
         }
         .environment(\.dynamicTypeSize, configuration.largestText ? .accessibility5 : systemTextSize)
@@ -41,7 +49,10 @@ struct LaunchView: View {
     }
 
     private func load() {
-        do { session = try AppLaunch.makeSession(configuration: configuration); failed = false }
+        var nextConfiguration = configuration
+        if attemptedLoad { nextConfiguration.forceStoreOpenFailure = false }
+        attemptedLoad = true
+        do { session = try AppLaunch.makeSession(configuration: nextConfiguration); failed = false }
         catch { failed = true }
     }
 }

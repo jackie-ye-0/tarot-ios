@@ -8,13 +8,12 @@ spec.loader.exec_module(rules)
 
 
 class DesignRoleTests(unittest.TestCase):
-    def test_app_uses_design_roles(self):
-        self.assertEqual(rules.check(), [])
-
     def test_rejects_raw_primitives_and_modifiers(self):
         for source in ['Color(red: 1, green: 0, blue: 0)', 'UIColor(named: "Ink")',
+                       'let raw = Color.red; Text("x").foregroundStyle(raw)',
+                       'let raw = UIColor.red', 'let raw = Font.body',
                        '.font(.body)', '.fontWeight(.bold)', '.cornerRadius(20)',
-                       'RoundedRectangle(cornerRadius: 20)', '.background(.red)',
+                       'let shape = RoundedRectangle(cornerRadius: 20)', '.background(.red)',
                        '.foregroundStyle(.primary)', '.bold()']:
             with self.subTest(source=source):
                 self.assertTrue(rules.violations(source))
