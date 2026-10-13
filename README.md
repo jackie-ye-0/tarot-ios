@@ -36,6 +36,8 @@ Use `--device <UDID>` on doctor/build/launch/test/check to choose an available i
 
 Use `./scripts/harness evidence --run ".harness/runs/<run-id>"` for a particular run. Every invocation has a distinct timestamp/UUID directory containing `summary.txt`, `summary.json`, raw logs, command arguments, toolchain/device metadata once prerequisites succeed, and Git head/dirty-state information. Build output lives in that run's `DerivedData/` with `Build.xcresult` for builds/launches; tests retain `Tests.xcresult` and exported `attachments/`. A successful test requires at least four executed tests, all passing with no skips, plus an exported image. Inspect the image visually; its existence does not prove layout quality. Launch images are immediate diagnostics and may capture the startup screen before rendering completes. Use the UI test attachment taken after successful interaction for visual verification.
 
+The repository-root `.no-mistakes.yaml` declares `no_ci: true`; once on the trusted default branch, this lets no-mistakes treat a PR with no registered remote checks as ready while local harness verification remains required.
+
 The launch command uses `simctl`; open the Simulator app yourself to watch the device. It installs only the app in the selected simulator and leaves that device running. Run directories can be large: delete obsolete directories under `.harness/runs/` when finished, retaining evidence you still need. Nothing is automatically uploaded or cleaned. Copy a complete run directory to preserve/share its evidence; review local paths and logs before sharing. Results are ignored by Git, so a fresh clone contains code/docs, not another Mac's results.
 
 ### Screenshot names and design comparison
@@ -79,6 +81,6 @@ Only Debug builds, with `--test-mode`, read these launch arguments:
 
 Release builds ignore all these arguments. Normal launches always use the saved installation seed and on-device store. Storage failures surface a retry, never a silent reset or temporary substitute.
 
-`./scripts/harness check` also runs the design-role source guard from `scripts/design_rules.py`. Outside `DesignSystem.swift`, this lexical check rejects the raw colour, font, font-modifier, rounded-shape and corner-radius vocabulary, plus unqualified system colour and text-style values. It does not parse Swift, follow aliases or inspect code inside string interpolation, so XCTest accessibility audits and visual comparison remain required.
+`./scripts/harness check` also runs the design-role source guard from `scripts/design_rules.py`. Outside `DesignSystem.swift`, this lexical check rejects the raw colour, font, font-modifier, rounded-shape and corner-radius vocabulary, plus unqualified system colour and text-style values. It does not parse Swift, follow aliases or inspect code inside string interpolation, and cannot catch contextual forms such as `.environment(\.font, .system(size: 17))` or Canvas `.color(.init(red: 1, green: 0, blue: 0))`, so XCTest accessibility audits and visual comparison remain required.
 
 Bundled font provenance and licences are in [Fonts](HarnessShell/Resources/Fonts/README.md). See [foundation verification](docs/foundation-verification.md) for the #7 evidence and accepted reference differences.
