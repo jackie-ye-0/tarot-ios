@@ -321,6 +321,10 @@ final class HarnessShellUITests: XCTestCase {
         XCTAssertTrue(element.exists || element.waitForExistence(timeout: 5), file: file, line: line)
         for _ in 0..<10 {
             let frame = element.frame
+            guard !frame.isEmpty && !frame.isNull && !frame.isInfinite else {
+                XCTFail("Cannot scroll to \(element.identifier) using an empty or invalid frame", file: file, line: line)
+                return
+            }
             let viewport = scrollViewport(in: app)
             let footer = app.otherElements["screen-footer"]
             let isFooterElement = !element.identifier.isEmpty &&
@@ -339,8 +343,20 @@ final class HarnessShellUITests: XCTestCase {
             let end = origin.withOffset(CGVector(dx: viewport.midX, dy: viewport.midY - delta / 2))
             start.press(forDuration: 0.05, thenDragTo: end)
         }
+        XCTAssertFalse(element.frame.isEmpty, "Empty frame for \(element.identifier)", file: file, line: line)
         XCTAssertTrue(scrollViewport(in: app).contains(element.frame),
                       "\(element.identifier) must be fully inside its scroll viewport", file: file, line: line)
+    }
+
+    private func showQuestionField(_ app: XCUIApplication) {
+        // A native text field can report a null frame while off-screen. Approach
+        // it from above using the surrounding SwiftUI text before checking it.
+        scrollTo(app.staticTexts["composer-title"], in: app)
+        scrollTo(app.staticTexts["Or start from one of these"], in: app)
+        let field = app.descendants(matching: .any)["question-field"].firstMatch
+        scrollTo(field, in: app)
+        waitForSettled([field])
+        assertVisible(field, in: app)
     }
 
     private func reveal(_ app: XCUIApplication, position: Int = 3) {
@@ -1117,12 +1133,14 @@ final class HarnessShellUITests: XCTestCase {
         app.buttons["ask-question-entry"].tap()
         scrollTo(app.buttons["area-relationship"], in: app)
         capture(app, "06-composer--largest-text")
+        showQuestionField(app)
+        capture(app, "06-composer--largest-text-field")
         scrollTo(app.buttons["submit-question"], in: app)
         XCTAssertFalse(app.buttons["submit-question"].isEnabled)
         capture(app, "06-composer--largest-text-bottom")
         scrollTo(app.buttons["suggestion-0"], in: app)
         app.buttons["suggestion-0"].tap()
-        scrollTo(app.descendants(matching: .any)["question-field"].firstMatch, in: app)
+        showQuestionField(app)
         capture(app, "06-composer-question-entered--largest-text")
         scrollTo(app.buttons["submit-question"], in: app)
         capture(app, "06-composer-question-entered--largest-text-bottom")
@@ -1176,7 +1194,7 @@ final class HarnessShellUITests: XCTestCase {
             if largest { scrollTo(app.buttons["ask-question-entry"], in: app) }
             app.buttons["ask-question-entry"].tap()
             let field = app.descendants(matching: .any)["question-field"].firstMatch
-            if largest { scrollTo(field, in: app) }
+            if largest { showQuestionField(app) }
             field.tap()
             XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
             field.typeText("Where can I grow?")
