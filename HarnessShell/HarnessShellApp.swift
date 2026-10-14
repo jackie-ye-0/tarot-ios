@@ -45,6 +45,11 @@ struct LaunchView: View {
                 }
             } else { ScreenGround() }
         }
+        #if DEBUG
+        .background {
+            if configuration.testMode { TestSafeAreaViewport() }
+        }
+        #endif
         .environment(\.dynamicTypeSize, configuration.largestText ? .accessibility5 : systemTextSize)
         .transaction { transaction in
             if !animationsEnabled {
@@ -105,3 +110,38 @@ struct LaunchView: View {
         catch { failed = true }
     }
 }
+
+#if DEBUG
+// A container for XCTest geometry, not a VoiceOver content element or a touch target.
+private struct TestSafeAreaViewport: UIViewRepresentable {
+    func makeUIView(context: Context) -> ViewportHost { ViewportHost() }
+    func updateUIView(_ uiView: ViewportHost, context: Context) { uiView.setNeedsLayout() }
+
+    final class ViewportHost: UIView {
+        private let marker = UIView()
+
+        init() {
+            super.init(frame: .zero)
+            isUserInteractionEnabled = false
+            isAccessibilityElement = false
+            marker.isUserInteractionEnabled = false
+            marker.isAccessibilityElement = false
+            marker.accessibilityIdentifier = "test-safe-viewport"
+            addSubview(marker)
+        }
+
+        required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+        override func layoutSubviews() {
+            super.layoutSubviews()
+            guard let window else { return }
+            marker.frame = convert(window.safeAreaLayoutGuide.layoutFrame, from: window)
+        }
+
+        override func safeAreaInsetsDidChange() {
+            super.safeAreaInsetsDidChange()
+            setNeedsLayout()
+        }
+    }
+}
+#endif

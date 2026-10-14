@@ -1,8 +1,8 @@
 # Local iOS coding harness
 
-A local-first native Swift/SwiftUI tarot app. The foundation slice (#7) opens on five face-down cards, reveals the selected daily card, then shows a basic Today with its core interpretation. The card and orientation are fixed by the installation seed and local date, and saved on-device with SwiftData. Reopening on the same date goes straight to Today.
+A local-first native Swift/SwiftUI tarot app. The daily-card flow (#7, #9) opens on five face-down cards, reveals the selected daily card, then shows Today with its core interpretation, colour, object, best hour, three area scores and distinct area readings. Tapping its thumbnail reopens Reveal with a way back to Today. The card and orientation are fixed by the installation seed and local date, and saved on-device with SwiftData. Reopening on the same date goes straight to Today.
 
-The starter library contains six cards in both orientations with original draft writing. No account, network, AI, analytics or paid service is used. Content needs editorial review before release to real users. Draw shuffles into a fan and Reveal turns the card as the screen warms to dawn; both remain interruptible and honour Reduce Motion. Local-day changes route to Draw, or restore Today when that date already has a saved card. Recent card identities trigger up to three salted retries, then the last result is accepted. This bounded rule cannot guarantee fourteen repeat-free days with the six-card starter. Later issues add Welcome, the full library, richer Today, Ask and History.
+The starter library contains six cards in both orientations with original draft writing. No account, network, AI, analytics or paid service is used. Content needs editorial review before release to real users. Draw shuffles into a fan and Reveal turns the card as the screen warms to dawn; both remain interruptible and honour Reduce Motion. Local-day changes route to Draw, or restore Today when that date already has a saved card. Recent card identities trigger up to three salted retries, then the last result is accepted. This bounded rule cannot guarantee fourteen repeat-free days with the six-card starter. Later issues add Welcome, the full library, Ask and History.
 
 ## Setup
 
@@ -56,7 +56,7 @@ Missing screens are reported without failing an ordinary run, so the current app
 ./scripts/harness check --require-all-screenshots
 ```
 
-This option also works with `test` and fails if any screen reference is missing its main capture, or if no screen references are available. It does not weaken the existing test-count, failure, skip or screenshot requirements. Coverage proves a named capture exists; follow the [design check](docs/design.md#12-design-check) to assess its contents and accessibility. Issue #7 captures `02-draw`, `02-draw-card-chosen`, `03-reveal` and `04-today`, plus large-text and Reduce Motion variants. The remaining screen references belong to later issues.
+This option also works with `test` and fails if any screen reference is missing its main capture, or if no screen references are available. It does not weaken the existing test-count, failure, skip or screenshot requirements. Coverage proves a named capture exists; follow the [design check](docs/design.md#12-design-check) to assess its contents and accessibility. The daily-card tests capture `02-draw`, `02-draw-card-chosen`, `03-reveal` and `04-today`, plus large-text and Reduce Motion variants. Full Today adds bottom-of-scroll and reopened-Reveal captures. The reference viewport assertions use the 390 × 844 point iPhone 17e simulator. The remaining screen references belong to later issues.
 
 ## Structure and limitations
 
@@ -81,6 +81,8 @@ Only Debug builds, with `--test-mode`, read these launch arguments:
 - `--test-largest-text` sets the largest SwiftUI Dynamic Type size. `--test-reduce-motion` removes all animations and shows the final ritual states on first paint, without changing simulator settings. The app also honours the real system Reduce Motion setting.
 - `--test-disable-animations` independently switches animations off for deterministic UI checks. Motion-specific tests leave it off.
 - `--test-hold-shuffle` holds the first wash phase for a deterministic interruption test. Tapping any card still resolves it immediately; Reduce Motion and animation-off bypass the hold entirely. This avoids racing XCTest’s automatic animation-idle wait.
+- `--test-earlier-snapshot` preloads a synthetic version 1 draw without the new daily fields, for compatibility evidence.
+- `--test-revised-content` supplies a different synthetic library to prove that a saved day survives an app content update.
 - `--test-storage-open-failure` makes the first store-opening attempt fail so UI tests can verify the error and retry path.
 - `--test-controls` adds a Debug-only test menu for advancing the configured clock to the next local midnight, arming a date advance while backgrounded, and switching Sydney/Honolulu. Clock changes emit the same notifications the app observes in production; background advancement waits for the real foreground lifecycle to refresh. Ordinary design captures omit this menu. No simulator setting is changed.
 
@@ -88,6 +90,8 @@ In Debug test mode, the Draw title and Reveal card also expose a `settled` acces
 
 Release builds ignore all these arguments. Normal launches always use the saved installation seed and on-device store. Storage failures surface a retry, never a silent reset or temporary substitute.
 
+Debug test mode also exposes an empty, non-interactive `test-safe-viewport` container sized from the window's actual safe area. It is not a VoiceOver content element. UI geometry checks and the overlapping accessibility audit use its frame instead of guessed screen insets; a missing marker fails the test. The marker is absent from normal Debug runs and compiled out of Release.
+
 `./scripts/harness check` also runs the design-role source guard from `scripts/design_rules.py`. Outside `DesignSystem.swift`, this lexical check rejects the raw colour, font, font-modifier, rounded-shape and corner-radius vocabulary, plus unqualified system colour and text-style values. It does not parse Swift, follow aliases or inspect code inside string interpolation, and cannot catch contextual forms such as `.environment(\.font, .system(size: 17))` or Canvas `.color(.init(red: 1, green: 0, blue: 0))`, so XCTest accessibility audits and visual comparison remain required.
 
-Bundled font provenance and licences are in [Fonts](HarnessShell/Resources/Fonts/README.md). See [foundation verification](docs/foundation-verification.md) for the #7 evidence and accepted reference differences.
+Bundled font provenance and licences are in [Fonts](HarnessShell/Resources/Fonts/README.md). See [foundation verification](docs/foundation-verification.md) for the #7 evidence and accepted reference differences, and [Today verification](docs/today-verification.md) for #9.

@@ -15,6 +15,8 @@ struct LaunchConfiguration {
     var testMode = false
     var forceStoreOpenFailure = false
     var testControls = false
+    var revisedContent = false
+    var earlierSnapshot = false
 
     static func current() -> LaunchConfiguration {
         var result = LaunchConfiguration()
@@ -37,6 +39,8 @@ struct LaunchConfiguration {
         result.holdShuffle = arguments.contains("--test-hold-shuffle")
         result.forceStoreOpenFailure = arguments.contains("--test-storage-open-failure")
         result.testControls = arguments.contains("--test-controls")
+        result.revisedContent = arguments.contains("--test-revised-content")
+        result.earlierSnapshot = arguments.contains("--test-earlier-snapshot")
         #endif
         return result
     }
@@ -174,12 +178,39 @@ enum AppLaunch {
             try FileManager.default.createDirectory(at: .applicationSupportDirectory, withIntermediateDirectories: true)
             modelConfiguration = ModelConfiguration(cloudKitDatabase: .none)
         }
-        let library = try CardLibrary.load()
+        var library = try CardLibrary.load()
+        #if DEBUG
+        if configuration.revisedContent {
+            let meaning = CardMeaning(keywords: ["Revised", "test", "content"], interpretation: "A revised library. For snapshot testing only.",
+                                      daily: try DailyContent(colourName: "Clay", colourHex: "#b0654a", object: "A test bookmark", bestHour: "After 6 pm",
+                                                              career: AreaReading(score: 10, line: "Revised work line."),
+                                                              relationship: AreaReading(score: 20, line: "Revised connection line."),
+                                                              social: AreaReading(score: 30, line: "Revised social line.")))
+            library = CardLibrary(version: library.version + 1, editorialStatus: library.editorialStatus,
+                                  cards: library.cards.map {
+                TarotCard(id: $0.id, name: "Revised \($0.name)", arcana: $0.arcana, suit: $0.suit, rank: $0.rank,
+                          upright: meaning, reversed: meaning)
+            })
+        }
+        #endif
         let store = try DrawStore(configuration: modelConfiguration)
         var randomness = SystemRandomNumberGenerator()
         let seed = try store.installSeed {
             configuration.seed ?? (0..<4).map { _ in String(randomness.next(), radix: 16) }.joined(separator: "-")
         }
-        return try AppSession(clock: SessionClock(configuration: configuration), seed: seed, store: store, library: library)
+        let clock = SessionClock(configuration: configuration)
+        #if DEBUG
+        if configuration.earlierSnapshot {
+            let draw = ReadingEngine.dailyDraw(seed: seed, dateKey: ReadingEngine.dateKey(for: clock.now, timeZone: clock.timeZone),
+                                              position: 3, library: library)
+            let card = draw.card
+            let earlierCard = TarotCard(id: card.id, name: card.name, arcana: card.arcana, suit: card.suit, rank: card.rank,
+                                        upright: CardMeaning(keywords: card.upright.keywords, interpretation: card.upright.interpretation, daily: nil),
+                                        reversed: CardMeaning(keywords: card.reversed.keywords, interpretation: card.reversed.interpretation, daily: nil))
+            _ = try store.save(DailyDraw(dateKey: draw.dateKey, position: draw.position, orientation: draw.orientation,
+                                        card: earlierCard, contentVersion: 1))
+        }
+        #endif
+        return try AppSession(clock: clock, seed: seed, store: store, library: library)
     }
 }

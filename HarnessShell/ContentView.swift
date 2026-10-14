@@ -17,7 +17,8 @@ struct ContentView: View {
                     session.showToday(draw)
                 }.id("reveal-\(draw.dateKey)")
             case .today(let draw):
-                TodayScreen(draw: draw, dateLabel: session.dateLabel).id("today-\(draw.dateKey)")
+                TodayScreen(draw: draw, dateLabel: session.dateLabel,
+                            animationsEnabled: animationsEnabled, testMode: testMode).id("today-\(draw.dateKey)")
             }
         }
         .alert("Your card could not be saved", isPresented: $session.saveFailed) {
@@ -184,6 +185,7 @@ struct RevealScreen: View {
     let draw: DailyDraw
     let animationsEnabled: Bool
     let testMode: Bool
+    var backAction: (() -> Void)? = nil
     let continueAction: () -> Void
     @State private var appeared = false
     @State private var motionSettled = false
@@ -194,12 +196,17 @@ struct RevealScreen: View {
         ReadingScreenLayout(dawnProgress: revealed ? 1 : 0,
                             dawnAnimation: animationsEnabled ? Design.Motion.dawn : nil) {
             VStack(spacing: Design.Space.large) {
-                Text("You picked card \(draw.position) of five")
-                    .typeRole(Design.TypeRole.secondary)
-                    .modifier(RevealPersistentCopy(progress: revealed ? 1 : 0))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .accessibilityIdentifier("draw-position")
-                    .padding(.bottom, Design.Space.small)
+                HStack(spacing: Design.Space.small) {
+                    if let backAction {
+                        BackToTodayAction(progress: revealed ? 1 : 0, action: backAction)
+                    }
+                    Text("You picked card \(draw.position) of five")
+                        .typeRole(Design.TypeRole.secondary)
+                        .modifier(RevealPersistentCopy(progress: revealed ? 1 : 0))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .accessibilityIdentifier("draw-position")
+                }
+                .padding(.bottom, Design.Space.small)
                 TurningTarotCard(draw: draw, progress: revealed ? 1 : 0, width: 214)
                     .animation(animationsEnabled ? Design.Motion.flip : nil, value: revealed)
                     .background {
@@ -256,10 +263,13 @@ struct RevealScreen: View {
 struct TodayScreen: View {
     let draw: DailyDraw
     let dateLabel: String
+    let animationsEnabled: Bool
+    let testMode: Bool
     @Environment(\.dynamicTypeSize) private var textSize
+    @State private var showsReveal = false
 
     var body: some View {
-        ReadingScreenLayout {
+        ScrollView {
             VStack(alignment: .leading, spacing: Design.Space.section) {
                 Text(dateLabel).typeRole(.section)
                     .accessibilityIdentifier("today-title")
@@ -273,6 +283,20 @@ struct TodayScreen: View {
                     .lineSpacing(Design.Space.readingLeading)
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("core-interpretation")
+                if let daily = draw.meaning.daily {
+                    DailyExtrasView(daily: daily)
+                    VStack(alignment: .leading, spacing: Design.Space.group) {
+                        Text("How today sits").typeRole(.section)
+                        DailyScoreStrip(daily: daily)
+                    }
+                    VStack(alignment: .leading, spacing: Design.Space.group) {
+                        Text("What to do about it").typeRole(.section)
+                        DailyAreaLines(daily: daily)
+                    }
+                } else {
+                    Text("This earlier draw has no saved extras or area readings.")
+                        .typeRole(Design.TypeRole.caption).foregroundStyle(Design.Palette.secondary)
+                }
                 Text("Your next card arrives at midnight")
                     .typeRole(Design.TypeRole.caption)
                     .foregroundStyle(Design.Palette.secondary)
@@ -285,12 +309,27 @@ struct TodayScreen: View {
             .padding(.top, Design.Space.page)
             .padding(.bottom, Design.Space.large)
         }
-        footer: { EmptyView() }
+        .clipped()
+        .background { ScreenGround() }
+        .preferredColorScheme(.light)
+        .fullScreenCover(isPresented: $showsReveal) {
+            RevealScreen(draw: draw, animationsEnabled: animationsEnabled, testMode: testMode,
+                         backAction: { showsReveal = false }) { showsReveal = false }
+                .environment(\.dynamicTypeSize, textSize)
+        }
     }
 
     private var card: some View {
-        TarotCardView(card: draw.card, orientation: draw.orientation, width: 120)
-            .accessibilityIdentifier("today-card")
+        Button { showsReveal = true } label: {
+            TarotCardView(card: draw.card, orientation: draw.orientation, width: 120)
+                .overlay(alignment: .bottomTrailing) { CardExpansionMark() }
+        }
+        .buttonStyle(ActionPressStyle())
+        .accessibilityElement(children: .ignore)
+        .accessibilityAddTraits(.isButton)
+        .accessibilityLabel("\(draw.card.name), \(draw.orientation.label)")
+        .accessibilityHint("Opens the full-size card")
+        .accessibilityIdentifier("today-card")
     }
 
     private var details: some View {

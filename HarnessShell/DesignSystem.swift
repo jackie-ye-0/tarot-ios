@@ -30,6 +30,31 @@ enum Design {
         static let clay = colour(0xb0654a)
         static let sage = colour(0x7d8f6a)
         static let ochre = colour(0xc79a3f)
+        static let controlTrack = colour(0xead6cd)
+        static let surfaceHairline = colour(0xefe2dc)
+        static let careerLabel = colour(0x3f596d)
+        static let relationshipLabel = colour(0x8a4a33)
+        static let socialLabel = colour(0x4d5e3d)
+
+        static func accent(for area: ReadingArea) -> Color {
+            switch area {
+            case .career: blue
+            case .relationship: clay
+            case .social: sage
+            }
+        }
+
+        static func label(for area: ReadingArea) -> Color {
+            switch area {
+            case .career: careerLabel
+            case .relationship: relationshipLabel
+            case .social: socialLabel
+            }
+        }
+
+        static func swatch(_ colour: DailyColour) -> Color {
+            self.colour(colour.rgb)
+        }
 
         private static func colour(_ value: UInt32) -> Color {
             Color(red: Double((value >> 16) & 255) / 255,
@@ -334,6 +359,138 @@ struct QuietAction: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(ActionPressStyle())
+    }
+}
+
+struct BackToTodayAction: View {
+    let progress: Double
+    let action: () -> Void
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: "chevron.left")
+                .resizable().scaledToFit().frame(width: 12, height: 20)
+                .modifier(RevealPersistentCopy(progress: progress))
+                .frame(width: Design.Space.target, height: Design.Space.target)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(ActionPressStyle())
+        .accessibilityLabel("Back to Today")
+        .accessibilityIdentifier("back-to-today")
+    }
+}
+
+struct CardExpansionMark: View {
+    var body: some View {
+        Image(systemName: "arrow.up.left.and.arrow.down.right")
+            .resizable().scaledToFit().frame(width: 14, height: 14)
+            .rotationEffect(.degrees(90))
+            .foregroundStyle(Design.Palette.surface)
+            .frame(width: 28, height: 28)
+            .background(Design.Palette.ink, in: Circle())
+            .padding(4)
+            .accessibilityHidden(true)
+    }
+}
+
+struct DailyExtrasView: View {
+    let daily: DailyContent
+    @Environment(\.dynamicTypeSize) private var textSize
+
+    var body: some View {
+        VStack(spacing: Design.Space.group) {
+            Rectangle().fill(Design.Palette.hairline).frame(height: 1).accessibilityHidden(true)
+            let layout = textSize.isAccessibilitySize
+                ? AnyLayout(VStackLayout(alignment: .leading, spacing: Design.Space.group))
+                : AnyLayout(HStackLayout(alignment: .top, spacing: Design.Space.related))
+            layout {
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 4) {
+                        Circle().fill(Design.Palette.swatch(daily.colour)).frame(width: 10, height: 10)
+                        Text("Colour").typeRole(.caption).foregroundStyle(Design.Palette.secondary)
+                    }
+                    Text(daily.colourName).typeRole(.metadata)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("Colour, \(daily.colourName)")
+                .accessibilityIdentifier("daily-colour")
+                if !textSize.isAccessibilitySize { Divider().overlay(Design.Palette.hairline) }
+                extra("Object", value: daily.object, identifier: "daily-object")
+                if !textSize.isAccessibilitySize { Divider().overlay(Design.Palette.hairline) }
+                extra("Best hour", value: daily.bestHour, identifier: "daily-hour")
+            }
+            .fixedSize(horizontal: false, vertical: true)
+            Rectangle().fill(Design.Palette.hairline).frame(height: 1).accessibilityHidden(true)
+        }
+    }
+
+    private func extra(_ title: String, value: String, identifier: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title).typeRole(.caption).foregroundStyle(Design.Palette.secondary)
+            Text(value).typeRole(.metadata)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(title), \(value)")
+        .accessibilityIdentifier(identifier)
+    }
+}
+
+struct DailyScoreStrip: View {
+    let daily: DailyContent
+    @Environment(\.dynamicTypeSize) private var textSize
+
+    var body: some View {
+        let layout = textSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: Design.Space.group))
+            : AnyLayout(HStackLayout(alignment: .top, spacing: Design.Space.related))
+        layout {
+            ForEach(ReadingArea.allCases, id: \.self) { area in
+                let score = daily.reading(for: area).score
+                VStack(alignment: .leading, spacing: Design.Space.small) {
+                    Text(area.label).typeRole(.label).foregroundStyle(Design.Palette.label(for: area))
+                        .accessibilityIdentifier("score-label-\(area.rawValue)")
+                    Text(score.formatted()).typeRole(.title)
+                    GeometryReader { geometry in
+                        Capsule().fill(Design.Palette.accent(for: area))
+                            .frame(width: geometry.size.width * Double(score) / 100)
+                    }
+                    .frame(height: 6)
+                    .background(Design.Palette.controlTrack, in: Capsule())
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("\(area.label), \(score) out of 100")
+                .accessibilityIdentifier("score-\(area.rawValue)")
+            }
+        }
+    }
+}
+
+struct DailyAreaLines: View {
+    let daily: DailyContent
+    var body: some View {
+        VStack(spacing: 0) {
+            ForEach(ReadingArea.allCases, id: \.self) { area in
+                if area != .career {
+                    Rectangle().fill(Design.Palette.surfaceHairline).frame(height: 1).accessibilityHidden(true)
+                }
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: Design.Space.small) {
+                        Circle().fill(Design.Palette.accent(for: area)).frame(width: 8, height: 8)
+                            .accessibilityHidden(true)
+                        Text(area.label).typeRole(.label).foregroundStyle(Design.Palette.label(for: area))
+                            .accessibilityIdentifier("area-label-\(area.rawValue)")
+                    }
+                    Text(daily.reading(for: area).line).typeRole(.body)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("line-\(area.rawValue)")
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(Design.Space.group)
+            }
+        }
+        .background(Design.Palette.surface, in: RoundedRectangle(cornerRadius: 20))
     }
 }
 

@@ -4,6 +4,95 @@ import Foundation
 struct CardMeaning: Codable, Equatable {
     let keywords: [String]
     let interpretation: String
+    // Absent only in snapshots saved before the full Today content shipped.
+    let daily: DailyContent?
+}
+
+enum ReadingArea: String, Codable, CaseIterable {
+    case career, relationship, social
+    var label: String { rawValue.capitalized }
+}
+
+struct AreaReading: Codable, Equatable {
+    let score: Int
+    let line: String
+}
+
+struct DailyColour: Codable, Equatable {
+    private enum ValidationError: Error { case invalidHex }
+
+    let hex: String
+    let rgb: UInt32
+
+    init(hex: String) throws {
+        guard let rgb = Self.parse(hex) else { throw ValidationError.invalidHex }
+        self.hex = hex
+        self.rgb = rgb
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let hex = try container.decode(String.self)
+        guard let rgb = Self.parse(hex) else {
+            throw DecodingError.dataCorruptedError(in: container, debugDescription: "Expected a six-digit hex colour")
+        }
+        self.hex = hex
+        self.rgb = rgb
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(hex)
+    }
+
+    private static func parse(_ hex: String) -> UInt32? {
+        guard hex.count == 7, hex.first == "#" else { return nil }
+        return UInt32(hex.dropFirst(), radix: 16)
+    }
+}
+
+struct DailyContent: Codable, Equatable {
+    let colourName: String
+    let colour: DailyColour
+    let object: String
+    let bestHour: String
+    let career: AreaReading
+    let relationship: AreaReading
+    let social: AreaReading
+
+    private enum CodingKeys: String, CodingKey {
+        case colourName
+        case colour = "colourHex"
+        case object, bestHour, career, relationship, social
+    }
+
+    init(colourName: String, colourHex: String, object: String, bestHour: String,
+         career: AreaReading, relationship: AreaReading, social: AreaReading) throws {
+        self.colourName = colourName
+        colour = try DailyColour(hex: colourHex)
+        self.object = object
+        self.bestHour = bestHour
+        self.career = career
+        self.relationship = relationship
+        self.social = social
+    }
+
+    var colourHex: String { colour.hex }
+
+    func reading(for area: ReadingArea) -> AreaReading {
+        switch area {
+        case .career: career
+        case .relationship: relationship
+        case .social: social
+        }
+    }
+
+    var isComplete: Bool {
+        let readings = ReadingArea.allCases.map { reading(for: $0) }
+        return [colourName, object, bestHour].allSatisfy { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+            && readings.allSatisfy { (0...100).contains($0.score) && !$0.line.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+            && Set(readings.map { $0.line.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }).count == 3
+    }
 }
 
 enum Orientation: String, Codable {
@@ -34,13 +123,17 @@ struct CardLibrary: Codable {
         guard let url = Bundle.main.url(forResource: "starter-cards", withExtension: "json") else {
             throw CocoaError(.fileNoSuchFile)
         }
-        let library = try JSONDecoder().decode(CardLibrary.self, from: Data(contentsOf: url))
+        return try decode(Data(contentsOf: url))
+    }
+
+    static func decode(_ data: Data) throws -> CardLibrary {
+        let library = try JSONDecoder().decode(CardLibrary.self, from: data)
         guard library.version > 0, library.cards.count >= 6,
               Set(library.cards.map(\.id)).count == library.cards.count,
               library.cards.allSatisfy({ card in
                   !card.name.isEmpty && !card.arcana.isEmpty &&
                   [card.upright, card.reversed].allSatisfy {
-                      (3...4).contains($0.keywords.count) && !$0.interpretation.isEmpty
+                      (3...4).contains($0.keywords.count) && !$0.interpretation.isEmpty && $0.daily?.isComplete == true
                   }
               }) else { throw CocoaError(.coderReadCorrupt) }
         return library
