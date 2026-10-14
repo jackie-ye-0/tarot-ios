@@ -111,6 +111,7 @@ struct SpreadCards: View {
                         Text(pick.card.name).typeRole(night ? .metadata : Design.TypeRole.secondary)
                             .foregroundStyle(night ? Design.Palette.cream : Design.Palette.ink)
                         Text(pick.orientation.label).typeRole(Design.TypeRole.secondary)
+                            .accessibilityIdentifier("spread-orientation-\(position.rawValue)")
                         if night { Text(position.label).typeRole(.label) }
                     }
                 }

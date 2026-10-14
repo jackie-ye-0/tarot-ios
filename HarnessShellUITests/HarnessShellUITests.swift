@@ -328,9 +328,16 @@ final class HarnessShellUITests: XCTestCase {
         start.press(forDuration: 0.05, thenDragTo: end)
     }
 
+    private func activeScrollView(in app: XCUIApplication) -> XCUIElement {
+        let matches = app.scrollViews.matching(identifier: "screen-content")
+        XCTAssertTrue(matches.firstMatch.exists || matches.firstMatch.waitForExistence(timeout: 5))
+        let scroll = matches.allElementsBoundByIndex.first { $0.isHittable }
+        XCTAssertNotNil(scroll, "The foreground screen must have a hittable scroll view")
+        return scroll ?? matches.firstMatch
+    }
+
     private func scrollViewport(in app: XCUIApplication, abovePinnedFooter: Bool = false) -> CGRect {
-        let scroll = app.scrollViews["screen-content"]
-        XCTAssertTrue(scroll.exists || scroll.waitForExistence(timeout: 5))
+        let scroll = activeScrollView(in: app)
         let footer = app.otherElements["screen-footer"]
         let pinned = footer.exists && !scroll.otherElements["screen-footer"].exists
         return scroll.frame.intersection(visibleFrame(in: app, abovePinnedFooter: abovePinnedFooter || pinned))
@@ -961,7 +968,7 @@ final class HarnessShellUITests: XCTestCase {
         app.buttons["today-card"].tap()
         scrollTo(app.buttons["back-to-today"], in: app)
         capture(app, "03-reveal--reopened-largest-text")
-        let modalDetails = app.scrollViews["screen-content"].staticTexts["card-details"]
+        let modalDetails = activeScrollView(in: app).staticTexts["card-details"]
         scrollTo(modalDetails, in: app)
         XCTAssertGreaterThan(modalDetails.frame.height, 40,
                              "The modal must retain the injected largest text size")
