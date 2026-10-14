@@ -95,7 +95,16 @@ struct QuestionPositionMeanings: Codable, Equatable {
 struct AreaQuestionContent: Codable {
     let suggestions: [String]
     let lens: String
-    var relationshipLenses: RelationshipLenses?
+}
+
+struct RelationshipQuestionContent: Codable {
+    let suggestions: [String]
+    let lens: String
+    let relationshipLenses: RelationshipLenses
+
+    var areaContent: AreaQuestionContent {
+        AreaQuestionContent(suggestions: suggestions, lens: lens)
+    }
 }
 
 struct RelationshipLenses: Codable {
@@ -119,14 +128,14 @@ struct RelationshipLenses: Codable {
 
 struct QuestionContent: Codable {
     let career: AreaQuestionContent
-    let relationship: AreaQuestionContent
+    let relationship: RelationshipQuestionContent
     let social: AreaQuestionContent
     let reflections: [String]
 
     func content(for area: ReadingArea) -> AreaQuestionContent {
         switch area {
         case .career: career
-        case .relationship: relationship
+        case .relationship: relationship.areaContent
         case .social: social
         }
     }
@@ -134,7 +143,7 @@ struct QuestionContent: Codable {
     var isComplete: Bool {
         let areas = ReadingArea.allCases.map { content(for: $0) }
         let suggestions = areas.flatMap(\.suggestions)
-        return relationship.relationshipLenses?.isComplete == true &&
+        return relationship.relationshipLenses.isComplete &&
             areas.allSatisfy { (3...4).contains($0.suggestions.count) && !$0.lens.isEmpty } &&
             suggestions.allSatisfy { $0.hasSuffix("?") && $0.count > 1 } &&
             Set(suggestions).count == suggestions.count &&
@@ -218,7 +227,7 @@ extension ReadingEngine {
         let reflection = library.questions.reflections[Int(number % UInt64(library.questions.reflections.count))]
         let content = library.questions.content(for: area)
         let lens = area == .relationship
-            ? content.relationshipLenses?.text(for: relationshipStatus, neutral: content.lens) ?? content.lens
+            ? library.questions.relationship.relationshipLenses.text(for: relationshipStatus, neutral: content.lens)
             : content.lens
         return QuestionReading(id: id, createdAt: createdAt, area: area, question: question, picks: picks,
                                sections: sections, connectingPassage: lens,

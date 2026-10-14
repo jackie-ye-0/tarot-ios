@@ -637,7 +637,7 @@ struct AskComposerRulesTests {
             SpreadPick(position: $0, card: $1, orientation: .upright)
         }
         let content = library.questions.relationship
-        let variants = try #require(content.relationshipLenses)
+        let variants = content.relationshipLenses
         let expected: String
         switch status {
         case .single: expected = variants.single
