@@ -1447,6 +1447,11 @@ final class HarnessShellUITests: XCTestCase {
                 XCTAssertEqual(fan.value as? String, reduced ? "settled" : "animating")
                 app.buttons["draw-card-\(index + 1)"].tap()
                 XCTAssertFalse(app.buttons["spread-slot-\(position)"].exists)
+                let filled = app.descendants(matching: .any)["spread-slot-\(position)"].firstMatch
+                let locked = filled.label
+                filled.tap()
+                XCTAssertEqual(filled.label, locked)
+                XCTAssertEqual(app.staticTexts["spread-progress"].label, index == 2 ? "All three drawn" : "Card \(index + 2) of 3")
             }
             XCTAssertEqual(app.descendants(matching: .any)["spread-slot-situation"].firstMatch.label, "Situation, The Star, Upright")
             XCTAssertEqual(app.descendants(matching: .any)["spread-slot-action"].firstMatch.label, "Action, The Sun, Reversed")

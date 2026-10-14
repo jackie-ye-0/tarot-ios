@@ -431,10 +431,12 @@ final class ReadingEngineTests: XCTestCase {
         XCTAssertEqual(try store.spreadDraft()?.picks, first)
         session.backToComposer()
         session.question = "What can I learn?"
+        session.area = .career
         let restored = try makeSession(store: store, seed: seed)
         restored.openAsk()
         guard case .composer = restored.screen else { return XCTFail("Back should restore the composer") }
         XCTAssertEqual(restored.question, session.question)
+        XCTAssertEqual(restored.area, .career)
         restored.submitQuestion()
         XCTAssertEqual(restored.picks, first)
         restored.pickCard()
