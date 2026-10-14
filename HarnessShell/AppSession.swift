@@ -28,6 +28,8 @@ struct LaunchConfiguration {
     var readingDeleteFailure = false
     var crisisDiscardFailure = false
     var settingsSaveFailure = false
+    var historyDays = 0
+    var historyReadFailure = false
 
     static func current() -> LaunchConfiguration {
         var result = LaunchConfiguration()
@@ -63,6 +65,8 @@ struct LaunchConfiguration {
         result.readingDeleteFailure = arguments.contains("--test-reading-delete-failure")
         result.crisisDiscardFailure = arguments.contains("--test-crisis-discard-failure")
         result.settingsSaveFailure = arguments.contains("--test-settings-save-failure")
+        result.historyDays = min(1000, max(0, value("--test-history-days").flatMap(Int.init) ?? 0))
+        result.historyReadFailure = arguments.contains("--test-history-read-failure")
         #endif
         return result
     }
@@ -97,7 +101,7 @@ final class SessionClock {
 @MainActor @Observable
 final class AppSession {
     enum Screen {
-        case welcome, draw, reveal(DailyDraw), today(DailyDraw), ask, composer, pick, reading(QuestionReading), support
+        case welcome, draw, reveal(DailyDraw), today(DailyDraw), ask, composer, pick, reading(QuestionReading), support, history
     }
 
     private enum DraftSaveOperation {
@@ -179,6 +183,18 @@ final class AppSession {
         return today.map(Screen.today) ?? .draw
     }
 
+    var historyRevision: Int { store.historyRevision }
+
+    func historyEntries() throws -> [HistoryEntry] {
+        #if DEBUG
+        if failHistoryRead {
+            failHistoryRead = false
+            throw CocoaError(.fileReadNoPermission)
+        }
+        #endif
+        return try store.history(timeZone: clock.timeZone)
+    }
+
     var dateLabel: String {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_AU")
@@ -210,7 +226,7 @@ final class AppSession {
             }
             let previous = try store.draws(from: ReadingEngine.repeatWindowStart(for: dateKey))
             draw = ReadingEngine.dailyDraw(seed: seed, dateKey: dateKey, position: position,
-                                           library: library, previousDraws: previous)
+                                           library: library, previousDraws: previous, createdAt: clock.now)
         } catch {
             dayRefreshFailed = true
             return
@@ -452,6 +468,14 @@ final class AppSession {
     }
 
     #if DEBUG
+    var failHistoryRead = false
+
+    func deleteLatestReadingForTest() {
+        do {
+            if let reading = try store.latestReading() { try store.deleteReading(id: reading.id) }
+        } catch { readingSaveFailed = true }
+    }
+
     func openSavedReadingForTest() throws {
         if let reading = try store.latestReading() { screen = .reading(reading) }
     }
@@ -521,6 +545,25 @@ enum AppLaunch {
         store.failsNextReadingDelete = configuration.readingDeleteFailure
         store.failsNextDraftDiscard = configuration.crisisDiscardFailure
         store.failsNextSettingsSave = configuration.settingsSaveFailure
+        if configuration.historyDays > 0 {
+            var calendar = Calendar(identifier: .gregorian)
+            calendar.timeZone = clock.timeZone
+            for offset in 0..<configuration.historyDays {
+                let date = calendar.date(byAdding: .day, value: -offset, to: clock.now)!
+                _ = try store.save(ReadingEngine.dailyDraw(seed: seed,
+                    dateKey: ReadingEngine.dateKey(for: date, timeZone: clock.timeZone), position: 3, library: library,
+                    createdAt: date.addingTimeInterval(-3600)))
+            }
+            for (offset, area) in ReadingArea.allCases.enumerated() {
+                let picks = zip(QuestionPosition.allCases, library.cards.prefix(3)).map {
+                    SpreadPick(position: $0.0, card: $0.1, orientation: .upright)
+                }
+                let id = UUID(uuidString: "00000000-0000-0000-0000-00000000000\(offset + 1)")!
+                let date = calendar.date(byAdding: .day, value: -offset * 8, to: clock.now)!
+                _ = try store.save(ReadingEngine.compose(id: id, createdAt: date, area: area,
+                    question: library.questions.content(for: area).suggestions[0], picks: picks, library: library))
+            }
+        }
         if configuration.earlierSnapshot {
             let draw = ReadingEngine.dailyDraw(seed: seed, dateKey: ReadingEngine.dateKey(for: clock.now, timeZone: clock.timeZone),
                                               position: 3, library: library)
@@ -535,6 +578,7 @@ enum AppLaunch {
         let session = try AppSession(clock: clock, seed: seed, store: store,
                                      library: library, randomIndex: randomIndex)
         #if DEBUG
+        session.failHistoryRead = configuration.historyReadFailure
         if configuration.openSavedReading { try session.openSavedReadingForTest() }
         #endif
         return session

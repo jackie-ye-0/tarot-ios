@@ -141,6 +141,85 @@ final class ReadingEngineTests: XCTestCase {
                               library: try library ?? CardLibrary.load(), randomIndex: { _ in 0 })
     }
 
+    func testHistoryCombinesSnapshotsOrdersAndFiltersBySavedArea() throws {
+        let library = try CardLibrary.load()
+        let zone = try XCTUnwrap(TimeZone(identifier: "Australia/Sydney"))
+        let instant = try XCTUnwrap(ISO8601DateFormatter().date(from: "2026-10-10T14:00:00Z"))
+        let draws = ["2026-10-10", "2026-10-11", "2026-10-12"].map {
+            ReadingEngine.dailyDraw(seed: "history", dateKey: $0, position: 2, library: library)
+        }
+        let picks = zip(QuestionPosition.allCases, library.cards.prefix(3)).map {
+            SpreadPick(position: $0.0, card: $0.1, orientation: .reversed)
+        }
+        let readings = try ReadingArea.allCases.enumerated().map { offset, area in
+            try ReadingEngine.compose(id: UUID(), createdAt: instant.addingTimeInterval(Double(offset) * 60),
+                area: area, question: "What can I notice?", picks: picks, library: library)
+        }
+        let all = ReadingEngine.history(draws: draws, readings: readings, timeZone: zone)
+        XCTAssertEqual(all, [.daily(draws[2]), .reading(readings[2]), .reading(readings[1]),
+                             .reading(readings[0]), .daily(draws[1]), .daily(draws[0])])
+        for reading in readings {
+            XCTAssertEqual(ReadingEngine.history(draws: draws, readings: readings, area: reading.area, timeZone: zone),
+                           [.reading(reading)])
+        }
+        XCTAssertEqual(ReadingEngine.history(draws: [], readings: [], timeZone: zone), [])
+        let travelled = ReadingEngine.history(draws: draws, readings: readings, timeZone: TimeZone(secondsFromGMT: 0)!)
+        XCTAssertEqual(travelled.first, .daily(draws[2]))
+        XCTAssertEqual(travelled[1], .daily(draws[1]), "Only reading timestamps use the supplied zone; daily date keys never move")
+    }
+
+    func testHistoryUsesNewDailyTimestampsAndDecodesOlderSnapshots() throws {
+        let library = try CardLibrary.load()
+        let instant = Date(timeIntervalSince1970: 1_791_676_800)
+        let old = ReadingEngine.dailyDraw(seed: "history", dateKey: "2026-10-11", position: 1, library: library)
+        let before = ReadingEngine.dailyDraw(seed: "history", dateKey: "2026-10-10", position: 1,
+                                             library: library, createdAt: instant.addingTimeInterval(-60))
+        let after = ReadingEngine.dailyDraw(seed: "history", dateKey: "2026-10-11", position: 1,
+                                            library: library, createdAt: instant.addingTimeInterval(60))
+        let picks = zip(QuestionPosition.allCases, library.cards.prefix(3)).map {
+            SpreadPick(position: $0.0, card: $0.1, orientation: .upright)
+        }
+        let reading = try ReadingEngine.compose(id: UUID(), createdAt: instant, area: .career,
+            question: "What can I notice?", picks: picks, library: library)
+        for zone in ["Australia/Sydney", "Pacific/Honolulu"] {
+            XCTAssertEqual(ReadingEngine.history(draws: [before, after], readings: [reading], timeZone: TimeZone(identifier: zone)!),
+                           [.daily(after), .reading(reading), .daily(before)])
+        }
+        let oldData = try JSONEncoder().encode(old)
+        XCTAssertFalse(String(decoding: oldData, as: UTF8.self).contains("createdAt"))
+        XCTAssertNil(try JSONDecoder().decode(DailyDraw.self, from: oldData).createdAt)
+        XCTAssertEqual(try JSONDecoder().decode(DailyDraw.self, from: JSONEncoder().encode(after)), after)
+        XCTAssertEqual(old.card, after.card, "The added timestamp must not enter card selection")
+        XCTAssertEqual(old.orientation, after.orientation)
+    }
+
+    func testHistoryEqualTimesHaveStableOrderAndKeepDistinctReadings() throws {
+        let library = try CardLibrary.load()
+        let picks = zip(QuestionPosition.allCases, library.cards.prefix(3)).map {
+            SpreadPick(position: $0.0, card: $0.1, orientation: .upright)
+        }
+        let readings = try (1...2).map { value in
+            try ReadingEngine.compose(id: UUID(uuidString: "00000000-0000-0000-0000-00000000000\(value)")!,
+                createdAt: Date(timeIntervalSince1970: 0), area: .career,
+                question: "Same question?", picks: picks, library: library)
+        }
+        XCTAssertEqual(ReadingEngine.history(draws: [], readings: Array(readings.reversed()), timeZone: TimeZone(secondsFromGMT: 0)!),
+                       readings.map(HistoryEntry.reading))
+    }
+
+    func testHistoryMonthLeapYearLeadingDaysAndYearNavigation() {
+        let october = HistoryMonth(dateKey: "2026-10-11")
+        XCTAssertEqual(october.leadingBlanks, 3)
+        XCTAssertEqual(october.keys.count, 31)
+        XCTAssertEqual(october.keys.first, "2026-10-01")
+        XCTAssertEqual(october.keys.last, "2026-10-31")
+        XCTAssertEqual(HistoryMonth(dateKey: "2024-02-29").keys.count, 29)
+        XCTAssertEqual(HistoryMonth(dateKey: "2026-02-01").keys.count, 28)
+        XCTAssertEqual(HistoryMonth(dateKey: "2026-12-31").moving(1).keys.first, "2027-01-01")
+        XCTAssertEqual(HistoryMonth(dateKey: "2027-01-01").moving(-1).keys.first, "2026-12-01")
+        XCTAssertEqual(HistoryMonth.label(for: "2026-10-11"), "Sunday 11 October 2026")
+    }
+
     func testStableDailyResultAndAllPositions() throws {
         let library = try CardLibrary.load()
         let first = ReadingEngine.dailyDraw(seed: "reference-3", dateKey: "2026-10-11", position: 1, library: library)

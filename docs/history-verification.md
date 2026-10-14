@@ -1,0 +1,45 @@
+# History verification (#19)
+
+Status: implementation complete; iOS run and independent comparison pending. This document is not a verification claim until the run evidence below is filled in.
+
+## Behaviour and tests
+
+- `testHistoryCalendarFiltersAndDesignEvidence`: third labelled tab, drawn/today/future date semantics, previous/next month, all four 44-point filters, daily cards only under All, combined newest-first list, full list independent of the visible month, and retained populated/filtered/bottom screenshots.
+- `testHistoryAppearsImmediatelyAndSnapshotsSurviveRelaunch`: Draw's History link, a just-saved daily card and reading, saved content after relaunch with a revised library, unchanged extras/scores/lines, archive navigation, retained filter, and an open list refreshing after a store deletion. The Debug test menu exercises the real deletion method; the user-facing confirmation/menu is owned by #16.
+- `testHistoryEmptyErrorAndLargestTextEvidence`: empty and empty-area copy, a failed read that recovers with Retry, largest-text calendar/filter/list states and both archive details with reachable return actions.
+- `testHistoryYearOfEntriesScrollPerformance`: Debug preload of 365 daily cards plus three readings; XCTest scrolling/deceleration metrics over repeated fast swipes and opening an entry after scrolling. Xcode 26 with iOS 26 or newer also records the native hitch metric, without raising the app's deployment target or removing older-SDK coverage.
+- Engine tests cover area filtering, mixed ordering, same-time stable ordering, daily date keys surviving time-zone changes, leap February and December/January navigation. Store behaviour is tested through the real app, not a third seam.
+- Existing screen tests cover the changed Draw header, three-tab Today/Ask, reading saved label, fonts, and Reduce Motion. All accessibility audit categories stay enabled, on settled screens, using the established strict helper.
+
+## Design comparison
+
+The final run's comparison page and screenshot paths will be recorded here after inspection. History follows `10-history`; archive details reuse `04-today` and `09-reading` with variant names. The manifest describes empty, read-error and accessible calendar layouts.
+
+Deliberate scope/layout differences to check against the final images:
+
+- History's Settings icon is absent because #20 explicitly owns the top-right Settings entry on Today and History.
+- The reference's “A missed day is just a day off” sentence is omitted; the issue requires no scolding, and the calendar does not need commentary about absence.
+- Rows show the fixture's real saved cards/questions/dates. About-someone rows remain #18. The list scrolls within the native 390 × 844 safe area, while the reference is a longer artboard.
+- October's weekday placement follows the real 2026 calendar. Older entries show an explicit day, month and year; the reference mixes “Yesterday” with yearless dates. Both month arrows remain enabled to browse either direction, including future months.
+- Selected tabs retain the established high-contrast ink pill. Future calendar dates use secondary ink with full text contrast.
+- Largest text stacks the calendar dates and filters and wraps row text. Archive daily detail adds Back to History and its saved date; live Ask/midnight actions are absent. Snapshot content is unchanged.
+- The existing generated card art, six-card starter content, native rendering and previously documented scope differences on Draw, Today, Ask and Reading remain as described in their verification documents.
+
+## Results
+
+- Command-contract tests: 34 passed on 14 October 2026.
+- Design-role guard and Swift syntax parse: passed.
+- First full iOS check (`20261014T093432.995747Z-check-1f555dd2`): 55 tests executed, 53 passed, two failed, zero skipped. Both failures identified the informational calendar date as a generic accessibility element with too small a hit area. The dates now retain their native Text semantics and full spoken labels; no audit category or issue is filtered. [Apple's child-accessibility documentation](https://developer.apple.com/documentation/swiftui/accessibilitychildbehavior/ignore) explains why replacing the children with a new element loses their properties.
+- First screenshot inspection found a mid-word break in Relationship. The filters now use intrinsic widths and fall back to a vertical stack when needed.
+- Second full check (`20261014T113944.785707Z-check-eec982d4`): 55 tests executed, 52 passed, three failed, zero skipped. Calendar hit regions passed; both History audits reached Dynamic Type and flagged a filter button. The exported standard images show whole filter labels. The replacement fit candidates have now been replaced by one set of controls in a width-measured native layout, with vertically flexible labels; this keeps their identity while changing arrangement. The strict audit is unchanged.
+- That second run also missed the first Draw tap in the existing all-five-positions test. Its hierarchy, event and recording were inspected: the tap was at the centre of the correct hit lane (58.17, 467), the screen was settled, and no selection followed. The same test passed in the first run, and later selection tests passed in the second. Its cause is unconfirmed; no Draw code, retry or timeout was changed in response.
+- Third full check (`20261014T130713.068374Z-check-09bf7544`): 55 tests executed, 53 passed, two failed, zero skipped. Empty/error History passed every audit category, and all largest-text archive paths and the 368-entry scroll test passed. The filter fix therefore progressed beyond the earlier failures. The populated audit flagged the first reading row's subtitle during Dynamic Type. Frames from its kept recording showed larger text pushing the row below the expanded header; native scroll-position tracking was attempted next.
+- The third run's other failure was the unchanged card-art gallery remaining on cards 46–48 after a Next tap. The all-five-positions Draw test passed without a change. Both intermittent interaction failures are retained, and their cause is unconfirmed; neither baseline test has been weakened. An earlier Draw interaction failure is already recorded in `docs/friction.md`.
+- Fourth full check (`20261014T143900.524290Z-check-86a53d00`): 55 tests executed, 54 passed, one failed, zero skipped. All existing tests and the other three History tests passed. The remaining failure is the first reading row's question during Dynamic Type; its recording still shows the row leaving the viewport. Scroll-position tracking did not fix it and has been removed. A normal stack now retains the row views and their accessibility nodes while the header grows. The next full run must establish both the strict audit result and the performance of this simpler layout with 368 entries.
+- The first four runs reported scroll duration only (fourth run: 2.576 seconds average, 0.294% relative standard deviation), not frame rate or hitches. The native `XCTHitchMetric` has been added for supported SDK/OS versions; its result is still pending.
+- Full iOS harness check after retaining row views: pending.
+- The third run's browser comparison page and History's standard, empty, error, filter, list and archive largest-text images were inspected. The weekday-header row had excess space compared with the reference; its minimum height is now 24 points, retaining natural text growth. The final comparison must use the next run's images.
+- Exported screenshot inspection: pending.
+- Independent comparison: pending, arranged by firstmate after final evidence is committed.
+
+Simulator metrics do not establish physical-device smoothness. Real-device behaviour and manual VoiceOver reading order remain unverified.
