@@ -68,7 +68,7 @@ This option also works with `test` and fails if any screen reference is missing 
 - [Learning notes](LEARNING.md): concepts introduced here.
 - [Verification](docs/verification.md): observed checks and pending gates.
 
-No app icon, AI/provider integration, hosted CI, device signing or App Store delivery is implemented. Completed questions and readings are saved on this phone; unfinished questions and picks currently stay only in memory. Export and deletion arrive with their assigned later tickets. This development slice is not ready for valuable personal data. Real-device behaviour and VoiceOver reading order still need a manual pass.
+No app icon, AI/provider integration, hosted CI, device signing or App Store delivery is implemented. Completed questions and readings are saved on this phone; unfinished spreads save their question, area and picks on-device after submission. Return through Ask to resume them; Back returns to the composer with the picks locked, and backing out to Ask discards the draft. Questions that have not yet been submitted remain in memory until #14. Export and deletion arrive with their assigned later tickets. This development slice is not ready for valuable personal data. Real-device behaviour and VoiceOver reading order still need a manual pass.
 
 ## Debug test configuration
 
@@ -78,6 +78,7 @@ Only Debug builds, with `--test-mode`, read these launch arguments. This mode al
 - `--test-seed <string>` supplies the seed when the store has no installation identity.
 - `--test-memory-store` starts with an empty temporary SwiftData store on each launch.
 - `--test-welcome-completed` preloads a completed Welcome for tests of later screens. Omit it to test first open; completion otherwise persists through the real welcome action in an isolated disk store.
+- `--test-spread-save-failure` fails the first draft save, then lets the retry succeed.
 - `--test-welcome-save-failure` fails the first attempt to save Welcome completion, then lets the retry succeed.
 - `--test-store-id <UUID>` uses an isolated on-device test store that survives process relaunch. UI tests use a new UUID per test; synthetic stores remain in the simulator app container until it is removed.
 - `--test-largest-text` sets the largest SwiftUI Dynamic Type size. `--test-reduce-motion` removes all animations and shows the final ritual states on first paint, without changing simulator settings. The app also honours the real system Reduce Motion setting.

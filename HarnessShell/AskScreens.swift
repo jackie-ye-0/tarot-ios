@@ -83,13 +83,14 @@ struct QuestionComposerScreen: View {
     }
 
     private var back: some View {
-        NavigationAction { session.screen = .ask }
+        NavigationAction(action: session.backToAsk)
     }
 }
 
 struct SpreadCards: View {
     let picks: [SpreadPick]
     var night = false
+    var animationsEnabled = false
     @Environment(\.dynamicTypeSize) private var textSize
 
     var body: some View {
@@ -104,7 +105,8 @@ struct SpreadCards: View {
                         TarotCardView(card: pick.card, orientation: pick.orientation, width: night ? 92 : 78, night: night)
                             .accessibilityHidden(true)
                     } else {
-                        EmptySpreadSlot(number: index + 1, active: picks.count == index, width: 92)
+                        EmptySpreadSlot(number: index + 1, active: picks.count == index, width: 92,
+                                        animationsEnabled: animationsEnabled)
                     }
                     if !night || pick == nil { Text(position.label).typeRole(.label) }
                     if let pick {
@@ -130,13 +132,17 @@ struct SpreadCards: View {
 
 struct ThreeCardPickScreen: View {
     let session: AppSession
+    let animationsEnabled: Bool
+    let holdShuffle: Bool
+    let testMode: Bool
+    @State private var shuffleID = 0
 
     var body: some View {
         ReadingScreenLayout(night: true, ritualDisc: true) {
             VStack(alignment: .leading, spacing: Design.Space.page) {
                 ZStack {
                     HStack {
-                        NavigationAction(night: true) { session.screen = .composer }
+                        NavigationAction(night: true, action: session.backToComposer)
                         Spacer()
                     }
                     Text(session.picks.count == 3 ? "All three drawn" : "Card \(session.picks.count + 1) of 3")
@@ -152,7 +158,7 @@ struct ThreeCardPickScreen: View {
                         .typeRole(Design.TypeRole.secondary).foregroundStyle(Design.Palette.nightSecondary)
                 }
                 Divider().overlay(Design.Palette.nightHairline)
-                SpreadCards(picks: session.picks, night: true)
+                SpreadCards(picks: session.picks, night: true, animationsEnabled: animationsEnabled)
                     .zIndex(1)
                 if session.picks.count < 3 {
                     Text("Choose your \(QuestionPosition.allCases[session.picks.count].rawValue) card")
@@ -161,7 +167,9 @@ struct ThreeCardPickScreen: View {
                         .multilineTextAlignment(.center)
                         .accessibilityIdentifier("pick-prompt")
                         .zIndex(1)
-                    CardFan(selected: Binding(get: { nil }, set: { _ in session.pickCard() }), compact: true, showsDisc: false)
+                    SpreadPickFan(animationsEnabled: animationsEnabled, holdShuffle: holdShuffle,
+                                  testMode: testMode, choose: session.pickCard)
+                        .id("\(session.picks.count)-\(shuffleID)")
                 }
             }
             .foregroundStyle(Design.Palette.cream)
@@ -180,11 +188,54 @@ struct ThreeCardPickScreen: View {
                 }
                 .multilineTextAlignment(.center)
             } else {
-                Text("Each pick fills the next position").typeRole(Design.TypeRole.caption)
-                    .foregroundStyle(Design.Palette.nightSecondary)
-                    .frame(minHeight: Design.Space.target)
+                VStack(spacing: Design.Space.small) {
+                    QuietAction(title: "Shuffle", underlined: true) { shuffleID += 1 }
+                        .accessibilityIdentifier("spread-shuffle")
+                    Text("Shuffling never uses up a pick.").typeRole(Design.TypeRole.caption)
+                        .foregroundStyle(Design.Palette.nightSecondary)
+                        .multilineTextAlignment(.center)
+                        .accessibilityIdentifier("spread-shuffle-helper")
+                }
             }
         }
+    }
+}
+
+private struct SpreadPickFan: View {
+    let animationsEnabled: Bool
+    let holdShuffle: Bool
+    let testMode: Bool
+    let choose: () -> Void
+    @State private var phase = FanPhase.gathered
+    @State private var order = Array(1...5)
+    @State private var settled = false
+
+    var body: some View {
+        CardFan(selected: nil, phase: animationsEnabled ? phase : .fanned, order: order,
+                compact: true, showsDisc: false, choose: { _ in choose() })
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("spread-fan")
+            .testMotionState(enabled: testMode, settled: !animationsEnabled || settled)
+            .task(id: animationsEnabled) {
+                guard animationsEnabled else { return }
+                do {
+                    withAnimation(Design.Motion.wash) {
+                        order = [order[2], order[0], order[4], order[1], order[3]]
+                        phase = .washLeft
+                    }
+                    try await Task.sleep(for: .seconds(Design.Motion.washDuration))
+                    try Task.checkCancellation()
+                    if holdShuffle { return }
+                    withAnimation(Design.Motion.wash) { phase = .washRight }
+                    try await Task.sleep(for: .seconds(Design.Motion.washDuration))
+                    try Task.checkCancellation()
+                    withAnimation(Design.Motion.fanOut, completionCriteria: .removed) { phase = .fanned } completion: {
+                        settled = true
+                    }
+                } catch is CancellationError {
+                    // A pick, replay or navigation replaces this fan and cancels its sequence.
+                } catch { assertionFailure("Unexpected spread shuffle timing error: \(error)") }
+            }
     }
 }
 
