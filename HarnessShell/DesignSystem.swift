@@ -133,11 +133,25 @@ extension View {
         font(role.font).tracking(role.tracking)
     }
 
-    /// Multi-line display copy uses line height 1.0 to 1.05; the font's own is about 1.17.
+    /// Multi-line display copy uses line height 1.0 to 1.05; Gabarito's own is 1.2.
     @ViewBuilder func displayLineHeight() -> some View {
-        // ponytail: iOS 17 to 25 keep the font's own leading, because they ignore negative
-        // line spacing. Drop this check when the deployment target reaches iOS 26.
-        if #available(iOS 26.0, *) { lineHeight(.multiple(factor: 1.025)) } else { self }
+        // ponytail: iOS 17 keeps the font's own line height, as text renderers arrive in iOS 18.
+        // Drop this check when the deployment target reaches iOS 18.
+        if #available(iOS 18.0, *) { textRenderer(DisplayLeading()) } else { self }
+    }
+}
+
+/// Draws each line closer to the last, taking Gabarito's 1.2 line height to Display's 1.04.
+/// The text keeps its natural frame: a shorter one clips the last line's descenders.
+struct DisplayLeading: TextRenderer {
+    func draw(layout: Text.Layout, in context: inout GraphicsContext) {
+        let lines = Array(layout)
+        let pitch = lines.count > 1 ? lines[1].typographicBounds.origin.y - lines[0].typographicBounds.origin.y : 0
+        for (index, line) in lines.enumerated() {
+            var lowered = context
+            lowered.translateBy(x: 0, y: CGFloat(lines.count - 1 - index) * pitch * (1 - 1.04 / 1.2))
+            lowered.draw(line)
+        }
     }
 }
 

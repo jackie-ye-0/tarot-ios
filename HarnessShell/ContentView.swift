@@ -79,8 +79,7 @@ struct WelcomeScreen: View {
                 WelcomeCard(animationsEnabled: animationsEnabled)
                     .frame(maxWidth: .infinity)
                 Spacer(minLength: Design.Space.large)
-                // Tight display lines end at the baseline, so the wider gap clears their descenders.
-                VStack(alignment: .leading, spacing: Design.Space.page) {
+                VStack(alignment: .leading, spacing: Design.Space.related) {
                     Text("One card.\nEvery morning.")
                         .typeRole(.compactDisplay)
                         .displayLineHeight()
