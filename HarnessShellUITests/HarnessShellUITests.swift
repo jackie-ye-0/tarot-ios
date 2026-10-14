@@ -1203,6 +1203,139 @@ final class HarnessShellUITests: XCTestCase {
         if largest { scrollTo(app.buttons["read-spread"], in: app) }
     }
 
+    func testComposerLimitAreaChangeAndDraftRestoresAfterBackgroundAndRelaunch() throws {
+        let app = app(extra: ["--test-store-id", UUID().uuidString], memory: false, audit: true)
+        reachAsk(app)
+        scrollTo(app.buttons["ask-question-entry"], in: app)
+        app.buttons["ask-question-entry"].tap()
+        let field = app.descendants(matching: .any)["question-field"].firstMatch
+        field.tap()
+        let question = String(repeating: "a", count: 300)
+        field.typeText(question + "b")
+        XCTAssertEqual(field.value as? String, question)
+        app.keyboards.buttons["Done"].tap()
+        XCTAssertEqual(app.staticTexts["question-count"].label, "300 of 300 characters, limit reached")
+        scrollTo(app.staticTexts["question-count"], in: app)
+        try auditAndCapture(app, "06-composer-question-entered--limit", expecting: app.staticTexts["question-count"])
+        showNavigationTop(app)
+        let oldSuggestion = app.buttons["suggestion-0"].label
+        app.buttons["area-career"].tap()
+        XCTAssertNotEqual(app.buttons["suggestion-0"].label, oldSuggestion)
+        XCTAssertEqual(field.value as? String, question)
+        XCUIDevice.shared.press(.home)
+        app.activate()
+        XCTAssertEqual(field.value as? String, question)
+        app.terminate()
+        app.launch()
+        XCTAssertTrue(app.buttons["tab-ask"].waitForExistence(timeout: 5))
+        app.buttons["tab-ask"].tap()
+        XCTAssertTrue(app.buttons["area-career"].isSelected)
+        scrollTo(app.buttons["ask-question-entry"], in: app)
+        app.buttons["ask-question-entry"].tap()
+        XCTAssertEqual(field.value as? String, question)
+        field.tap()
+        field.typeText(XCUIKeyboardKey.delete.rawValue)
+        app.keyboards.buttons["Done"].tap()
+        XCTAssertEqual(app.staticTexts["question-count"].label, "299 of 300 characters")
+        showNavigationTop(app)
+        app.buttons["go-back"].tap()
+        app.terminate()
+        app.launch()
+        app.buttons["tab-ask"].tap()
+        scrollTo(app.buttons["ask-question-entry"], in: app)
+        app.buttons["ask-question-entry"].tap()
+        XCTAssertEqual(app.staticTexts["question-count"].label, "0 of 300 characters")
+    }
+
+    func testAskContextStatusAndLatestSavedReading() throws {
+        let app = app(extra: fixedSpread + ["--test-store-id", UUID().uuidString], memory: false, audit: true)
+        reachAsk(app)
+        let expected = ["career": ("Share an idea you have been quietly tending.", "Career, 72 out of 100"),
+                        "relationship": ("Let a kind word make room for connection.", "Relationship, 81 out of 100"),
+                        "social": ("Notice who gives you space to be yourself.", "Social, 64 out of 100")]
+        for area in ["career", "social", "relationship"] {
+            app.buttons["area-\(area)"].tap()
+            XCTAssertEqual(app.staticTexts["ask-area-line"].label, expected[area]!.0)
+            XCTAssertEqual(app.staticTexts["ask-area-score"].label, expected[area]!.1)
+            XCTAssertFalse(app.buttons["latest-area-reading"].exists)
+        }
+        scrollTo(app.buttons["relationship-status-single"], in: app)
+        for status in ["single", "inRelationship", "complicated", "preferNotToSay"] {
+            let choice = app.buttons["relationship-status-\(status)"]
+            XCTAssertGreaterThanOrEqual(choice.frame.height, 44)
+            XCTAssertGreaterThanOrEqual(choice.frame.width, 44)
+        }
+        app.buttons["relationship-status-single"].tap()
+        XCTAssertFalse(app.staticTexts["relationship-prompt"].exists)
+        scrollTo(app.buttons["suggestion-0"], in: app)
+        app.buttons["suggestion-0"].tap()
+        app.buttons["submit-question"].tap()
+        chooseSpread(app)
+        app.buttons["read-spread"].tap()
+        let identifiers = ["reading-question", "reading-situation", "reading-action", "reading-outcome", "reading-lens", "reflection-question"]
+        let firstQuestion = app.staticTexts["reading-question"].label
+        XCTAssertTrue(app.staticTexts["reading-lens"].label.contains("while single"))
+        app.terminate()
+        let dateArgument = app.launchArguments.firstIndex(of: "--test-date")!
+        app.launchArguments[dateArgument + 1] = "2026-10-11T01:00:00Z"
+        app.launch()
+        app.buttons["tab-ask"].tap()
+        XCTAssertFalse(app.staticTexts["relationship-prompt"].exists)
+        scrollTo(app.buttons["suggestion-1"], in: app)
+        app.buttons["suggestion-1"].tap()
+        app.buttons["submit-question"].tap()
+        chooseSpread(app)
+        app.buttons["read-spread"].tap()
+        XCTAssertNotEqual(app.staticTexts["reading-question"].label, firstQuestion)
+        XCTAssertTrue(app.staticTexts["reading-lens"].label.contains("while single"))
+        let original = identifiers.map { app.staticTexts[$0].label }
+        app.terminate()
+        app.launchArguments.append("--test-revised-content")
+        app.launch()
+        app.buttons["tab-ask"].tap()
+        XCTAssertFalse(app.staticTexts["relationship-prompt"].exists)
+        scrollTo(app.buttons["latest-area-reading"], in: app)
+        XCTAssertGreaterThanOrEqual(app.buttons["latest-area-reading"].frame.height, 44)
+        XCTAssertGreaterThanOrEqual(app.buttons["latest-area-reading"].frame.width, 44)
+        try auditAndCapture(app, "05-ask--recent-reading", expecting: app.buttons["latest-area-reading"])
+        app.buttons["latest-area-reading"].tap()
+        XCTAssertEqual(identifiers.map { app.staticTexts[$0].label }, original)
+        app.buttons["reading-done"].tap()
+        app.buttons["tab-ask"].tap()
+        app.buttons["area-social"].tap()
+        XCTAssertFalse(app.buttons["latest-area-reading"].exists)
+        scrollTo(app.buttons["ask-question-entry"], in: app)
+        app.buttons["ask-question-entry"].tap()
+        XCTAssertEqual(app.staticTexts["question-count"].label, "0 of 300 characters")
+        app.terminate()
+        app.launchArguments.append("--test-largest-text")
+        app.launch()
+        app.buttons["tab-ask"].tap()
+        app.buttons["area-relationship"].tap()
+        scrollTo(app.buttons["latest-area-reading"], in: app)
+        capture(app, "05-ask--largest-text-recent-reading")
+        app.buttons["latest-area-reading"].tap()
+        XCTAssertEqual(app.staticTexts["reading-question"].label, original[0])
+    }
+
+    func testSkippedRelationshipStatusIsRememberedWithoutChoosingAStatus() {
+        let app = app(extra: ["--test-store-id", UUID().uuidString], memory: false)
+        reachAsk(app)
+        scrollTo(app.buttons["skip-relationship-status"], in: app)
+        app.buttons["skip-relationship-status"].tap()
+        XCTAssertFalse(app.staticTexts["relationship-prompt"].exists)
+        app.terminate()
+        app.launch()
+        app.buttons["tab-ask"].tap()
+        XCTAssertFalse(app.staticTexts["relationship-prompt"].exists)
+        scrollTo(app.buttons["suggestion-0"], in: app)
+        app.buttons["suggestion-0"].tap()
+        app.buttons["submit-question"].tap()
+        chooseSpread(app)
+        app.buttons["read-spread"].tap()
+        XCTAssertTrue(app.staticTexts["reading-lens"].label.contains("Whether you are exploring a connection"))
+    }
+
     func testAskSuggestionsComposerPickReadingAndDesignEvidence() throws {
         let app = app(extra: fixedSpread, audit: true)
         reachAsk(app)
@@ -1217,18 +1350,36 @@ final class HarnessShellUITests: XCTestCase {
                 XCTAssertTrue(suggestions.insert(suggestion.label).inserted)
             }
         }
-        try auditAndCapture(app, "05-ask", expecting: app.staticTexts["ask-title"], app.buttons["suggestion-0"])
+        XCTAssertFalse(app.buttons["latest-area-reading"].exists)
+        try auditAndCapture(app, "05-ask", expecting: app.staticTexts["ask-title"], app.staticTexts["ask-area-line"])
+        scrollTo(app.buttons["suggestion-2"], in: app)
+        try auditAndCapture(app, "05-ask--suggestions", expecting: app.buttons["suggestion-2"])
+        scrollTo(app.buttons["skip-relationship-status"], in: app)
+        try auditAndCapture(app, "05-ask--bottom", expecting: app.buttons["skip-relationship-status"])
+        app.buttons["skip-relationship-status"].tap()
         app.buttons["tab-today"].tap()
         XCTAssertTrue(app.staticTexts["today-title"].exists)
         app.buttons["tab-ask"].tap()
+        scrollTo(app.buttons["ask-question-entry"], in: app)
         app.buttons["ask-question-entry"].tap()
         XCTAssertFalse(app.buttons["tab-ask"].exists)
         XCTAssertFalse(app.buttons["submit-question"].isEnabled)
+        XCTAssertEqual(app.buttons["submit-question"].label, "Write or pick a question")
+        XCTAssertEqual(app.staticTexts["question-count"].label, "0 of 300 characters")
+        for position in ["situation", "action", "outcome"] {
+            XCTAssertEqual(app.descendants(matching: .any)["composer-preview-\(position)"].firstMatch.label, "\(position.capitalized), empty")
+        }
         try auditAndCapture(app, "06-composer", expecting: app.descendants(matching: .any)["question-field"].firstMatch, app.buttons["submit-question"])
+        scrollTo(app.buttons["suggestion-2"], in: app)
+        try auditAndCapture(app, "06-composer--bottom", expecting: app.buttons["suggestion-2"])
+        scrollTo(app.buttons["suggestion-0"], in: app)
         app.buttons["suggestion-0"].tap()
         XCTAssertTrue(app.buttons["submit-question"].isEnabled)
         XCTAssertEqual(app.descendants(matching: .any)["question-field"].firstMatch.value as? String, "Where is this going?")
-        try auditAndCapture(app, "06-composer-question-entered", expecting: app.staticTexts["Or start from one of these"], app.buttons["submit-question"])
+        showNavigationTop(app)
+        try auditAndCapture(app, "06-composer-question-entered", expecting: app.staticTexts["composer-title"], app.buttons["submit-question"])
+        scrollTo(app.buttons["suggestion-2"], in: app)
+        try auditAndCapture(app, "06-composer-question-entered--bottom", expecting: app.buttons["suggestion-2"])
         app.buttons["submit-question"].tap()
         XCTAssertEqual(app.staticTexts["spread-question"].label, "“Where is this going?”")
         XCTAssertFalse(app.buttons["tab-ask"].exists)
@@ -1271,6 +1422,7 @@ final class HarnessShellUITests: XCTestCase {
         let app = app(extra: fixedSpread + ["--test-store-id", UUID().uuidString], memory: false)
         reachAsk(app)
         app.buttons["area-career"].tap()
+        scrollTo(app.buttons["ask-question-entry"], in: app)
         app.buttons["ask-question-entry"].tap()
         let field = app.descendants(matching: .any)["question-field"].firstMatch
         field.tap()
@@ -1303,6 +1455,7 @@ final class HarnessShellUITests: XCTestCase {
         reachAsk(app)
         app.buttons["area-social"].tap()
         let question = app.buttons["suggestion-0"].label
+        scrollTo(app.buttons["suggestion-0"], in: app)
         app.buttons["suggestion-0"].tap()
         XCTAssertEqual(app.descendants(matching: .any)["question-field"].firstMatch.value as? String, question)
         XCTAssertTrue(app.buttons["submit-question"].isEnabled)
@@ -1319,7 +1472,18 @@ final class HarnessShellUITests: XCTestCase {
         scrollTo(app.staticTexts["ask-title"], in: app)
         capture(app, "05-ask--largest-text")
         scrollTo(app.buttons["suggestion-2"], in: app)
+        capture(app, "05-ask--largest-text-suggestions")
+        scrollTo(app.staticTexts["ask-area-line"], in: app)
+        capture(app, "05-ask--largest-text-context")
+        scrollTo(app.staticTexts["relationship-prompt"], in: app)
+        capture(app, "05-ask--largest-text-status")
+        for status in ["single", "inRelationship", "complicated", "preferNotToSay"] {
+            scrollTo(app.buttons["relationship-status-\(status)"], in: app)
+            capture(app, "05-ask--largest-text-status-\(status)")
+        }
+        scrollTo(app.buttons["skip-relationship-status"], in: app)
         capture(app, "05-ask--largest-text-bottom")
+        scrollTo(app.buttons["ask-question-entry"], in: app)
         scrollTo(app.buttons["ask-question-entry"], in: app)
         app.buttons["ask-question-entry"].tap()
         showNavigationTop(app)
@@ -1333,6 +1497,7 @@ final class HarnessShellUITests: XCTestCase {
         scrollTo(app.buttons["submit-question"], in: app)
         XCTAssertFalse(app.buttons["submit-question"].isEnabled)
         capture(app, "06-composer--largest-text-bottom")
+        scrollTo(app.buttons["suggestion-0"], in: app)
         scrollTo(app.buttons["suggestion-0"], in: app)
         app.buttons["suggestion-0"].tap()
         showNavigationTop(app)
@@ -1401,7 +1566,8 @@ final class HarnessShellUITests: XCTestCase {
             let app = app(extra: fixedSpread + ["--test-reduce-motion"] + (largest ? ["--test-largest-text"] : []))
             reachAsk(app, largest: largest)
             if largest { scrollTo(app.buttons["ask-question-entry"], in: app) }
-            app.buttons["ask-question-entry"].tap()
+            scrollTo(app.buttons["ask-question-entry"], in: app)
+        app.buttons["ask-question-entry"].tap()
             let field = app.descendants(matching: .any)["question-field"].firstMatch
             if largest { showQuestionField(app) }
             field.tap()

@@ -65,8 +65,14 @@ struct ContentView: View {
         }
         .alert("Your draft could not be saved", isPresented: $session.draftSaveFailed) {
             Button("Try again", action: session.retryDraftSave)
+            Button("Keep editing", role: .cancel) { }
         } message: {
-            Text("Your latest changes are only in memory. Free some space on your phone if needed, then try again before leaving the app.")
+            Text("Your words are still here. Check the free space on your phone and try again before leaving the app.")
+        }
+        .alert("Your choice could not be saved", isPresented: $session.relationshipSaveFailed) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("Check the free space on your phone, then choose your relationship status or Skip again.")
         }
     }
 

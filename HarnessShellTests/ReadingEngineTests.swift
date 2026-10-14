@@ -1,5 +1,6 @@
 import XCTest
 import SwiftData
+import Testing
 import UIKit
 @testable import HarnessShell
 
@@ -565,5 +566,50 @@ private final class StoredDailyDraw {
     init(dateKey: String, snapshot: Data) {
         self.dateKey = dateKey
         self.snapshot = snapshot
+    }
+}
+
+struct AskComposerRulesTests {
+    @Test func characterLimitPreservesWholeCharactersAndExistingWords() {
+        let full = String(repeating: "👩🏽‍💻", count: 300)
+        #expect(QuestionEdit.applying(full + "x", to: full).text == full)
+        #expect(QuestionEdit.applying("x" + full, to: full).text == full)
+        #expect(QuestionEdit.applying(full + "extra", to: "").text == full)
+        let almostFull = String(repeating: "a", count: 294) + " tail"
+        #expect(QuestionEdit.applying("xyz" + almostFull, to: almostFull).text == "x" + almostFull)
+        #expect(QuestionEdit.applying(String(full.dropLast()), to: full).text.count == 299)
+        #expect(QuestionEdit.applying(full + "\n", to: full).dismissKeyboard)
+        #expect(ReadingEngine.canSubmit(question: full))
+        #expect(!ReadingEngine.canSubmit(question: full + "x"))
+    }
+
+    @Test(arguments: [RelationshipStatus.single, .inRelationship, .complicated, .preferNotToSay])
+    func relationshipLensMatchesStatusAndOtherAreasStayUnchanged(status: RelationshipStatus) throws {
+        let library = try CardLibrary.load()
+        let picks = zip(QuestionPosition.allCases, library.cards.prefix(3)).map {
+            SpreadPick(position: $0, card: $1, orientation: .upright)
+        }
+        let content = library.questions.relationship
+        let variants = try #require(content.relationshipLenses)
+        let expected: String
+        switch status {
+        case .single: expected = variants.single
+        case .inRelationship: expected = variants.inRelationship
+        case .complicated: expected = variants.complicated
+        case .preferNotToSay: expected = content.lens
+        }
+        #expect(Set([content.lens, variants.single, variants.inRelationship, variants.complicated]).count == 4)
+        for area in ReadingArea.allCases {
+            let id = UUID()
+            let date = Date(timeIntervalSince1970: 1234)
+            let reading = try ReadingEngine.compose(id: id, createdAt: date, area: area, question: "What matters?",
+                picks: picks, library: library, relationshipStatus: status)
+            #expect(reading.connectingPassage == (area == .relationship ? expected : library.questions.content(for: area).lens))
+            #expect(reading == (try ReadingEngine.compose(id: id, createdAt: date, area: area, question: "What matters?",
+                picks: picks, library: library, relationshipStatus: status)))
+        }
+        let neutral = try ReadingEngine.compose(id: UUID(), createdAt: Date(), area: .relationship,
+            question: "What matters?", picks: picks, library: library)
+        #expect(neutral.connectingPassage == content.lens)
     }
 }

@@ -201,7 +201,15 @@ The reading shows the question, area and “Saved on this phone”, the cards an
 
 The save-error alert says the spread could not be saved, retains all three cards and asks the user to retry “Read my spread”. The already composed snapshot is reused on retry. A blank or whitespace-only composer uses the disabled button; a new Ask has no empty recent-reading placeholder. These states use the existing dawn/night roles and native alert. Issue #15 persists a question and its picks once the spread starts, including edits after returning to the composer. Persistence before the first submission belongs to #14.
 
-## 11b. Not yet designed
+## 11b. Full Ask and composer (#14)
+
+Ask places today's saved area line and score in the area's tint panel below the selector, headed by the daily card's name. This uses the bundled daily line instead of inventing a second interpretation or the reference's example “Open-handed” headline. Earlier snapshots without area content omit the panel. Below the suggestions, Relationship asks “Where are you, relationship-wise?” with four full-width question chips and a 44-point “Skip” quiet action. The single column keeps every choice readable at all text sizes. The optional helper explains why answering helps. Choosing or skipping removes the prompt permanently; Settings editing belongs to its assigned ticket. A divider precedes the latest reading, when present: three small saved card faces, the original question, date and an arrow. At accessibility sizes the cards sit above the question. With no past reading, omit the entire section.
+
+The composer has a trailing live `0 / 300` count below the field. At 300, show “Limit reached” and the count in the error role (`#a3331f`, the existing destructive hue); text and VoiceOver convey the limit as well as colour. Further insertion at the limit is rejected, pasted text is capped by whole characters, and deleting text clears the error. The footer previews three small, empty, dashed dawn card outlines beside the existing next-step explanation; at accessibility sizes the preview sits above it. Each slot has a position label for VoiceOver. No new animation is introduced.
+
+The draft's question and area are saved on every change, restored via the Ask entry after a relaunch, and kept when the app backgrounds. Back to Ask explicitly clears the draft, as does successfully creating a reading. A native save-error alert retains the words and offers a retry. A failed status save leaves the prompt available and explains that the choice could not be saved. These states use the existing alert and dawn roles. Pick persistence remains #15.
+
+## 11c. Not yet designed
 
 A birth-details entry form (not in the first build; Settings does not link to one), the paywall, and all empty, loading and error states. Settings and "About someone" keep their original layouts with this manifest's colours and controls applied; they have not had a full design pass. Tab icons are placeholders. When designing these, reuse the roles and components above rather than adding new ones; if a new one is truly needed, add it here in the same change.
 

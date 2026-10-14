@@ -42,6 +42,7 @@ final class DrawStore {
 
     init(configuration: ModelConfiguration) throws {
         container = try ModelContainer(for: InstallIdentity.self, StoredDailyDraw.self, StoredQuestionReading.self, StoredSpreadDraft.self,
+                                       StoredQuestionDraft.self, StoredRelationshipPreference.self,
                                        configurations: configuration)
         context.autosaveEnabled = false
     }
@@ -117,6 +118,7 @@ final class DrawStore {
             let saved = try existing.map { try JSONDecoder().decode(QuestionReading.self, from: $0.snapshot) } ?? reading
             if existing == nil { context.insert(try StoredQuestionReading(reading)) }
             for draft in try context.fetch(FetchDescriptor<StoredSpreadDraft>()) { context.delete(draft) }
+            for draft in try context.fetch(FetchDescriptor<StoredQuestionDraft>()) { context.delete(draft) }
             try context.save()
             return saved
         } catch {
@@ -146,6 +148,7 @@ final class DrawStore {
                 let snapshot = try JSONEncoder().encode(draft)
                 if let stored { stored.snapshot = snapshot }
                 else { context.insert(StoredSpreadDraft(snapshot: snapshot)) }
+                for questionDraft in try context.fetch(FetchDescriptor<StoredQuestionDraft>()) { context.delete(questionDraft) }
             } else if let stored { context.delete(stored) }
             try context.save()
         } catch {
@@ -158,6 +161,69 @@ final class DrawStore {
         var request = FetchDescriptor<StoredQuestionReading>(sortBy: [SortDescriptor(\.createdAt, order: .reverse)])
         request.fetchLimit = 1
         return try context.fetch(request).first.map { try JSONDecoder().decode(QuestionReading.self, from: $0.snapshot) }
+    }
+
+    func latestReadingsByArea() throws -> [ReadingArea: QuestionReading] {
+        let request = FetchDescriptor<StoredQuestionReading>(sortBy: [SortDescriptor(\.createdAt, order: .reverse)])
+        var latest: [ReadingArea: QuestionReading] = [:]
+        for stored in try context.fetch(request) {
+            let reading = try JSONDecoder().decode(QuestionReading.self, from: stored.snapshot)
+            if latest[reading.area] == nil { latest[reading.area] = reading }
+            if latest.count == ReadingArea.allCases.count { break }
+        }
+        return latest
+    }
+
+    func questionDraft() throws -> QuestionDraft? {
+        try context.fetch(FetchDescriptor<StoredQuestionDraft>()).first.map {
+            try JSONDecoder().decode(QuestionDraft.self, from: $0.snapshot)
+        }
+    }
+
+    func saveDraft(_ draft: QuestionDraft?) throws {
+        do {
+            let saved = try context.fetch(FetchDescriptor<StoredQuestionDraft>()).first
+            if let draft {
+                let data = try JSONEncoder().encode(draft)
+                if let saved { saved.snapshot = data }
+                else { context.insert(StoredQuestionDraft(snapshot: data)) }
+            } else if let saved { context.delete(saved) }
+            try context.save()
+        } catch { context.rollback(); throw error }
+    }
+
+    func relationshipPreference() throws -> StoredRelationshipPreference? {
+        try context.fetch(FetchDescriptor<StoredRelationshipPreference>()).first
+    }
+
+    func saveRelationshipStatus(_ status: RelationshipStatus?) throws {
+        do {
+            if let saved = try relationshipPreference() { saved.status = status?.rawValue }
+            else { context.insert(StoredRelationshipPreference(status: status)) }
+            try context.save()
+        } catch { context.rollback(); throw error }
+    }
+}
+
+@Model
+final class StoredQuestionDraft {
+    @Attribute(.unique) var key: String
+    var snapshot: Data
+
+    init(snapshot: Data) {
+        key = "question"
+        self.snapshot = snapshot
+    }
+}
+
+@Model
+final class StoredRelationshipPreference {
+    @Attribute(.unique) var key: String
+    var status: String?
+
+    init(status: RelationshipStatus?) {
+        key = "relationship"
+        self.status = status?.rawValue
     }
 }
 

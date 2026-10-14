@@ -2,20 +2,76 @@ import SwiftUI
 
 struct AskScreen: View {
     @Bindable var session: AppSession
+    @Environment(\.dynamicTypeSize) private var textSize
 
     var body: some View {
         ReadingScreenLayout {
             VStack(alignment: .leading, spacing: Design.Space.section) {
                 Text("What's on your mind?").typeRole(Design.TypeRole.title).accessibilityIdentifier("ask-title")
                 AreaSelector(selection: $session.area)
+                if let reading = session.todayAreaReading, let name = session.todayCardName {
+                    AskContextPanel(area: session.area, cardName: name, reading: reading)
+                }
                 QuestionEntry(title: "Ask about \(session.area.subject)") { session.openComposer() }
                     .accessibilityIdentifier("ask-question-entry")
                 SuggestedQuestions(questions: session.suggestions) { session.openComposer(question: $0) }
+                if session.area == .relationship && !session.relationshipStatusAsked {
+                    relationshipPrompt
+                }
+                if let reading = session.latestReading { recentReading(reading) }
             }
             .foregroundStyle(Design.Palette.ink)
             .padding(.horizontal, Design.Space.page)
             .padding(.vertical, Design.Space.page)
         } footer: { EmptyView() }
+    }
+
+    private var relationshipPrompt: some View {
+        VStack(alignment: .leading, spacing: Design.Space.small) {
+            Divider().overlay(Design.Palette.hairline)
+            Text("Where are you, relationship-wise?").typeRole(.metadata)
+                .accessibilityIdentifier("relationship-prompt")
+            ForEach(RelationshipStatus.allCases) { status in
+                QuestionChip(title: status.label, fillsWidth: true) { session.setRelationshipStatus(status) }
+                    .accessibilityIdentifier("relationship-status-\(status.rawValue)")
+            }
+            Text("Optional. Answering makes love readings speak to where you actually are.")
+                .typeRole(Design.TypeRole.secondary).foregroundStyle(Design.Palette.secondary)
+            QuietAction(title: "Skip", night: false) { session.setRelationshipStatus(nil) }
+                .accessibilityIdentifier("skip-relationship-status")
+        }
+    }
+
+    private func recentReading(_ reading: QuestionReading) -> some View {
+        VStack(alignment: .leading, spacing: Design.Space.related) {
+            Divider().overlay(Design.Palette.hairline)
+            Text("Your last \(session.area.rawValue) reading").typeRole(.metadata)
+            Button { session.screen = .reading(reading) } label: {
+                let layout = textSize.isAccessibilitySize
+                    ? AnyLayout(VStackLayout(alignment: .leading, spacing: Design.Space.related))
+                    : AnyLayout(HStackLayout(spacing: Design.Space.related))
+                layout {
+                    HStack(spacing: Design.Space.small) {
+                        ForEach(reading.picks) { pick in
+                            TarotCardView(card: pick.card, orientation: pick.orientation, width: 24)
+                        }
+                    }.accessibilityHidden(true)
+                    VStack(alignment: .leading, spacing: Design.Space.small) {
+                        Text("“\(reading.question)”").typeRole(.metadata)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Text(reading.createdAt, format: .dateTime.day().month(.wide))
+                            .typeRole(Design.TypeRole.secondary).foregroundStyle(Design.Palette.secondary)
+                    }
+                    if !textSize.isAccessibilitySize { Spacer(minLength: 0) }
+                    Image(systemName: "chevron.right").typeRole(.label).accessibilityHidden(true)
+                }
+                .multilineTextAlignment(.leading)
+                .frame(maxWidth: .infinity, minHeight: Design.Space.target, alignment: .leading)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(ActionPressStyle())
+            .accessibilityIdentifier("latest-area-reading")
+        }
     }
 }
 
@@ -70,9 +126,7 @@ struct QuestionComposerScreen: View {
                 .padding(.bottom, Design.Space.section)
             } footer: {
                 VStack(alignment: .leading, spacing: Design.Space.group) {
-                    Text("Next you'll draw three cards: one for the situation, one for an action, one for the outcome.")
-                        .typeRole(Design.TypeRole.secondary).foregroundStyle(Design.Palette.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
+                    ComposerPreview()
                     PrimaryAction(title: session.canSubmit ? "Draw my three cards" : "Write or pick a question",
                                   arrow: session.canSubmit, action: session.submitQuestion)
                         .disabled(!session.canSubmit)

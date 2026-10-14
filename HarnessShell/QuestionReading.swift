@@ -3,6 +3,7 @@ import Foundation
 
 /// A question stays one paragraph; a lone inserted Return finishes editing.
 struct QuestionEdit: Equatable {
+    static let limit = 300
     let text: String
     let dismissKeyboard: Bool
 
@@ -27,8 +28,31 @@ struct QuestionEdit: Equatable {
                 inBreak = false
             }
         }
+        if text.count > limit {
+            // Limit the insertion without dropping words after the cursor.
+            let keptSuffix = min(suffix, limit)
+            text = String(text.prefix(limit - keptSuffix)) + String(previous.suffix(keptSuffix))
+        }
         return QuestionEdit(text: text, dismissKeyboard: isReturn)
     }
+}
+
+enum RelationshipStatus: String, Codable, CaseIterable, Identifiable {
+    case single, inRelationship, complicated, preferNotToSay
+    var id: String { rawValue }
+    var label: String {
+        switch self {
+        case .single: "Single"
+        case .inRelationship: "In a relationship"
+        case .complicated: "It's complicated"
+        case .preferNotToSay: "Prefer not to say"
+        }
+    }
+}
+
+struct QuestionDraft: Codable {
+    let area: ReadingArea
+    let question: String
 }
 
 enum ReadingArea: String, Codable, CaseIterable, Identifiable {
@@ -71,6 +95,26 @@ struct QuestionPositionMeanings: Codable, Equatable {
 struct AreaQuestionContent: Codable {
     let suggestions: [String]
     let lens: String
+    var relationshipLenses: RelationshipLenses?
+}
+
+struct RelationshipLenses: Codable {
+    let single: String
+    let inRelationship: String
+    let complicated: String
+
+    var isComplete: Bool {
+        [single, inRelationship, complicated].allSatisfy { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+    }
+
+    func text(for status: RelationshipStatus?, neutral: String) -> String {
+        switch status {
+        case .single: single
+        case .inRelationship: inRelationship
+        case .complicated: complicated
+        case .preferNotToSay, nil: neutral
+        }
+    }
 }
 
 struct QuestionContent: Codable {
@@ -90,7 +134,8 @@ struct QuestionContent: Codable {
     var isComplete: Bool {
         let areas = ReadingArea.allCases.map { content(for: $0) }
         let suggestions = areas.flatMap(\.suggestions)
-        return areas.allSatisfy { (3...4).contains($0.suggestions.count) && !$0.lens.isEmpty } &&
+        return relationship.relationshipLenses?.isComplete == true &&
+            areas.allSatisfy { (3...4).contains($0.suggestions.count) && !$0.lens.isEmpty } &&
             suggestions.allSatisfy { $0.hasSuffix("?") && $0.count > 1 } &&
             Set(suggestions).count == suggestions.count &&
             !reflections.isEmpty && reflections.allSatisfy { $0.hasSuffix("?") && $0.count > 1 }
@@ -139,7 +184,7 @@ struct QuestionReading: Codable, Equatable, Identifiable {
 
 extension ReadingEngine {
     static func canSubmit(question: String) -> Bool {
-        !question.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        question.count <= QuestionEdit.limit && !question.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     /// The source returns an index in 0..<upperBound; invoked only when a card is picked.
@@ -156,7 +201,8 @@ extension ReadingEngine {
     }
 
     static func compose(id: UUID, createdAt: Date, area: ReadingArea, question: String,
-                        picks: [SpreadPick], library: CardLibrary) throws -> QuestionReading {
+                        picks: [SpreadPick], library: CardLibrary,
+                        relationshipStatus: RelationshipStatus? = nil) throws -> QuestionReading {
         guard canSubmit(question: question), picks.map(\.position) == QuestionPosition.allCases,
               Set(picks.map { $0.card.id }).count == 3,
               !library.questions.reflections.isEmpty else { throw CocoaError(.coderInvalidValue) }
@@ -170,8 +216,12 @@ extension ReadingEngine {
         let bytes = SHA256.hash(data: Data(input.utf8))
         let number = bytes.prefix(8).reduce(UInt64(0)) { ($0 << 8) | UInt64($1) }
         let reflection = library.questions.reflections[Int(number % UInt64(library.questions.reflections.count))]
+        let content = library.questions.content(for: area)
+        let lens = area == .relationship
+            ? content.relationshipLenses?.text(for: relationshipStatus, neutral: content.lens) ?? content.lens
+            : content.lens
         return QuestionReading(id: id, createdAt: createdAt, area: area, question: question, picks: picks,
-                               sections: sections, connectingPassage: library.questions.content(for: area).lens,
+                               sections: sections, connectingPassage: lens,
                                reflectionQuestion: reflection, contentVersion: library.version)
     }
 }
