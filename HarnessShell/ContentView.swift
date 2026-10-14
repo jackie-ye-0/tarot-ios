@@ -5,10 +5,15 @@ struct ContentView: View {
     var animationsEnabled = true
     var holdShuffle = false
     var testMode = false
+    let storageFailed: () -> Void
 
     var body: some View {
         ZStack {
             switch session.screen {
+            case .welcome:
+                WelcomeScreen(animationsEnabled: animationsEnabled) {
+                    do { try session.completeWelcome() } catch { storageFailed() }
+                }
             case .draw:
                 DrawScreen(session: session, animationsEnabled: animationsEnabled,
                            holdShuffle: holdShuffle, testMode: testMode).id("draw-\(session.dateKey)")
@@ -37,6 +42,11 @@ struct ContentView: View {
             default: EmptyView()
             }
         }
+        .alert("Your welcome could not be saved", isPresented: $session.welcomeSaveFailed) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("Free some space on your phone if needed, then tap Draw my first card to try again. Your saved cards are unchanged.")
+        }
         .alert("Your card could not be saved", isPresented: $session.saveFailed) {
             Button("OK", role: .cancel) { }
         } message: {
@@ -55,6 +65,53 @@ struct ContentView: View {
     }
 
     private var isAsk: Bool { if case .ask = session.screen { true } else { false } }
+}
+
+struct WelcomeScreen: View {
+    let animationsEnabled: Bool
+    let continueAction: () -> Void
+
+    var body: some View {
+        ReadingScreenLayout(night: true, fillsAvailableHeight: true) {
+            VStack(alignment: .leading, spacing: 0) {
+                Text("Daybreak")
+                    .typeRole(.wordmark)
+                    .accessibilityIdentifier("welcome-name")
+                    .zIndex(1) // The decorative disc extends behind the name, never over it.
+                Spacer(minLength: Design.Space.large)
+                WelcomeCard(animationsEnabled: animationsEnabled)
+                    .frame(maxWidth: .infinity)
+                Spacer(minLength: Design.Space.large)
+                VStack(alignment: .leading, spacing: Design.Space.related) {
+                    Text("One card.\nEvery morning.")
+                        .typeRole(.compactDisplay)
+                        .displayLineHeight()
+                        .accessibilityIdentifier("welcome-title")
+                    Text("Pick a card, turn it over, and see how today reads for your work, your love life and the people around you.")
+                        .typeRole(Design.TypeRole.body)
+                        .lineSpacing(Design.Space.readingLeading)
+                        .foregroundStyle(Design.Palette.nightParagraph)
+                        .accessibilityIdentifier("welcome-promise")
+                }
+                .fixedSize(horizontal: false, vertical: true)
+            }
+            .foregroundStyle(Design.Palette.cream)
+            .padding(.horizontal, Design.Space.ritual)
+            .padding(.top, Design.Space.page)
+            .padding(.bottom, Design.Space.section)
+        } footer: {
+            VStack(spacing: Design.Space.related) {
+                PrimaryAction(title: "Draw my first card", night: true, action: continueAction)
+                    .accessibilityIdentifier("welcome-draw")
+                Text("A mirror, not a forecast. Readings are for entertainment and reflection, not prediction or professional advice.")
+                    .typeRole(Design.TypeRole.caption)
+                    .foregroundStyle(Design.Palette.nightSecondary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("welcome-disclaimer")
+            }
+        }
+    }
 }
 
 struct DrawScreen: View {

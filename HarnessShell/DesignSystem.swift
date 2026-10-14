@@ -12,6 +12,7 @@ enum Design {
         static let dawn = Animation.easeInOut(duration: 1.6)
         static let textDelay = 0.85
         static let stagger = 0.08
+        static let welcomeFloat = Animation.easeInOut(duration: 3).repeatForever(autoreverses: true)
     }
 
     enum Palette {
@@ -27,6 +28,7 @@ enum Design {
         static let cream = colour(0xf6ecdf)
         static let nightSecondary = colour(0xc9bcd8)
         static let nightHairline = nightSecondary.opacity(0.3)
+        static let nightParagraph = colour(0xd8cce4)
         static let blue = colour(0x6f8ca2)
         static let clay = colour(0xb0654a)
         static let sage = colour(0x7d8f6a)
@@ -93,7 +95,7 @@ enum Design {
     }
 
     enum TypeRole {
-        case display, compactDisplay, title, section, button, body, keywords, metadata, secondary, label, caption, tab
+        case display, compactDisplay, title, section, wordmark, button, body, keywords, metadata, secondary, label, caption, tab
 
         var font: Font {
             switch self {
@@ -101,6 +103,8 @@ enum Design {
             case .compactDisplay: .custom("Gabarito-Regular", size: 40, relativeTo: .largeTitle).weight(.bold)
             case .title: .custom("Gabarito-Regular", size: 30, relativeTo: .title).weight(.semibold)
             case .section: .custom("Gabarito-Regular", size: 22, relativeTo: .title2).weight(.semibold)
+            // The app name takes the reference's cut: the smallest section size, in the display weight.
+            case .wordmark: .custom("Gabarito-Regular", size: 20, relativeTo: .title2).weight(.bold)
             case .button: .custom("Gabarito-Regular", size: 18, relativeTo: .headline).weight(.semibold)
             case .body: .custom("HankenGrotesk-Regular", size: 17, relativeTo: .body)
             case .keywords: .custom("HankenGrotesk-Regular", size: 16, relativeTo: .body)
@@ -127,6 +131,27 @@ extension View {
 
     func typeRole(_ role: Design.TypeRole) -> some View {
         font(role.font).tracking(role.tracking)
+    }
+
+    /// Multi-line display copy uses line height 1.0 to 1.05; Gabarito's own is 1.2.
+    @ViewBuilder func displayLineHeight() -> some View {
+        // ponytail: iOS 17 keeps the font's own line height, as text renderers arrive in iOS 18.
+        // Drop this check when the deployment target reaches iOS 18.
+        if #available(iOS 18.0, *) { textRenderer(DisplayLeading()) } else { self }
+    }
+}
+
+/// Draws each line closer to the last, taking Gabarito's 1.2 line height to Display's 1.04.
+/// The text keeps its natural frame: a shorter one clips the last line's descenders.
+struct DisplayLeading: TextRenderer {
+    func draw(layout: Text.Layout, in context: inout GraphicsContext) {
+        let lines = Array(layout)
+        let pitch = lines.count > 1 ? lines[1].typographicBounds.origin.y - lines[0].typographicBounds.origin.y : 0
+        for (index, line) in lines.enumerated() {
+            var lowered = context
+            lowered.translateBy(x: 0, y: CGFloat(lines.count - 1 - index) * pitch * (1 - 1.04 / 1.2))
+            lowered.draw(line)
+        }
     }
 }
 
@@ -181,6 +206,29 @@ struct ScreenGround: View {
             }
             .ignoresSafeArea()
             .accessibilityHidden(true)
+    }
+}
+
+struct WelcomeCard: View {
+    let animationsEnabled: Bool
+    @State private var floating = false
+
+    var body: some View {
+        TarotCardView(card: nil, width: 146)
+            .rotationEffect(.degrees(-3))
+            // Only this card is lifted off its disc; the Draw card backs stay flat.
+            .shadow(color: Design.Palette.night.opacity(0.9), radius: 20, y: 20)
+            .offset(y: animationsEnabled && floating ? -6 : 0)
+            .animation(animationsEnabled ? Design.Motion.welcomeFloat : nil, value: floating)
+            .background {
+                Circle().fill(Design.Palette.disc)
+                    .overlay { GroundGrain(night: true).clipShape(Circle()) }
+                    .frame(width: 460, height: 460)
+            }
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+            .onAppear { floating = animationsEnabled }
+            .onChange(of: animationsEnabled) { _, enabled in floating = enabled }
     }
 }
 
