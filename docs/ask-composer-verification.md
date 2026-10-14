@@ -35,6 +35,8 @@ The failed UI cases were the main composer's footer audit and the character-limi
 
 The first run's Ask top, status prompt and recent-reading images were inspected, as was the empty composer. These inspections do not turn the failed run into verification. A new full check is required for both corrections.
 
+The second check, `20261014T104334.763452Z-check-65b147a1`, built clean commit `2d7acf2` and passed 51/52 tests, with zero skips and expected failures. All command tests and the design-role guard passed. The original two failures were fixed: the full main Ask/composer/pick/reading audit passed (the pinned helper's own image measured 5.24:1), and the limit test passed rejection, area changes, backgrounding and disk restoration. Its later one-backspace assertion still reported 300 characters. That test had not established a character before the restored caret. The follow-up uses explicit [XCTest key events](https://developer.apple.com/documentation/xcuiautomation/xcuielement/typekey%28_%3Amodifierflags%3A%29-6gaoi): one right arrow, then Delete. It retains the 299-character counter assertion and adds an assertion on the native field's actual text. App code is unchanged. The second run's retained limit image was inspected; the count, field and primary action are legible. This run remains failed pending verification of the test correction.
+
 ## Release limits
 
 The new lens variants are original draft writing requiring editorial review before release. Real-device behaviour and manual VoiceOver reading order are not established by simulator evidence. Named-person questions (#18), History (#19), Settings editing and data export/deletion remain assigned to other tickets.
