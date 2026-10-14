@@ -137,8 +137,11 @@ final class AppSession {
     func completeWelcome() {
         do {
             try updateDay()
+            let saved = try store.draw(for: dateKey)
             try store.completeWelcome()
-            screen = try store.draw(for: dateKey).map(Screen.today) ?? .draw
+            screen = saved.map(Screen.today) ?? .draw
+        } catch DrawStore.StoreError.read(_) {
+            dayRefreshFailed = true
         } catch { welcomeSaveFailed = true }
     }
 

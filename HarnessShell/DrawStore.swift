@@ -38,13 +38,9 @@ final class DrawStore {
     var failsNextWelcomeSave = false
     #endif
 
-    convenience init(configuration: ModelConfiguration) throws {
-        try self.init(container: ModelContainer(for: InstallIdentity.self, StoredDailyDraw.self, StoredQuestionReading.self,
-                                                configurations: configuration))
-    }
-
-    init(container: ModelContainer) {
-        self.container = container
+    init(configuration: ModelConfiguration) throws {
+        container = try ModelContainer(for: InstallIdentity.self, StoredDailyDraw.self, StoredQuestionReading.self,
+                                       configurations: configuration)
         context.autosaveEnabled = false
     }
 

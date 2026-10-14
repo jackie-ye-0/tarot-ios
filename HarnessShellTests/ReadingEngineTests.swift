@@ -6,14 +6,27 @@ import UIKit
 final class ReadingEngineTests: XCTestCase {
     @MainActor
     func testLegacyInstallWithoutWelcomeFieldSkipsWelcome() throws {
-        let container = try ModelContainer(for: InstallIdentity.self, StoredDailyDraw.self,
-                                           configurations: ModelConfiguration(isStoredInMemoryOnly: true,
-                                                                              cloudKitDatabase: .none))
-        container.mainContext.insert(InstallIdentity(seed: "legacy", welcomeCompleted: nil))
-        try container.mainContext.save()
+        let directory = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString,
+                                                                          directoryHint: .isDirectory)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let configuration = ModelConfiguration(url: directory.appending(path: "legacy.store"),
+                                               cloudKitDatabase: .none)
+        try autoreleasepool {
+            let legacy = try ModelContainer(for: InstallIdentity.self, StoredDailyDraw.self,
+                                            configurations: configuration)
+            legacy.mainContext.insert(InstallIdentity(seed: "legacy"))
+            try legacy.mainContext.save()
+        }
+        let store = try DrawStore(configuration: configuration)
+        let seed = try store.installSeed {
+            XCTFail("Opening a legacy store must preserve its installation identity")
+            return "replacement"
+        }
 
-        let session = try makeSession(store: DrawStore(container: container), seed: "legacy")
+        let session = try makeSession(store: store, seed: seed)
 
+        XCTAssertEqual(seed, "legacy")
         guard case .draw = session.screen else { return XCTFail("Legacy installs should skip Welcome") }
     }
 
@@ -44,6 +57,38 @@ final class ReadingEngineTests: XCTestCase {
 
         guard case let .today(saved) = session.screen else { return XCTFail("A saved card should route to Today") }
         XCTAssertEqual(saved, draw)
+    }
+
+    @MainActor
+    func testWelcomeRouteReadFailureDoesNotCommitCompletion() throws {
+        let directory = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString,
+                                                                          directoryHint: .isDirectory)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let configuration = ModelConfiguration(url: directory.appending(path: "corrupt.store"),
+                                               cloudKitDatabase: .none)
+        try autoreleasepool {
+            let container = try ModelContainer(for: HarnessShell.InstallIdentity.self,
+                                               HarnessShell.StoredDailyDraw.self,
+                                               configurations: configuration)
+            container.mainContext.insert(HarnessShell.InstallIdentity(seed: "corrupt", welcomeCompleted: false))
+            let library = try CardLibrary.load()
+            let draw = ReadingEngine.dailyDraw(seed: "corrupt", dateKey: "2026-10-11", position: 3,
+                                               library: library)
+            let stored = try HarnessShell.StoredDailyDraw(draw)
+            stored.snapshot = Data("not-json".utf8)
+            container.mainContext.insert(stored)
+            try container.mainContext.save()
+        }
+        let store = try DrawStore(configuration: configuration)
+        let session = try makeSession(store: store, seed: "corrupt")
+
+        session.completeWelcome()
+
+        XCTAssertTrue(session.dayRefreshFailed)
+        XCTAssertFalse(session.welcomeSaveFailed)
+        guard case .welcome = session.screen else { return XCTFail("A read failure should leave Welcome visible") }
+        XCTAssertFalse(try store.hasCompletedWelcome())
     }
 
     @MainActor
@@ -432,4 +477,26 @@ final class ReadingEngineTests: XCTestCase {
                        QuestionEdit(text: "  A question?  ", dismissKeyboard: false))
     }
 
+}
+
+@Model
+private final class InstallIdentity {
+    @Attribute(.unique) var key: String
+    var seed: String
+
+    init(seed: String) {
+        key = "installation"
+        self.seed = seed
+    }
+}
+
+@Model
+private final class StoredDailyDraw {
+    @Attribute(.unique) var dateKey: String
+    var snapshot: Data
+
+    init(dateKey: String, snapshot: Data) {
+        self.dateKey = dateKey
+        self.snapshot = snapshot
+    }
 }
