@@ -37,7 +37,7 @@ final class ReadingEngineTests: XCTestCase {
         let session = try makeSession(store: store, seed: seed)
         guard case .welcome = session.screen else { return XCTFail("New installs should show Welcome") }
 
-        session.completeWelcome()
+        try session.completeWelcome()
         guard case .draw = session.screen else { return XCTFail("Completing Welcome should open Draw") }
         let relaunched = try makeSession(store: store, seed: seed)
         guard case .draw = relaunched.screen else { return XCTFail("Later launches should skip Welcome") }
@@ -53,42 +53,30 @@ final class ReadingEngineTests: XCTestCase {
         let session = try makeSession(store: store, seed: seed, library: library)
         guard case .welcome = session.screen else { return XCTFail("New installs should show Welcome") }
 
-        session.completeWelcome()
+        try session.completeWelcome()
 
         guard case let .today(saved) = session.screen else { return XCTFail("A saved card should route to Today") }
         XCTAssertEqual(saved, draw)
     }
 
     @MainActor
-    func testWelcomeReadFailureDoesNotCommitAndCanRetry() throws {
+    func testReadFailureAfterSavingWelcomeRetriesPastWelcome() throws {
         let store = try makeStore()
-        let seed = try store.installSeed { "read-retry" }
-        store.failsNextWelcomeRead = true
+        let seed = try store.installSeed { "read-after-save" }
         let session = try makeSession(store: store, seed: seed)
+        store.failsNextWelcomeRead = true
 
-        session.completeWelcome()
-
-        XCTAssertTrue(session.dayRefreshFailed)
+        // LaunchView answers this error with its storage-failure screen, not the welcome save alert.
+        XCTAssertThrowsError(try session.completeWelcome()) { error in
+            guard case DrawStore.StoreError.read = error else { return XCTFail("Expected a read failure, got \(error)") }
+        }
         XCTAssertFalse(session.welcomeSaveFailed)
-        guard case .welcome = session.screen else { return XCTFail("A read failure should leave Welcome visible") }
-        XCTAssertFalse(try store.hasCompletedWelcome())
-
-        session.completeWelcome()
-
-        guard case .draw = session.screen else { return XCTFail("Retrying should complete Welcome") }
         XCTAssertTrue(try store.hasCompletedWelcome())
-    }
 
-    @MainActor
-    func testMissingWelcomeIdentityIsReportedAsReadFailure() throws {
-        let store = try makeStore()
-        let session = try makeSession(store: store, seed: "missing-identity")
-
-        session.completeWelcome()
-
-        XCTAssertTrue(session.dayRefreshFailed)
-        XCTAssertFalse(session.welcomeSaveFailed)
-        guard case .welcome = session.screen else { return XCTFail("An identity read failure should leave Welcome visible") }
+        // That screen's Try again runs the launch routing again.
+        guard case .draw = try makeSession(store: store, seed: seed).screen else {
+            return XCTFail("Retrying should open Draw without showing Welcome again")
+        }
     }
 
     @MainActor
@@ -102,7 +90,7 @@ final class ReadingEngineTests: XCTestCase {
         configuration.fixedDate = try XCTUnwrap(ISO8601DateFormatter().date(from: "2026-10-11T00:00:00Z"))
         configuration.timeZone = try XCTUnwrap(TimeZone(secondsFromGMT: 0))
         return try AppSession(clock: SessionClock(configuration: configuration), seed: seed, store: store,
-                              library: try library ?? CardLibrary.load())
+                              library: try library ?? CardLibrary.load(), randomIndex: { _ in 0 })
     }
 
     func testStableDailyResultAndAllPositions() throws {

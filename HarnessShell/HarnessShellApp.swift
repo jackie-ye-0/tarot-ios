@@ -39,7 +39,10 @@ struct LaunchView: View {
         Group {
             if let session {
                 ContentView(session: session, animationsEnabled: animationsEnabled,
-                            holdShuffle: configuration.holdShuffle, testMode: configuration.testMode)
+                            holdShuffle: configuration.holdShuffle, testMode: configuration.testMode) {
+                    self.session = nil
+                    failed = true
+                }
             }
             else if failed {
                 ReadingScreenLayout {

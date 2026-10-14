@@ -5,12 +5,15 @@ struct ContentView: View {
     var animationsEnabled = true
     var holdShuffle = false
     var testMode = false
+    let storageFailed: () -> Void
 
     var body: some View {
         ZStack {
             switch session.screen {
             case .welcome:
-                WelcomeScreen(animationsEnabled: animationsEnabled, continueAction: session.completeWelcome)
+                WelcomeScreen(animationsEnabled: animationsEnabled) {
+                    do { try session.completeWelcome() } catch { storageFailed() }
+                }
             case .draw:
                 DrawScreen(session: session, animationsEnabled: animationsEnabled,
                            holdShuffle: holdShuffle, testMode: testMode).id("draw-\(session.dateKey)")
@@ -50,10 +53,7 @@ struct ContentView: View {
             Text("Your choice is still here. Free some space on your phone if needed, then tap Turn it over to try again.")
         }
         .alert("Today's card could not be opened", isPresented: $session.dayRefreshFailed) {
-            Button("Try again") {
-                if case .welcome = session.screen { session.completeWelcome() }
-                else { session.refreshDay() }
-            }
+            Button("Try again") { session.refreshDay() }
         } message: {
             Text("Your saved cards are unchanged. Try again after checking the free space on your phone.")
         }

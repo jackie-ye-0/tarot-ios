@@ -63,37 +63,30 @@ final class DrawStore {
     }
 
     func hasCompletedWelcome() throws -> Bool {
+        #if DEBUG
+        // One failure only, so a test can also follow the storage-failure retry.
+        if failsNextWelcomeRead {
+            failsNextWelcomeRead = false
+            throw StoreError.read(CocoaError(.fileReadCorruptFile))
+        }
+        #endif
         guard let identity = try context.fetch(FetchDescriptor<InstallIdentity>()).first else { return false }
         return identity.welcomeCompleted ?? true
     }
 
-    func completeWelcome(for dateKey: String) throws -> DailyDraw? {
-        let identity: InstallIdentity
-        let saved: DailyDraw?
-        do {
-            #if DEBUG
-            if failsNextWelcomeRead {
-                failsNextWelcomeRead = false
-                throw CocoaError(.fileReadCorruptFile)
-            }
-            #endif
-            guard let storedIdentity = try context.fetch(FetchDescriptor<InstallIdentity>()).first else {
-                throw CocoaError(.fileReadCorruptFile)
-            }
-            let request = FetchDescriptor<StoredDailyDraw>(predicate: #Predicate { $0.dateKey == dateKey })
-            saved = try context.fetch(request).first.map { try JSONDecoder().decode(DailyDraw.self, from: $0.snapshot) }
-            identity = storedIdentity
-        } catch { throw StoreError.read(error) }
-
+    func completeWelcome() throws {
         #if DEBUG
+        // One failure only, so a test can also follow the retry that the alert promises.
         if failsNextWelcomeSave {
             failsNextWelcomeSave = false
             throw StoreError.save(CocoaError(.fileWriteOutOfSpace))
         }
         #endif
+        let identity: InstallIdentity?
+        do { identity = try context.fetch(FetchDescriptor<InstallIdentity>()).first } catch { throw StoreError.read(error) }
+        guard let identity else { throw StoreError.read(CocoaError(.fileReadCorruptFile)) }
         identity.welcomeCompleted = true
         do { try context.save() } catch { context.rollback(); throw StoreError.save(error) }
-        return saved
     }
 
     func save(_ draw: DailyDraw) throws -> DailyDraw {

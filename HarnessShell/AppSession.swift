@@ -121,9 +121,14 @@ final class AppSession {
         self.store = store
         self.library = library
         self.randomIndex = randomIndex
+        screen = try launchScreen()
+    }
+
+    /// Welcome until it is completed, then Today once today's card is drawn, otherwise Draw.
+    private func launchScreen() throws -> Screen {
+        if try !store.hasCompletedWelcome() { return .welcome }
         today = try store.draw(for: dateKey)
-        if try !store.hasCompletedWelcome() { screen = .welcome }
-        else if let today { screen = .today(today) }
+        return today.map(Screen.today) ?? .draw
     }
 
     var dateLabel: String {
@@ -134,14 +139,15 @@ final class AppSession {
         return formatter.string(from: date)
     }
 
-    func completeWelcome() {
-        do {
-            try updateDay()
-            let saved = try store.completeWelcome(for: dateKey)
-            screen = saved.map(Screen.today) ?? .draw
-        } catch DrawStore.StoreError.read(_) {
-            dayRefreshFailed = true
-        } catch { welcomeSaveFailed = true }
+    /// A read failure throws for the caller's storage-failure screen; Welcome is saved by then, so its retry routes past it.
+    func completeWelcome() throws {
+        do { try store.completeWelcome() }
+        catch DrawStore.StoreError.save(_) {
+            welcomeSaveFailed = true
+            return
+        }
+        try updateDay()
+        screen = try launchScreen()
     }
 
     func turnOver(position: Int) {
@@ -308,9 +314,7 @@ enum AppLaunch {
             return Int.random(in: 0..<upperBound, using: &randomness)
         }
         #if DEBUG
-        if configuration.testMode && configuration.welcomeCompleted {
-            _ = try store.completeWelcome(for: ReadingEngine.dateKey(for: clock.now, timeZone: clock.timeZone))
-        }
+        if configuration.testMode && configuration.welcomeCompleted { try store.completeWelcome() }
         store.failsNextWelcomeSave = configuration.welcomeSaveFailure
         if configuration.earlierSnapshot {
             let draw = ReadingEngine.dailyDraw(seed: seed, dateKey: ReadingEngine.dateKey(for: clock.now, timeZone: clock.timeZone),
