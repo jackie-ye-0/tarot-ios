@@ -207,7 +207,7 @@ Ask places today's saved area line and score in the area's tint panel below the 
 
 The composer has a trailing live `0 / 300` count below the field. At 300, show “Limit reached” and the count in the error role (`#a3331f`, the existing destructive hue); text and VoiceOver convey the limit as well as colour. Further insertion at the limit is rejected, pasted text is capped by whole characters, and deleting text clears the error. The footer previews three small, empty, dashed dawn card outlines beside the existing next-step explanation; at accessibility sizes the preview sits above it. Each slot has a position label for VoiceOver. No new animation is introduced.
 
-The draft's question and area are saved on every change, restored via the Ask entry after a relaunch, and kept when the app backgrounds. Back to Ask explicitly clears the draft, as does successfully creating a reading. A native save-error alert retains the words and offers a retry. A failed status save leaves the prompt available and explains that the choice could not be saved. These states use the existing alert and dawn roles. Pick persistence remains #15.
+The draft's question and area are saved on every change, restored via the Ask entry after a relaunch, and kept when the app backgrounds. Back to Ask explicitly clears the draft, as does successfully creating a reading. A native save-error alert retains the words and offers a retry of the operation that failed; after a failed Back to Ask, retry clears the draft rather than saving it again. A failed status save leaves the prompt available and explains that the choice could not be saved. These states use the existing alert and dawn roles. Pick persistence remains #15.
 
 ## 11c. Not yet designed
 
