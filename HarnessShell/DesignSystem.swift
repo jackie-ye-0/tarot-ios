@@ -12,6 +12,7 @@ enum Design {
         static let dawn = Animation.easeInOut(duration: 1.6)
         static let textDelay = 0.85
         static let stagger = 0.08
+        static let welcomeFloat = Animation.easeInOut(duration: 3).repeatForever(autoreverses: true)
     }
 
     enum Palette {
@@ -27,6 +28,7 @@ enum Design {
         static let cream = colour(0xf6ecdf)
         static let nightSecondary = colour(0xc9bcd8)
         static let nightHairline = nightSecondary.opacity(0.3)
+        static let nightParagraph = colour(0xd8cce4)
         static let blue = colour(0x6f8ca2)
         static let clay = colour(0xb0654a)
         static let sage = colour(0x7d8f6a)
@@ -181,6 +183,27 @@ struct ScreenGround: View {
             }
             .ignoresSafeArea()
             .accessibilityHidden(true)
+    }
+}
+
+struct WelcomeCard: View {
+    let animationsEnabled: Bool
+    @State private var floating = false
+
+    var body: some View {
+        TarotCardView(card: nil, width: 146)
+            .rotationEffect(.degrees(-3))
+            .offset(y: animationsEnabled && floating ? -6 : 0)
+            .animation(animationsEnabled ? Design.Motion.welcomeFloat : nil, value: floating)
+            .background {
+                Circle().fill(Design.Palette.disc)
+                    .overlay { GroundGrain(night: true).clipShape(Circle()) }
+                    .frame(width: 460, height: 460)
+            }
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+            .onAppear { floating = animationsEnabled }
+            .onChange(of: animationsEnabled) { _, enabled in floating = enabled }
     }
 }
 

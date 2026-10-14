@@ -5,6 +5,7 @@ import SwiftData
 final class InstallIdentity {
     @Attribute(.unique) var key: String
     var seed: String
+    var welcomeCompleted: Bool = false
 
     init(seed: String) {
         key = "installation"
@@ -54,6 +55,18 @@ final class DrawStore {
             let request = FetchDescriptor<StoredDailyDraw>(predicate: #Predicate { $0.dateKey == dateKey })
             return try context.fetch(request).first.map { try JSONDecoder().decode(DailyDraw.self, from: $0.snapshot) }
         } catch { throw StoreError.read(error) }
+    }
+
+    func hasCompletedWelcome() throws -> Bool {
+        try context.fetch(FetchDescriptor<InstallIdentity>()).first?.welcomeCompleted ?? false
+    }
+
+    func completeWelcome() throws {
+        guard let identity = try context.fetch(FetchDescriptor<InstallIdentity>()).first else {
+            throw CocoaError(.fileReadCorruptFile)
+        }
+        identity.welcomeCompleted = true
+        do { try context.save() } catch { context.rollback(); throw error }
     }
 
     func save(_ draw: DailyDraw) throws -> DailyDraw {

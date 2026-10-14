@@ -45,7 +45,7 @@ private func measuredContrast(_ image: CGImage) -> (ratio: Double, background: D
 final class HarnessShellUITests: XCTestCase {
     override func setUpWithError() throws { continueAfterFailure = false }
 
-    private func app(extra: [String] = [], memory: Bool = true, seed: String = "reference-1", date: String = "2026-10-11T00:00:00Z", animations: Bool = false, audit: Bool = false) -> XCUIApplication {
+    private func app(extra: [String] = [], memory: Bool = true, seed: String = "reference-1", date: String = "2026-10-11T00:00:00Z", animations: Bool = false, audit: Bool = false, welcome: Bool = false) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = ["--test-mode", "--test-date", date,
                                "--test-time-zone", "Australia/Sydney", "--test-seed", seed]
@@ -53,6 +53,7 @@ final class HarnessShellUITests: XCTestCase {
         if !animations { app.launchArguments.append("--test-disable-animations") }
         app.launchArguments += extra
         if audit { app.launchArguments.append("--test-reduce-motion") }
+        if !welcome { app.launchArguments.append("--test-welcome-completed") }
         app.launch()
         return app
     }
@@ -499,6 +500,109 @@ final class HarnessShellUITests: XCTestCase {
         largeSizes.buttons["face-proof-next"].tap()
         XCTAssertTrue(largeSizes.staticTexts["Ten of Wands"].exists)
 
+    }
+
+    func testWelcomeFirstOpenDesignAndPersistentRouting() throws {
+        let app = app(extra: ["--test-store-id", UUID().uuidString], memory: false, audit: true, welcome: true)
+        XCTAssertTrue(app.staticTexts["welcome-name"].waitForExistence(timeout: 5))
+        let expected = [
+            "welcome-name": "Daybreak",
+            "welcome-title": "One card.\nEvery morning.",
+            "welcome-promise": "Pick a card, turn it over, and see how today reads for your work, your love life and the people around you.",
+            "welcome-disclaimer": "A mirror, not a forecast. Readings are for entertainment and reflection, not prediction or professional advice."
+        ]
+        for (identifier, label) in expected {
+            let element = app.staticTexts[identifier]
+            assertVisible(element, in: app)
+            XCTAssertEqual(element.label, label)
+        }
+        XCTAssertEqual(app.buttons.count, 1)
+        XCTAssertEqual(app.buttons["welcome-draw"].label, "Draw my first card")
+        assertVisible(app.buttons["welcome-draw"], in: app)
+        XCTAssertEqual(app.textFields.count + app.secureTextFields.count + app.textViews.count, 0)
+        XCTAssertEqual(app.alerts.count, 0)
+        XCTAssertEqual(XCUIApplication(bundleIdentifier: "com.apple.springboard").alerts.count, 0)
+        try auditAndCapture(app, "01-welcome")
+        let hierarchy = XCTAttachment(string: app.debugDescription)
+        hierarchy.name = "welcome-accessibility-hierarchy"
+        hierarchy.lifetime = .keepAlways
+        add(hierarchy)
+
+        // An interruption before the action must not silently bypass the disclaimer.
+        app.terminate()
+        app.launch()
+        XCTAssertTrue(app.buttons["welcome-draw"].waitForExistence(timeout: 5))
+        app.buttons["welcome-draw"].tap()
+        XCTAssertTrue(app.staticTexts["draw-title"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.staticTexts["welcome-name"].exists)
+        app.terminate()
+        app.launch()
+        XCTAssertTrue(app.staticTexts["draw-title"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["welcome-draw"].exists)
+        reveal(app)
+        XCTAssertEqual(app.alerts.count, 0)
+        XCTAssertEqual(XCUIApplication(bundleIdentifier: "com.apple.springboard").alerts.count, 0)
+        app.buttons["see-meaning"].tap()
+        XCTAssertTrue(app.staticTexts["today-title"].waitForExistence(timeout: 5))
+        app.terminate()
+        app.launch()
+        XCTAssertTrue(app.staticTexts["today-title"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["welcome-draw"].exists)
+        app.terminate()
+        let dateIndex = app.launchArguments.firstIndex(of: "--test-date")!
+        app.launchArguments[dateIndex + 1] = "2026-10-12T00:00:00Z"
+        app.launch()
+        XCTAssertTrue(app.staticTexts["draw-title"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["welcome-draw"].exists)
+    }
+
+    func testWelcomeRemainsUntilContinuedAcrossMidnight() {
+        let app = app(extra: ["--test-controls"], welcome: true)
+        XCTAssertTrue(app.buttons["welcome-draw"].waitForExistence(timeout: 5))
+        testControl("test-next-day", in: app)
+        XCTAssertTrue(app.buttons["welcome-draw"].exists)
+        XCTAssertFalse(app.staticTexts["draw-title"].exists)
+        app.buttons["welcome-draw"].tap()
+        XCTAssertTrue(app.staticTexts["draw-title"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Monday 12 October"].exists)
+    }
+
+    func testWelcomeLargestTextAndReducedMotion() throws {
+        let app = app(extra: ["--test-largest-text", "--test-reduce-motion"], animations: true, welcome: true)
+        XCTAssertTrue(app.staticTexts["welcome-name"].waitForExistence(timeout: 5))
+        capture(app, "01-welcome--largest-text")
+        for identifier in ["welcome-title", "welcome-promise"] {
+            scrollTo(app.staticTexts[identifier], in: app)
+            capture(app, "01-welcome--largest-text-\(identifier)")
+        }
+        scrollTo(app.staticTexts["welcome-disclaimer"], in: app)
+        assertVisible(app.buttons["welcome-draw"], in: app)
+        capture(app, "01-welcome--largest-text-bottom")
+        let hierarchy = XCTAttachment(string: app.debugDescription)
+        hierarchy.name = "welcome-largest-text-accessibility-hierarchy"
+        hierarchy.lifetime = .keepAlways
+        add(hierarchy)
+        app.buttons["welcome-draw"].tap()
+        XCTAssertTrue(app.staticTexts["draw-title"].waitForExistence(timeout: 5))
+        app.terminate()
+
+        let reduced = self.app(extra: ["--test-reduce-motion"], animations: true, welcome: true)
+        XCTAssertTrue(reduced.buttons["welcome-draw"].waitForExistence(timeout: 5))
+        capture(reduced, "01-welcome--reduce-motion")
+        let before = reduced.scrollViews["screen-content"].screenshot().pngRepresentation
+        Thread.sleep(forTimeInterval: 1)
+        XCTAssertEqual(reduced.scrollViews["screen-content"].screenshot().pngRepresentation, before,
+                       "Reduce Motion must leave the welcome card still")
+        reduced.buttons["welcome-draw"].tap()
+        XCTAssertTrue(reduced.staticTexts["draw-title"].waitForExistence(timeout: 5))
+    }
+
+    func testWelcomeFloatingCardDoesNotDelayTheFirstDraw() {
+        let app = app(animations: true, welcome: true)
+        XCTAssertTrue(app.buttons["welcome-draw"].waitForExistence(timeout: 5))
+        app.buttons["welcome-draw"].tap()
+        XCTAssertTrue(app.buttons["draw-card-3"].waitForExistence(timeout: 5))
+        reveal(app)
     }
 
     func testDrawRevealTodayAndDesignEvidence() throws {

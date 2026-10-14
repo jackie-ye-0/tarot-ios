@@ -21,6 +21,7 @@ struct LaunchConfiguration {
     var cardSizeProof = false
     var randomIndices: [Int] = []
     var openSavedReading = false
+    var welcomeCompleted = false
 
     static func current() -> LaunchConfiguration {
         var result = LaunchConfiguration()
@@ -49,6 +50,7 @@ struct LaunchConfiguration {
         result.cardSizeProof = arguments.contains("--test-card-sizes")
         result.randomIndices = value("--test-random-indices")?.split(separator: ",").compactMap { Int($0) }.filter { $0 >= 0 } ?? []
         result.openSavedReading = arguments.contains("--test-open-saved-reading")
+        result.welcomeCompleted = arguments.contains("--test-welcome-completed")
         #endif
         return result
     }
@@ -83,13 +85,14 @@ final class SessionClock {
 @MainActor @Observable
 final class AppSession {
     enum Screen {
-        case draw, reveal(DailyDraw), today(DailyDraw), ask, composer, pick, reading(QuestionReading)
+        case welcome, draw, reveal(DailyDraw), today(DailyDraw), ask, composer, pick, reading(QuestionReading)
     }
 
     var screen: Screen = .draw
     var saveFailed = false
     var dayRefreshFailed = false
     var readingSaveFailed = false
+    var welcomeSaveFailed = false
     var area: ReadingArea = .relationship
     var question = ""
     private(set) var picks: [SpreadPick] = []
@@ -117,7 +120,8 @@ final class AppSession {
         self.library = library
         self.randomIndex = randomIndex
         today = try store.draw(for: dateKey)
-        if let today { screen = .today(today) }
+        if try !store.hasCompletedWelcome() { screen = .welcome }
+        else if let today { screen = .today(today) }
     }
 
     var dateLabel: String {
@@ -126,6 +130,14 @@ final class AppSession {
         formatter.timeZone = timeZone
         formatter.dateFormat = "EEEE d MMMM"
         return formatter.string(from: date)
+    }
+
+    func completeWelcome() {
+        do {
+            try updateDay()
+            try store.completeWelcome()
+            screen = .draw
+        } catch { welcomeSaveFailed = true }
     }
 
     func turnOver(position: Int) {
@@ -178,7 +190,11 @@ final class AppSession {
         guard key != dateKey else { return false }
         let saved = try store.draw(for: key)
         today = saved
-        screen = saved.map(Screen.today) ?? .draw
+        // The disclaimer must remain in place until the welcome action is taken.
+        switch screen {
+        case .welcome: break
+        default: screen = saved.map(Screen.today) ?? .draw
+        }
         dateKey = key
         saveFailed = false
         date = now
@@ -288,6 +304,7 @@ enum AppLaunch {
             return Int.random(in: 0..<upperBound, using: &randomness)
         }
         #if DEBUG
+        if configuration.testMode && configuration.welcomeCompleted { try store.completeWelcome() }
         if configuration.earlierSnapshot {
             let draw = ReadingEngine.dailyDraw(seed: seed, dateKey: ReadingEngine.dateKey(for: clock.now, timeZone: clock.timeZone),
                                               position: 3, library: library)
