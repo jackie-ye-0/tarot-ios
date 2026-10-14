@@ -27,6 +27,14 @@ The tests retain top and bottom captures, Ask status and recent-reading states, 
 
 The new context, status, recent-reading, count, preview and error states are described in `design.md` §11b. Comparison results, final run details and the independent verdict will be recorded after verification.
 
+## Development checks
+
+The first full check, `20261014T091809.449753Z-check-d8528a11`, ran 52 tests: 50 passed, two failed, zero skipped and zero expected failures. All 34 command-contract tests and the design-role guard passed. The app was committed as `8fea110` while the run waited for the shared simulator; the harness's initial revision capture therefore records the earlier base plus a dirty worktree. App and test sources were unchanged from that commit throughout compilation and execution.
+
+The failed UI cases were the main composer's footer audit and the character-limit test. The exported `06-composer` image was inspected and shows the footer fully visible; the helper had incorrectly required it to fit inside the separate scrolling viewport. The correction identifies actual footer descendants and audits them within the footer's intersection with the real safe area. Content behind that footer still uses the unoccluded scroll viewport. No audit category, contrast threshold or plain-static-text-only measurement rule changed. The field failure showed 301 characters in the native field despite the saved binding being capped at 300. A local native edit buffer now visibly rolls back rejected input before writing valid text to the draft binding.
+
+The first run's Ask top, status prompt and recent-reading images were inspected, as was the empty composer. These inspections do not turn the failed run into verification. A new full check is required for both corrections.
+
 ## Release limits
 
 The new lens variants are original draft writing requiring editorial review before release. Real-device behaviour and manual VoiceOver reading order are not established by simulator evidence. Named-person questions (#18), History (#19), Settings editing and data export/deletion remain assigned to other tickets.

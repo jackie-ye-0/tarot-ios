@@ -1239,16 +1239,29 @@ struct QuestionEntry: View {
 struct QuestionField: View {
     @Binding var text: String
     var onFocus: () -> Void = {}
+    @State private var editBuffer: String
     @FocusState private var focused: Bool
+
+    init(text: Binding<String>, onFocus: @escaping () -> Void = {}) {
+        _text = text
+        _editBuffer = State(initialValue: text.wrappedValue)
+        self.onFocus = onFocus
+    }
 
     var body: some View {
         VStack(alignment: .trailing, spacing: Design.Space.small) {
-            TextField("Your question", text: Binding(get: { text }, set: { proposed in
-                let edit = QuestionEdit.applying(proposed, to: text)
-                text = edit.text
-                if edit.dismissKeyboard { focused = false }
-            }),
+            TextField("Your question", text: $editBuffer,
                       prompt: Text("Type your question...").foregroundStyle(Design.Palette.placeholder), axis: .vertical)
+                .onChange(of: editBuffer) { _, proposed in
+                    let edit = QuestionEdit.applying(proposed, to: text)
+                    // A changed native buffer makes SwiftUI visibly undo rejected input.
+                    if editBuffer != edit.text { editBuffer = edit.text }
+                    if text != edit.text { text = edit.text }
+                    if edit.dismissKeyboard { focused = false }
+                }
+                .onChange(of: text) { _, updated in
+                    if editBuffer != updated { editBuffer = updated }
+                }
                 .typeRole(.body)
                 .foregroundStyle(Design.Palette.ink)
                 .tint(Design.Palette.ink)
@@ -1316,6 +1329,7 @@ struct ComposerPreview: View {
             Text("Next you'll draw three cards: one for the situation, one for an action, one for the outcome.")
                 .typeRole(.secondary).foregroundStyle(Design.Palette.secondary)
                 .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("composer-preview-helper")
         }
     }
 }

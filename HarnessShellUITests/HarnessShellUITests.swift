@@ -86,7 +86,8 @@ final class HarnessShellUITests: XCTestCase {
             var framesBeforeResizing = deferred.mapValues { $0.exists ? $0.frame : CGRect.null }
             let fullyVisibleBefore = framesBeforeResizing.keys.filter {
                 let frame = framesBeforeResizing[$0]!
-                return !frame.isEmpty && viewport.contains(frame)
+                let bounds = auditViewport(for: deferred[$0]!, in: app, contentViewport: viewport)
+                return !frame.isEmpty && bounds.contains(frame)
             }
             var deferredAtThisStop = Set<String>()
             let handleIssue: (XCUIAccessibilityAuditIssue) throws -> Bool = { issue in
@@ -101,11 +102,12 @@ final class HarnessShellUITests: XCTestCase {
                     : query.matching(identifier: identifier)
                 guard matches.count == 1 else { return false }
                 let key = "\(element.elementType.rawValue):" + (identifier.isEmpty ? "label:\(element.label)" : "id:\(identifier)")
+                let elementViewport = self.auditViewport(for: element, in: app, contentViewport: viewport)
                 var record = ["identifier": element.identifier, "elementKey": key, "label": element.label,
-                              "frame": String(describing: frame), "viewport": String(describing: viewport),
+                              "frame": String(describing: frame), "viewport": String(describing: elementViewport),
                               "nativeIssue": issue.compactDescription]
-                if self.isNotFullyVisible(frame, in: viewport) {
-                    print("Audit deferred \(key): \(frame), viewport \(viewport)")
+                if self.isNotFullyVisible(frame, in: elementViewport) {
+                    print("Audit deferred \(key): \(frame), viewport \(elementViewport)")
                     deferred[key] = matches.firstMatch
                     deferredFrames[key] = frame
                     if framesBeforeResizing[key] == nil {
@@ -117,7 +119,7 @@ final class HarnessShellUITests: XCTestCase {
                     records.append(record)
                     return true
                 }
-                guard !viewport.isNull && viewport.contains(frame) else { return false }
+                guard !elementViewport.isNull && elementViewport.contains(frame) else { return false }
                 // A mixed accessibility group can hide low-contrast text behind
                 // high-contrast art. Only plain static text supports this measure.
                 guard element.elementType == .staticText,
@@ -350,6 +352,20 @@ final class HarnessShellUITests: XCTestCase {
         let footer = app.otherElements["screen-footer"]
         let pinned = footer.exists && !scroll.otherElements["screen-footer"].exists
         return scroll.frame.intersection(visibleFrame(in: app, abovePinnedFooter: abovePinnedFooter || pinned))
+    }
+
+    private func auditViewport(for element: XCUIElement, in app: XCUIApplication, contentViewport: CGRect) -> CGRect {
+        let footer = app.otherElements["screen-footer"]
+        guard footer.exists, !activeScrollView(in: app).otherElements["screen-footer"].exists else {
+            return contentViewport
+        }
+        let descendants = footer.descendants(matching: element.elementType)
+        let matches = element.identifier.isEmpty
+            ? descendants.matching(NSPredicate(format: "label == %@", element.label))
+            : descendants.matching(identifier: element.identifier)
+        // Only actual footer descendants may use the pinned region; covered scroll content cannot.
+        guard matches.count == 1 else { return contentViewport }
+        return footer.frame.intersection(visibleFrame(in: app))
     }
 
     private func scrollTo(_ element: XCUIElement, in app: XCUIApplication, abovePinnedFooter: Bool = false,
