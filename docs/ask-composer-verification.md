@@ -1,8 +1,8 @@
 # Full Ask and composer verification (#14)
 
-Status: implementation and tests pass the full harness check; exported screenshots and the comparison page have been inspected by the author. Independent image comparison remains pending.
+Status: the independent comparison returned a conditional pass with three required corrections. Those changes are implemented; the rebased full check and inspection of their new captures remain pending.
 
-Final check: `20261014T151523.231288Z-check-7a5e5bc3` built clean commit `6527d588852945bba715015f24b29d09726e69c5` on the harness's dedicated iPhone simulator, iOS 26.5. It passed 52/52 iOS tests (22 XCTest unit tests, two Swift Testing tests and 28 UI tests), with zero failed, skipped or expected failures. All 34 command-contract tests and the design-role guard passed. `./scripts/harness evidence` was read, and the final `design-comparison.html` was opened with `chrome-devtools-axi`. The documentation-only update recording this result does not change the tested app or tests.
+Pre-review check: `20261014T151523.231288Z-check-7a5e5bc3` built clean commit `6527d588852945bba715015f24b29d09726e69c5` on the harness's dedicated iPhone simulator, iOS 26.5. It passed 52/52 iOS tests (22 XCTest unit tests, two Swift Testing tests and 28 UI tests), with zero failed, skipped or expected failures. All 34 command-contract tests and the design-role guard passed. `./scripts/harness evidence` was read, and the final `design-comparison.html` was opened with `chrome-devtools-axi`. The documentation-only update recording this result does not change the tested app or tests.
 
 ## Behaviour and tests
 
@@ -29,23 +29,40 @@ The tests retain top and bottom captures, Ask status and recent-reading states, 
 
 The new context, status, recent-reading, count, preview and error states are described in `design.md` §11b. The final run passes the settled-screen audits for Ask, the empty and filled composer and the limit state, plus the existing largest-text and keyboard geometry checks. `testBundledTypefacesDoNotFallBack` passed. The inspected large-text captures show the context, all four status choices, Skip, the saved-reading row, the field/count and both primary-action states without internal clipping. Content crossing the viewport edge is covered by overlapping captures; the native multiline field may scroll long text internally. Standard keyboard evidence keeps the action above the keyboard; largest-text evidence shows the field while editing and the reachable inline action after Done.
 
-### Author comparison and accepted differences
+### Independent comparison and dispositions
 
-The three main pairs (`05-ask`, `06-composer`, `06-composer-question-entered`) were compared side by side with their references. Final status, recent-reading, limit, keyboard and largest-text variants were also inspected. These are explicit differences, not a claim of pixel identity:
+A fresh reviewer completed the image-only comparison on 15 October 2026, opening all 42 supplied in-scope images: three references, 33 full screenshots and six element crops. The reviewer received the manifest and touched-state inventory, with no source, logs or author conclusions. The verdict was **“pass after the listed must-fix items, A08, A09 and C05”**, with no additional should-fix items. Firstmate directed exactly these three corrections and one rebased full check; this is the required independent round, with no second review requested.
 
-| Difference | Reason accepted |
+| Finding | Correction and verification |
 | --- | --- |
-| Ask shows “The Star” and the shorter saved area line instead of the illustrative “Open-handed” heading and longer paragraph | The panel presents today's actual saved card, line and score, as required, without inventing a second interpretation. The shorter content makes the panel shorter. |
-| Ask suggestions use question forms rather than the older reference's topic fragments | These match the approved suggestions in manifest §8 and the composer reference. |
-| Relationship choices use one full-width column and add explicit Skip | This keeps all four choices readable at accessibility sizes and supplies the required optional skip path. Answered/skipped prompts disappear; no recent reading means no placeholder section. |
-| Recent readings show three real card faces, a real saved question/date, and stack vertically at accessibility sizes | The saved reading is identifiable and immutable; full-width text avoids squeezing the question beside thumbnails. The reference uses illustrative flat card marks and content. |
-| The named-person entry and History tab are absent | Named-person questions are explicitly assigned to #18 and History to #19. This ticket retains the existing two-tab foundation. |
-| Native status bar, safe-area spacing, back/arrow icon weight, grain, type rasterisation and line wrapping differ from the web references | The existing native layout and bundled design-system roles are retained. The title uses Gabarito 30/600 and the primary uses 18/600; the font-loading test rejects fallback. The selected ink tab treatment follows the manifest's existing contrast correction. |
-| At standard size, the composer field starts about 27 points lower and the primary about 18 points higher | The existing shared safe-area layout and native role metrics account for the offsets; side guides, field size, action height and component order remain consistent. |
-| The preview outlines are darker and use the shared 8-point gaps; the helper wraps differently | The preview uses the existing secondary-ink role and spacing tokens. The primary stays pinned at standard size and moves inline at accessibility sizes, as the manifest requires. |
-| Limit-error, keyboard and largest-text states have no separate reference artboards | Their rules are documented in manifest §§11a–11b; retained captures, screen audits and geometry checks cover them. |
+| C05, shared with F04: composer Back glyph enlarged at accessibility sizes | Constrain only the composer's navigation action to the standard Dynamic Type size. Its separate accessibility-size row and minimum 44-point target remain. The empty and filled largest-text top captures will verify the standard glyph size, as manifest §11 requires. |
+| A08: no full largest-text Ask question-entry capture | Add `05-ask--largest-text-entry` between the context and suggestion stops. It requires both the complete outlined question entry and the “Or start from one of these” introduction to be visible together above the tabs. |
+| A09: answered-or-skipped/no-past-reading combination absent | Capture the existing Skip path before any reading is created, asserting that both the prompt and recent-reading section are absent. `05-ask--status-skipped-no-reading` and its bottom/largest-text variants cover this combination using the existing test mode. |
 
-Independent comparison is deliberately pending: a fresh reviewer will receive the final images and manifest without these author conclusions. Its verdict and each finding's disposition will be recorded here and in the eventual pull-request description.
+The following differences were independently accepted. The manifest sections refer to the supplied review copy; they remain the governing rules after rebase.
+
+| Finding | Accepted difference and manifest reason |
+| --- | --- |
+| A01 | Native status/tab bars, shorter scrolling viewport and more open group spacing replace the long reference artboard. Native safe areas, scrolling and consistent side guides are required by §4. |
+| A02 | “The Star” and the shorter saved area line replace “Open-handed” and the illustrative paragraph; the panel is shorter and the title less dominant. §11b requires the real saved card/line/score. §§2 and 11b prescribe the darker clay text and area tint. |
+| A03 | Question-form suggestions replace topic fragments, changing chip widths. Native entry-arrow weight and text wrapping differ. §§8–9 and 11a require question wording; §12 permits native rendering differences while preserving hierarchy and padding. |
+| A04 | Named-person entry and History are absent, the two tabs are spaced across the bar, Today uses a plain card outline and selected Ask uses an ink pill. §11a explicitly defers the first two to #18/#19; §5 requires the selected treatment and the not-yet-designed section permits placeholder tab icons. |
+| A05 | Four full-width status choices and Skip replace two rows of shorter pills, making the group taller. This is the explicit §11b single-column layout and optional skip action. |
+| A06 | No-history states omit the recent-reading section; answered/skipped states omit the prompt. Actual saved card art, question and date replace the sample marks/content, with wider thumbnail gaps and a heavier arrow. §11b requires these states and saved content; §5 supplies the face grammar. |
+| A07 | Largest text stacks the selector and recent-reading contents, wraps labels/score, uses multiline-control corners and enlarges tabs. §§3–4 and 11–11b require scaling, scrolling and these adaptations. Captured regions were readable; the separate entry evidence gap is corrected under A08. |
+| A10 | Native grain is denser and text/symbol edges differ from the web reference. §2 requires grain without an exact pattern; §12 permits small native rendering differences. The dawn roles remain distinct. |
+| C01 | Standard composer status bar, heavier back glyph, narrower/right-shifted selector and larger header/field gaps differ. §4 requires safe areas and a real Back target; content order and whole segment labels remain. The field starts about 27 points lower; C05 separately corrects the largest-text glyph. |
+| C02 | Title wraps after “ask” rather than “to”, with different leading and glyph widths/weights. §12 allows native rendering differences; wording and the two-line hierarchy remain. Bundled-font identity is established by the separate passing font test, not the review images. |
+| C03 | Suggestions sit closer to the preview; darker, more widely spaced dashed slots move the helper right and change its wrapping. §§4 and 11b require three tall empty slots and the complete explanation; §§5 and 11 require the pinned footer. Side guides remain aligned. |
+| C04 | Disabled action sits about 18 points higher, with different label rendering and grain. §§2 and 5 require its pale disabled role and “Write or pick a question”; §11 requires footer clearance. |
+| C06 | Largest-text empty composer reflows selector, text, field and chips; preview stacks and the disabled action becomes an inline two-line rounded rectangle. §§11–11b explicitly require these adaptations. All content was readable apart from the separately corrected C05 glyph. |
+| F01 | Filled composer repeats C01–C04/A10; its bottom capture has a taller field and another scroll position. §§4 and 11a permit field growth and scrolling. The question/count remain complete with no extra component. |
+| F02 | Enabled action has a heavier arrow with more separation and different helper wrapping. §§5, 8 and 11a preserve the label, ink/light treatment, order and one-primary hierarchy; the contents fit inside the button. |
+| F03 | Largest-text filled composer wraps text/count/suggestions and stacks the preview; the enabled action wraps over three lines. §§11–11b permit inline footers, multiline actions and surface-style corners. The entire action is visible. |
+| F05 | Keyboard captures contain “Where can I grow?” and show native focus scrolling, Done/checkmark key and system keyboard colours. §11a specifies that behaviour and §11 the footer clearance. Standard-size action is above the keyboard; largest-text action is shown after dismissal. |
+| F06 | Limit capture has synthetic text, a taller field, red textual limit feedback and an enabled action; the last suggestion's lower border crosses the scroll boundary. §11b requires limit feedback, and a nonblank 300-character question remains valid. Other captures expose that suggestion fully. The independent review does not certify a largest-text limit combination. |
+
+The author also inspected the original three comparison pairs, status/recent/limit/keyboard states and largest-text variants. The independent findings above supersede any implication that the original packet covered the entry or answered/no-reading combination. Behavioural tests and native audits establish the nonvisual requirements; still images alone do not establish persistence, hit-target dimensions, VoiceOver order or actual motion.
 
 ## Development checks
 

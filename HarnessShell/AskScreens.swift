@@ -138,6 +138,7 @@ struct QuestionComposerScreen: View {
 
     private var back: some View {
         NavigationAction(action: session.backToAsk)
+            .dynamicTypeSize(.large) // Keep the glyph's designed size; its target remains at least 44 points.
     }
 }
 
