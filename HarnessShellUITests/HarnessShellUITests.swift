@@ -1253,8 +1253,8 @@ final class HarnessShellUITests: XCTestCase {
         let deleteKey = app.keyboards.keys["delete"].firstMatch
         XCTAssertTrue(deleteKey.waitForExistence(timeout: 5))
         waitForSettled([field, deleteKey])
-        // Ensure a character precedes Backspace regardless of the restored caret position.
-        field.typeKey(.rightArrow, modifierFlags: [])
+        // Focus scrolls the restored field; a second settled tap places the caret within its text.
+        tapWhenSettled(field)
         capture(app, "06-composer-question-entered--restored-draft-keyboard")
         tapWhenSettled(deleteKey)
         XCTAssertEqual(field.value as? String, String(question.dropLast()))
