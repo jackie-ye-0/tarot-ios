@@ -1,8 +1,12 @@
 # Three-card pick in full (#15)
 
-15 October 2026. Independent design comparison completed with one required correction, P06. The glyph correction is implemented; its full check and four replacement opening captures are pending. No push or delivery pipeline has run yet.
+15 October 2026. Independent design comparison completed with one required correction, P06. The glyph correction is implemented and verified on the final target commit. No push or delivery pipeline has run yet.
 
-## Verified run
+## Verification runs
+
+The final `./scripts/harness check` on clean `af287500daf84b05770999c852b5f3b0e79c33c2` in `.harness/runs/20261014T204832.008722Z-check-6816b793` passed all 34 command tests, the design-role guard and 62/63 iOS tests. The only failure was `testWelcomeLargestTextAndReducedMotion` (`HarnessShellUITests.swift:596`), a byte-equality comparison of two Welcome screenshots taken one second apart. That test came from the merged Welcome work in #8 and is untouched by this branch; two focused reruns on the unchanged target commit both passed.
+
+The author inspected the four replacement largest-text opening captures and confirmed that the Back glyph remains at its standard size inside a 44-point target. Firstmate authorised completing this correction without a second independent comparison.
 
 `./scripts/harness check` passed on clean `f0dec7889f4d0652a908c8e61a55a31aa7552979` in `.harness/runs/20261014T185235.975661Z-check-c0437277`: **34 command tests, the design-role guard and 63/63 iOS tests** (29 unit, 34 UI), with zero failures, skips, expected failures or runtime warnings. The toolchain was Xcode 27.0, build 27A266a, on this checkout's iPhone 17e simulator running iOS 26.5. This was the first full check of this change; there were no failed iOS runs to exclude.
 
@@ -48,7 +52,7 @@ A fresh session reviewed the four references and all 35 relevant built images us
 
 | Review IDs | Disposition and manifest reason |
 | --- | --- |
-| P06, C06, E06/Q06 glyph portion | Fixed once inside the glyph-only `NavigationAction`: `.dynamicTypeSize(.large)` keeps the symbol at its standard size while the existing frame retains a minimum 44 × 44-point target. No text label is constrained. This implements §11's fixed decorative-icon rule and keeps the composer's separate Back row. Four opening captures require inspection after the clean-commit full check. |
+| P06, C06, E06/Q06 glyph portion | Fixed once inside the glyph-only `NavigationAction`: `.dynamicTypeSize(.large)` keeps the symbol at its standard size while the existing frame retains a minimum 44 × 44-point target. No text label is constrained. This implements §11's fixed decorative-icon rule and keeps the composer's separate Back row. The four replacement opening captures were inspected after the clean-commit full check. |
 | P02, C01 spacing portion | Retained the modest ordinary-size vertical-rhythm difference at firstmate's direction. The native safe area, existing section-spacing roles and compact fan remain consistent with §§4/11a, leaving clear space for the prompt and five separate tap lanes. No forced reference-pixel offsets or shared-layout compression were introduced. Fan overlap and motif proportions remain acceptable under §11a's compact-offset treatment. |
 | E02, Q01 spacing/wrapping portion | Retained the existing selector-to-title and guidance-to-field spacing roles and natural title wrapping. §§4/12 permit native type metrics and scalable layout; matching the web wrap with forced breaks or tighter fixed gaps would weaken that consistency. This is an accepted fidelity difference, not deferred work in another ticket. |
 | P01, E01, C01 native-chrome portion | Accepted native status chrome, normal-size symbol weight, reserved Back target and 24-point night/20-point dawn guides under §§4/6. The large-glyph exception is fixed by P06. |
