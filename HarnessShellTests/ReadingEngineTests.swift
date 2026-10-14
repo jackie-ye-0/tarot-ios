@@ -58,11 +58,12 @@ final class ReadingEngineTests: XCTestCase {
 
     // The six-card starter cannot exercise a fourteen-day non-repeat run. Interpretations expand in #24–#26.
     private func syntheticDeck() throws -> CardLibrary {
-        let template = try CardLibrary.load().cards[0]
+        let source = try CardLibrary.load()
+        let template = source.cards[0]
         return CardLibrary(version: 1, editorialStatus: "synthetic-test", cards: (0..<78).map {
             TarotCard(id: "card-\($0)", name: "Synthetic card \($0)", arcana: template.arcana,
                       suit: nil, rank: $0, upright: template.upright, reversed: template.reversed)
-        })
+        }, questions: source.questions)
     }
 
     private func past(_ card: Int, on date: String, in library: CardLibrary) -> DailyDraw {

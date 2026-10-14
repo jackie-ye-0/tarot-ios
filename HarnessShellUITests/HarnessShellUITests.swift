@@ -321,6 +321,12 @@ final class HarnessShellUITests: XCTestCase {
         start.press(forDuration: 0.05, thenDragTo: end)
     }
 
+    private func scrollViewport(in app: XCUIApplication, abovePinnedFooter: Bool = false) -> CGRect {
+        let scroll = app.scrollViews["screen-content"]
+        XCTAssertTrue(scroll.exists || scroll.waitForExistence(timeout: 5))
+        return scroll.frame.intersection(visibleFrame(in: app, abovePinnedFooter: abovePinnedFooter))
+    }
+
     private func scrollTo(_ element: XCUIElement, in app: XCUIApplication, abovePinnedFooter: Bool = false,
                           file: StaticString = #filePath, line: UInt = #line) {
         XCTAssertTrue(element.exists || element.waitForExistence(timeout: 5), file: file, line: line)
@@ -330,7 +336,7 @@ final class HarnessShellUITests: XCTestCase {
                 XCTFail("Cannot scroll to \(element.identifier) using an empty or invalid frame", file: file, line: line)
                 return
             }
-            let viewport = scrollViewport(in: app)
+            let viewport = scrollViewport(in: app, abovePinnedFooter: abovePinnedFooter)
             let footer = app.otherElements["screen-footer"]
             let isFooterElement = !element.identifier.isEmpty &&
                 footer.descendants(matching: .any).matching(identifier: element.identifier).firstMatch.exists
@@ -349,7 +355,7 @@ final class HarnessShellUITests: XCTestCase {
             start.press(forDuration: 0.05, thenDragTo: end)
         }
         XCTAssertFalse(element.frame.isEmpty, "Empty frame for \(element.identifier)", file: file, line: line)
-        XCTAssertTrue(scrollViewport(in: app).contains(element.frame),
+        XCTAssertTrue(scrollViewport(in: app, abovePinnedFooter: abovePinnedFooter).contains(element.frame),
                       "\(element.identifier) must be fully inside its scroll viewport", file: file, line: line)
     }
 
