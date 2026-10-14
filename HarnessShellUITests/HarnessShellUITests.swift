@@ -86,7 +86,7 @@ final class HarnessShellUITests: XCTestCase {
                 return element.exists && !element.frame.isEmpty && viewport.contains(element.frame)
             }
             var deferredAtThisStop = Set<String>()
-            try app.performAccessibilityAudit(for: .all) { issue in
+            let handleIssue: (XCUIAccessibilityAuditIssue) throws -> Bool = { issue in
                 guard issue.auditType == .contrast, let element = issue.element,
                       element.exists, !element.frame.isEmpty else { return false }
                 let frame = element.frame
@@ -129,9 +129,17 @@ final class HarnessShellUITests: XCTestCase {
                 if measured.ratio >= 4.5 { return true }
                 return false
             }
+            // Run each category once so Dynamic Type cannot change the scroll stop
+            // before element detection or contrast inspects it.
+            let auditTypes: [XCUIAccessibilityAuditType] = [
+                .elementDetection, .contrast, .hitRegion, .sufficientElementDescription,
+                .textClipped, .trait, .dynamicType
+            ]
+            for auditType in auditTypes {
+                try app.performAccessibilityAudit(for: auditType, handleIssue)
+            }
             covered.formUnion(fullyVisibleBefore.filter {
-                let element = deferred[$0]!
-                return !deferredAtThisStop.contains($0) && element.exists && !element.frame.isEmpty && viewport.contains(element.frame)
+                !deferredAtThisStop.contains($0)
             })
             if !covered.isEmpty { print("Audit fully visible: \(covered.sorted())") }
             guard let key = deferred.keys.sorted().first(where: { !covered.contains($0) }) else { break }
@@ -165,7 +173,7 @@ final class HarnessShellUITests: XCTestCase {
             let gap = max(0, readingFrame.minY - cardFrame.maxY)
             let readingTop = viewport.minY + gap / 2
             let distance = max(readingFrame.minY - readingTop, targetFrame.maxY - viewport.maxY)
-            if abs(distance) < 1 { break }
+            if cardFrame.maxY <= viewport.minY && viewport.contains(targetFrame) { break }
             // Cross the scroll view's touch threshold, then remeasure the actual result.
             let drag = min(abs(distance) + 12, viewport.height - 2) * (distance > 0 ? 1 : -1)
             let origin = app.coordinate(withNormalizedOffset: .zero)
@@ -194,7 +202,9 @@ final class HarnessShellUITests: XCTestCase {
     }
 
     private func waitForStableFrames(_ app: XCUIApplication) {
-        let elements = app.descendants(matching: .any).allElementsBoundByIndex.filter { $0.isHittable }
+        let elements = app.descendants(matching: .any).allElementsBoundByIndex.filter {
+            $0.isHittable && !$0.identifier.isEmpty
+        }
         var previous: [CGRect]?
         let settled = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
             let frames = elements.map(\.frame)
