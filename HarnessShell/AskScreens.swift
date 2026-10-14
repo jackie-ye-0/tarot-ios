@@ -304,7 +304,7 @@ struct QuestionReadingScreen: View {
                 NavigationAction(close: true, action: done)
                 VStack(alignment: .leading, spacing: Design.Space.small) {
                     Text("“\(reading.question)”").typeRole(Design.TypeRole.title).accessibilityIdentifier("reading-question")
-                    Text("\(reading.area.label) · Saved on this phone")
+                    Text("\(reading.area.label) · Saved to History")
                         .typeRole(Design.TypeRole.secondary).foregroundStyle(Design.Palette.secondary)
                         .accessibilityIdentifier("reading-saved")
                 }

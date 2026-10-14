@@ -25,6 +25,9 @@ struct ContentView: View {
                 TodayScreen(draw: draw, dateLabel: session.dateLabel,
                             animationsEnabled: animationsEnabled, testMode: testMode,
                             ask: session.openAsk).id("today-\(draw.dateKey)")
+            case .history:
+                HistoryScreen(session: session, animationsEnabled: animationsEnabled, testMode: testMode)
+                    .id("history")
             case .ask:
                 AskScreen(session: session).id("ask")
             case .composer:
@@ -38,8 +41,9 @@ struct ContentView: View {
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             switch session.screen {
-            case .today, .ask:
-                RestingTabBar(askSelected: isAsk, today: session.goToToday, ask: session.openAsk)
+            case .today, .ask, .history:
+                RestingTabBar(selection: selectedTab, today: session.goToToday,
+                              ask: session.openAsk, history: { session.screen = .history })
             default: EmptyView()
             }
         }
@@ -76,7 +80,13 @@ struct ContentView: View {
         }
     }
 
-    private var isAsk: Bool { if case .ask = session.screen { true } else { false } }
+    private var selectedTab: String {
+        switch session.screen {
+        case .ask: "Ask"
+        case .history: "History"
+        default: "Today"
+        }
+    }
 }
 
 struct WelcomeScreen: View {
@@ -146,11 +156,18 @@ struct DrawScreen: View {
     var body: some View {
         ReadingScreenLayout(night: true, fillsAvailableHeight: true) {
             VStack(spacing: Design.Space.section) {
-                Text(session.dateLabel)
-                    .typeRole(Design.TypeRole.secondary)
-                    .foregroundStyle(Design.Palette.nightSecondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.bottom, Design.Space.related)
+                let header = textSize.isAccessibilitySize
+                    ? AnyLayout(VStackLayout(alignment: .leading, spacing: Design.Space.small))
+                    : AnyLayout(HStackLayout(spacing: Design.Space.small))
+                header {
+                    Text(session.dateLabel)
+                        .typeRole(Design.TypeRole.secondary)
+                        .foregroundStyle(Design.Palette.nightSecondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    QuietAction(title: "History") { session.screen = .history }
+                        .accessibilityIdentifier("draw-history")
+                }
+                .padding(.bottom, Design.Space.related)
                 VStack(spacing: Design.Space.related) {
                     Text(selected != nil ? "This one is yours" : isShuffling ? "Washing the cards…" : "Pick the one that pulls at you")
                         .typeRole(Design.TypeRole.title)
@@ -278,6 +295,7 @@ struct RevealScreen: View {
     let animationsEnabled: Bool
     let testMode: Bool
     var backAction: (() -> Void)? = nil
+    var backLabel = "Back to Today"
     let continueAction: () -> Void
     @State private var appeared = false
     @State private var motionSettled = false
@@ -290,7 +308,7 @@ struct RevealScreen: View {
             VStack(spacing: Design.Space.large) {
                 HStack(spacing: Design.Space.small) {
                     if let backAction {
-                        BackToTodayAction(progress: revealed ? 1 : 0, action: backAction)
+                        BackToTodayAction(progress: revealed ? 1 : 0, label: backLabel, action: backAction)
                     }
                     Text("You picked card \(draw.position) of five")
                         .typeRole(Design.TypeRole.secondary)
@@ -358,12 +376,18 @@ struct TodayScreen: View {
     let animationsEnabled: Bool
     let testMode: Bool
     let ask: () -> Void
+    var backToHistory: (() -> Void)? = nil
     @Environment(\.dynamicTypeSize) private var textSize
     @State private var showsReveal = false
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Design.Space.section) {
+                if let backToHistory {
+                    NavigationAction(action: backToHistory)
+                        .accessibilityLabel("Back to History")
+                        .accessibilityIdentifier("back-to-history")
+                }
                 Text(dateLabel).typeRole(.section)
                     .accessibilityIdentifier("today-title")
                 if textSize.isAccessibilitySize {
@@ -390,14 +414,16 @@ struct TodayScreen: View {
                     Text("This earlier draw has no saved extras or area readings.")
                         .typeRole(Design.TypeRole.caption).foregroundStyle(Design.Palette.secondary)
                 }
-                QuestionEntry(title: "Ask the cards", action: ask)
-                    .accessibilityIdentifier("today-ask")
-                Text("Your next card arrives at midnight")
-                    .typeRole(Design.TypeRole.caption)
-                    .foregroundStyle(Design.Palette.secondary)
-                    .frame(maxWidth: .infinity)
-                    .multilineTextAlignment(.center)
-                    .accessibilityIdentifier("next-card-arrival")
+                if backToHistory == nil {
+                    QuestionEntry(title: "Ask the cards", action: ask)
+                        .accessibilityIdentifier("today-ask")
+                    Text("Your next card arrives at midnight")
+                        .typeRole(Design.TypeRole.caption)
+                        .foregroundStyle(Design.Palette.secondary)
+                        .frame(maxWidth: .infinity)
+                        .multilineTextAlignment(.center)
+                        .accessibilityIdentifier("next-card-arrival")
+                }
             }
             .foregroundStyle(Design.Palette.ink)
             .padding(.horizontal, Design.Space.page)
@@ -410,7 +436,8 @@ struct TodayScreen: View {
         .preferredColorScheme(.light)
         .fullScreenCover(isPresented: $showsReveal) {
             RevealScreen(draw: draw, animationsEnabled: animationsEnabled, testMode: testMode,
-                         backAction: { showsReveal = false }) { showsReveal = false }
+                         backAction: { showsReveal = false },
+                         backLabel: backToHistory == nil ? "Back to Today" : "Back to daily card") { showsReveal = false }
                 .environment(\.dynamicTypeSize, textSize)
         }
     }

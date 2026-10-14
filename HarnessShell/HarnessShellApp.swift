@@ -97,6 +97,8 @@ struct LaunchView: View {
                     }.accessibilityIdentifier("test-next-day")
                     Button("Advance while backgrounded") { advanceOnBackground = true }
                         .accessibilityIdentifier("test-background-day")
+                    Button("Delete latest reading") { session.deleteLatestReadingForTest() }
+                        .accessibilityIdentifier("test-delete-reading")
                     Button("Change time zone") {
                         session.clock.toggleTestTimeZone()
                         NotificationCenter.default.post(name: .NSSystemTimeZoneDidChange, object: nil)

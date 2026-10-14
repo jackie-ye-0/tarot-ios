@@ -146,6 +146,17 @@ struct DailyDraw: Codable, Equatable {
     let orientation: Orientation
     let card: TarotCard
     let contentVersion: Int
+    let createdAt: Date?
+
+    init(dateKey: String, position: Int, orientation: Orientation, card: TarotCard,
+         contentVersion: Int, createdAt: Date? = nil) {
+        self.dateKey = dateKey
+        self.position = position
+        self.orientation = orientation
+        self.card = card
+        self.contentVersion = contentVersion
+        self.createdAt = createdAt
+    }
 
     var meaning: CardMeaning { card.meaning(orientation) }
 }
@@ -167,20 +178,20 @@ enum ReadingEngine {
     }
 
     static func dailyDraw(seed: String, dateKey: String, position: Int, library: CardLibrary,
-                          previousDraws: [DailyDraw] = []) -> DailyDraw {
+                          previousDraws: [DailyDraw] = [], createdAt: Date? = nil) -> DailyDraw {
         precondition((1...5).contains(position))
         precondition(!library.cards.isEmpty)
         let start = repeatWindowStart(for: dateKey)
         let recentCards = Set(previousDraws.filter { $0.dateKey >= start }.map { $0.card.id })
         for attempt in 0...3 {
-            let draw = candidate(seed: seed, dateKey: dateKey, position: position, library: library, attempt: attempt)
+            let draw = candidate(seed: seed, dateKey: dateKey, position: position, library: library, attempt: attempt, createdAt: createdAt)
             if !recentCards.contains(draw.card.id) || attempt == 3 { return draw }
         }
         preconditionFailure("The final salted candidate is always accepted")
     }
 
     private static func candidate(seed: String, dateKey: String, position: Int,
-                                  library: CardLibrary, attempt: Int) -> DailyDraw {
+                                  library: CardLibrary, attempt: Int, createdAt: Date?) -> DailyDraw {
         // Versioned UTF-8 input and big-endian bytes make this stable across processes and devices.
         // Preserve the foundation result unless a recent card requires a retry.
         let salt = attempt == 0 ? "" : "\u{0}retry:\(attempt)"
@@ -189,6 +200,6 @@ enum ReadingEngine {
         let card = library.cards[Int(number % UInt64(library.cards.count))]
         return DailyDraw(dateKey: dateKey, position: position,
                          orientation: bytes[8] & 1 == 0 ? .upright : .reversed,
-                         card: card, contentVersion: library.version)
+                         card: card, contentVersion: library.version, createdAt: createdAt)
     }
 }

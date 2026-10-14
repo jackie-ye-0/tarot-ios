@@ -1186,6 +1186,236 @@ final class HarnessShellUITests: XCTestCase {
         }
     }
 
+    private func openHistory(_ app: XCUIApplication) {
+        let tab = app.buttons["tab-history"]
+        if tab.exists { tab.tap() } else { app.buttons["draw-history"].tap() }
+        XCTAssertTrue(app.staticTexts["history-title"].waitForExistence(timeout: 5))
+    }
+
+    func testHistoryCalendarFiltersAndDesignEvidence() throws {
+        let app = app(extra: ["--test-history-days", "10"], audit: true)
+        openHistory(app)
+        XCTAssertTrue(app.buttons["tab-history"].isSelected)
+        XCTAssertLessThan(app.buttons["tab-today"].frame.midX, app.buttons["tab-ask"].frame.midX)
+        XCTAssertLessThan(app.buttons["tab-ask"].frame.midX, app.buttons["tab-history"].frame.midX)
+        XCTAssertEqual(app.staticTexts["history-month"].label, "October 2026")
+        XCTAssertEqual(app.staticTexts["history-month-count"].label, "10 cards drawn")
+        let today = app.staticTexts["history-day-2026-10-11"]
+        XCTAssertTrue(today.label.contains("Today, Card drawn"))
+        XCTAssertTrue(app.descendants(matching: .any)["history-day-2026-10-12"].firstMatch.label.contains("Future day"))
+        XCTAssertFalse(app.descendants(matching: .any)["history-day-2026-10-01"].firstMatch.label.contains("Card drawn"))
+        try auditAndCapture(app, "10-history", expecting: app.staticTexts["history-title"], app.staticTexts["history-month"])
+        scrollTo(app.buttons["history-filter-all"], in: app)
+        for area in ["all", "career", "relationship", "social"] {
+            let filter = app.buttons["history-filter-\(area)"]
+            XCTAssertGreaterThanOrEqual(filter.frame.height, 44)
+            XCTAssertGreaterThanOrEqual(filter.frame.width, 44)
+        }
+        for (index, area) in ["career", "relationship", "social"].enumerated() {
+            scrollTo(app.buttons["history-filter-\(area)"], in: app)
+            app.buttons["history-filter-\(area)"].tap()
+            let row = app.buttons["history-reading-00000000-0000-0000-0000-00000000000\(index + 1)"]
+            scrollTo(row, in: app)
+            XCTAssertTrue(row.label.contains("\(area.capitalized) question"))
+            XCTAssertEqual(app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'history-daily-'")).count, 0)
+            XCTAssertEqual(app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'history-reading-'")).count, 1)
+        }
+        try auditAndCapture(app, "10-history--filtered", expecting: app.buttons["history-filter-social"])
+        scrollTo(app.buttons["history-filter-all"], in: app)
+        app.buttons["history-filter-all"].tap()
+        let firstReading = app.buttons["history-reading-00000000-0000-0000-0000-000000000001"]
+        scrollTo(firstReading, in: app)
+        let daily = app.buttons["history-daily-2026-10-11"]
+        XCTAssertLessThan(firstReading.frame.minY, daily.frame.minY)
+        capture(app, "10-history--list")
+        XCTAssertEqual(app.buttons["history-filter-all"].label, "All")
+        XCTAssertTrue(firstReading.label.contains("Career question · Today"))
+        XCTAssertEqual(daily.label, "The Star, upright, Daily card · Today")
+        let hierarchy = XCTAttachment(string: app.debugDescription)
+        hierarchy.name = "history-accessibility-hierarchy"
+        hierarchy.lifetime = .keepAlways
+        add(hierarchy)
+        // The oldest reading is beyond the ten daily cards, proving the month does not limit the list.
+        let oldest = app.buttons["history-reading-00000000-0000-0000-0000-000000000003"]
+        for _ in 0..<8 {
+            if oldest.exists && oldest.isHittable { break }
+            activeScrollView(in: app).swipeUp(velocity: .slow)
+        }
+        scrollTo(oldest, in: app)
+        try auditAndCapture(app, "10-history--bottom", expecting: oldest)
+        scrollTo(app.staticTexts["history-title"], in: app)
+        app.buttons["history-previous-month"].tap()
+        XCTAssertEqual(app.staticTexts["history-month"].label, "September 2026")
+        XCTAssertEqual(app.staticTexts["history-month-count"].label, "0 cards drawn")
+        app.buttons["history-next-month"].tap()
+        app.buttons["history-next-month"].tap()
+        XCTAssertEqual(app.staticTexts["history-month"].label, "November 2026")
+        XCTAssertTrue(app.descendants(matching: .any)["history-day-2026-11-01"].firstMatch.label.contains("Future day"))
+    }
+
+    func testHistoryAppearsImmediatelyAndSnapshotsSurviveRelaunch() throws {
+        let app = app(extra: ["--test-store-id", UUID().uuidString] + fixedSpread, memory: false, audit: true)
+        openHistory(app)
+        XCTAssertEqual(app.staticTexts["history-message"].label, "Your story starts here")
+        app.buttons["tab-today"].tap()
+        reveal(app)
+        let name = app.staticTexts["card-name"].label
+        let details = app.staticTexts["card-details"].label
+        app.buttons["see-meaning"].tap()
+        let interpretation = app.staticTexts["core-interpretation"].label
+        openHistory(app)
+        let daily = app.buttons["history-daily-2026-10-11"]
+        scrollTo(daily, in: app)
+        daily.tap()
+        XCTAssertEqual(app.staticTexts["card-name"].label, name)
+        XCTAssertEqual(app.staticTexts["card-details"].label, details)
+        XCTAssertEqual(app.staticTexts["core-interpretation"].label, interpretation)
+        assertTodayContent(app)
+        try auditAndCapture(app, "04-today--history", today: true, expecting: app.buttons["back-to-history"], app.buttons["today-card"])
+        positionTodayAuditBelowCard(app, revealing: app.staticTexts["line-social"])
+        try auditAndCapture(app, "04-today--history-bottom", today: true, expecting: app.staticTexts["line-social"])
+        XCTAssertFalse(app.buttons["today-ask"].exists)
+        XCTAssertFalse(app.staticTexts["next-card-arrival"].exists)
+        scrollTo(app.buttons["back-to-history"], in: app)
+        app.buttons["back-to-history"].tap()
+        app.buttons["tab-ask"].tap()
+        app.buttons["ask-question-entry"].tap()
+        app.buttons["suggestion-0"].tap()
+        app.buttons["submit-question"].tap()
+        chooseSpread(app)
+        app.buttons["read-spread"].tap()
+        var saved: [String: String] = [:]
+        for id in ["reading-question", "reading-situation", "reading-action", "reading-outcome", "reading-lens", "reflection-question"] {
+            saved[id] = app.staticTexts[id].label
+        }
+        app.buttons["reading-done"].tap()
+        openHistory(app)
+        scrollTo(app.buttons["history-filter-relationship"], in: app)
+        app.buttons["history-filter-relationship"].tap()
+        let reading = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'history-reading-'")).firstMatch
+        scrollTo(reading, in: app)
+        let readingID = reading.identifier
+        reading.tap()
+        try auditAndCapture(app, "09-reading--history", expecting: app.staticTexts["reading-question"])
+        for (id, value) in saved { XCTAssertEqual(app.staticTexts[id].label, value) }
+        scrollTo(app.staticTexts["reflection-question"], in: app, abovePinnedFooter: true)
+        capture(app, "09-reading--history-bottom")
+        app.buttons["reading-done"].tap()
+        XCTAssertTrue(app.buttons["history-filter-relationship"].isSelected)
+        app.terminate()
+        app.launchArguments += ["--test-revised-content", "--test-controls"]
+        let dateIndex = app.launchArguments.firstIndex(of: "--test-date")!
+        app.launchArguments[dateIndex + 1] = "2026-10-12T00:00:00Z"
+        app.launch()
+        reveal(app)
+        XCTAssertTrue(app.staticTexts["card-name"].label.hasPrefix("Revised "))
+        app.buttons["see-meaning"].tap()
+        openHistory(app)
+        for _ in 0..<3 {
+            if app.buttons["history-daily-2026-10-11"].exists { break }
+            activeScrollView(in: app).swipeUp(velocity: .slow)
+        }
+        scrollTo(app.buttons["history-daily-2026-10-11"], in: app)
+        app.buttons["history-daily-2026-10-11"].tap()
+        XCTAssertEqual(app.staticTexts["today-title"].label, "Sunday 11 October 2026")
+        XCTAssertEqual(app.staticTexts["card-name"].label, name)
+        XCTAssertEqual(app.staticTexts["core-interpretation"].label, interpretation)
+        assertTodayContent(app)
+        app.buttons["back-to-history"].tap()
+        scrollTo(app.buttons[readingID], in: app)
+        app.buttons[readingID].tap()
+        for (id, value) in saved { XCTAssertEqual(app.staticTexts[id].label, value) }
+        app.buttons["reading-done"].tap()
+        testControl("test-delete-reading", in: app)
+        XCTAssertFalse(app.buttons[readingID].exists, "A store deletion must update the open History list")
+        XCTAssertTrue(app.buttons["history-daily-2026-10-11"].exists)
+    }
+
+    func testHistoryEmptyErrorAndLargestTextEvidence() throws {
+        let empty = app(audit: true)
+        openHistory(empty)
+        scrollTo(empty.staticTexts["history-message"], in: empty)
+        try auditAndCapture(empty, "10-history--empty", expecting: empty.staticTexts["history-message"])
+        scrollTo(empty.buttons["history-filter-career"], in: empty)
+        empty.buttons["history-filter-career"].tap()
+        XCTAssertEqual(empty.staticTexts["history-message"].label, "No career readings yet")
+        capture(empty, "10-history--empty-area")
+        empty.terminate()
+        let failure = app(extra: ["--test-history-read-failure"], audit: true)
+        openHistory(failure)
+        try auditAndCapture(failure, "10-history--read-error", expecting: failure.buttons["history-retry"])
+        failure.buttons["history-retry"].tap()
+        XCTAssertTrue(failure.staticTexts["history-month"].waitForExistence(timeout: 5))
+        failure.terminate()
+        let emptyLarge = app(extra: ["--test-largest-text", "--test-history-read-failure"])
+        openHistory(emptyLarge)
+        capture(emptyLarge, "10-history--read-error-largest-text")
+        scrollTo(emptyLarge.buttons["history-retry"], in: emptyLarge)
+        capture(emptyLarge, "10-history--read-error-largest-text-bottom")
+        emptyLarge.buttons["history-retry"].tap()
+        scrollTo(emptyLarge.staticTexts["history-message"], in: emptyLarge)
+        capture(emptyLarge, "10-history--empty-largest-text")
+        scrollTo(emptyLarge.staticTexts["history-message-body"], in: emptyLarge)
+        capture(emptyLarge, "10-history--empty-largest-text-bottom")
+        emptyLarge.terminate()
+        let large = app(extra: ["--test-history-days", "1", "--test-largest-text"], audit: true)
+        openHistory(large)
+        capture(large, "10-history--largest-text")
+        scrollTo(large.buttons["history-filter-all"], in: large)
+        capture(large, "10-history--largest-text-filters")
+        for area in ["all", "career", "relationship", "social"] {
+            scrollTo(large.buttons["history-filter-\(area)"], in: large)
+            XCTAssertGreaterThanOrEqual(large.buttons["history-filter-\(area)"].frame.height, 44)
+        }
+        let daily = large.buttons["history-daily-2026-10-11"]
+        for _ in 0..<6 {
+            if daily.exists && daily.isHittable { break }
+            activeScrollView(in: large).swipeUp(velocity: .slow)
+        }
+        scrollTo(daily, in: large)
+        capture(large, "10-history--largest-text-list")
+        daily.tap()
+        capture(large, "04-today--history-largest-text")
+        scrollTo(large.staticTexts["line-social"], in: large)
+        capture(large, "04-today--history-largest-text-bottom")
+        scrollTo(large.buttons["back-to-history"], in: large)
+        large.buttons["back-to-history"].tap()
+        let reading = large.buttons["history-reading-00000000-0000-0000-0000-000000000001"]
+        scrollTo(reading, in: large)
+        reading.tap()
+        capture(large, "09-reading--history-largest-text")
+        scrollTo(large.staticTexts["reading-disclaimer"], in: large)
+        assertVisible(large.buttons["reading-done"], in: large)
+        capture(large, "09-reading--history-largest-text-bottom")
+        large.buttons["reading-done"].tap()
+        XCTAssertTrue(large.staticTexts["history-title"].exists)
+    }
+
+    func testHistoryYearOfEntriesScrollPerformance() {
+        let app = app(extra: ["--test-history-days", "365"])
+        openHistory(app)
+        scrollTo(app.buttons["history-filter-all"], in: app)
+        let list = app.otherElements["history-entries"]
+        XCTAssertEqual(list.value as? String, "368 entries")
+        let options = XCTMeasureOptions()
+        options.iterationCount = 2
+        var metrics: [any XCTMetric] = [XCTOSSignpostMetric.scrollingAndDecelerationMetric]
+        #if compiler(>=6.2)
+        if #available(iOS 26.0, *) { metrics.append(XCTHitchMetric(application: app)) }
+        #endif
+        measure(metrics: metrics, options: options) {
+            for _ in 0..<5 { app.swipeUp(velocity: .fast) }
+        }
+        XCTAssertTrue(app.buttons["tab-history"].isHittable)
+        capture(app, "10-history--year-scroll")
+        let visible = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'history-daily-'")).allElementsBoundByIndex
+            .first { $0.isHittable }
+        XCTAssertNotNil(visible)
+        visible?.tap()
+        XCTAssertTrue(app.buttons["back-to-history"].waitForExistence(timeout: 5))
+        capture(app, "04-today--history-year-entry")
+    }
+
     private let fixedSpread = ["--test-random-indices", "0,0,0,1,0,0"]
 
     private func reachAsk(_ app: XCUIApplication, largest: Bool = false) {
@@ -1422,7 +1652,7 @@ final class HarnessShellUITests: XCTestCase {
         try auditAndCapture(app, "08-three-card-pick-complete", expecting: app.staticTexts["spread-complete-title"], app.buttons["read-spread"])
         app.buttons["read-spread"].tap()
         XCTAssertTrue(app.staticTexts["reading-saved"].waitForExistence(timeout: 5))
-        XCTAssertEqual(app.staticTexts["reading-saved"].label, "Relationship · Saved on this phone")
+        XCTAssertEqual(app.staticTexts["reading-saved"].label, "Relationship · Saved to History")
         XCTAssertFalse(app.buttons["tab-ask"].exists)
         try auditAndCapture(app, "09-reading", expecting: app.staticTexts["reading-saved"], app.staticTexts["reading-situation"], app.buttons["reading-done"])
         for identifier in ["reading-situation", "reading-action", "reading-outcome", "reading-lens"] {
@@ -1486,7 +1716,7 @@ final class HarnessShellUITests: XCTestCase {
         app.buttons["submit-question"].tap()
         chooseSpread(app)
         app.buttons["read-spread"].tap()
-        XCTAssertEqual(app.staticTexts["reading-saved"].label, "Social · Saved on this phone")
+        XCTAssertEqual(app.staticTexts["reading-saved"].label, "Social · Saved to History")
         XCTAssertTrue(app.staticTexts["reading-lens"].label.contains("belonging"))
     }
 
