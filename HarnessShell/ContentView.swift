@@ -72,16 +72,18 @@ struct WelcomeScreen: View {
         ReadingScreenLayout(night: true, fillsAvailableHeight: true) {
             VStack(alignment: .leading, spacing: 0) {
                 Text("Daybreak")
-                    .typeRole(.section)
+                    .typeRole(.wordmark)
                     .accessibilityIdentifier("welcome-name")
                     .zIndex(1) // The decorative disc extends behind the name, never over it.
                 Spacer(minLength: Design.Space.large)
                 WelcomeCard(animationsEnabled: animationsEnabled)
                     .frame(maxWidth: .infinity)
                 Spacer(minLength: Design.Space.large)
-                VStack(alignment: .leading, spacing: Design.Space.group) {
+                // Tight display lines end at the baseline, so the wider gap clears their descenders.
+                VStack(alignment: .leading, spacing: Design.Space.page) {
                     Text("One card.\nEvery morning.")
                         .typeRole(.compactDisplay)
+                        .displayLineHeight()
                         .accessibilityIdentifier("welcome-title")
                     Text("Pick a card, turn it over, and see how today reads for your work, your love life and the people around you.")
                         .typeRole(Design.TypeRole.body)

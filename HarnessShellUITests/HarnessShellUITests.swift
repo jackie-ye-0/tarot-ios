@@ -570,11 +570,11 @@ final class HarnessShellUITests: XCTestCase {
     func testWelcomeLargestTextAndReducedMotion() throws {
         let app = app(extra: ["--test-largest-text", "--test-reduce-motion"], animations: true, welcome: true)
         XCTAssertTrue(app.staticTexts["welcome-name"].waitForExistence(timeout: 5))
+        // The top stop shows the whole headline, so it needs no stop of its own.
+        assertVisible(app.staticTexts["welcome-title"], in: app)
         capture(app, "01-welcome--largest-text")
-        for identifier in ["welcome-title", "welcome-promise"] {
-            scrollTo(app.staticTexts[identifier], in: app)
-            capture(app, "01-welcome--largest-text-\(identifier)")
-        }
+        scrollTo(app.staticTexts["welcome-promise"], in: app)
+        capture(app, "01-welcome--largest-text-welcome-promise")
         scrollTo(app.staticTexts["welcome-disclaimer"], in: app)
         assertVisible(app.buttons["welcome-draw"], in: app)
         capture(app, "01-welcome--largest-text-bottom")
@@ -595,6 +595,27 @@ final class HarnessShellUITests: XCTestCase {
                        "Reduce Motion must leave the welcome card still")
         reduced.buttons["welcome-draw"].tap()
         XCTAssertTrue(reduced.staticTexts["draw-title"].waitForExistence(timeout: 5))
+    }
+
+    func testWelcomeSaveFailureKeepsWelcomeAndAllowsRetry() {
+        let app = app(extra: ["--test-welcome-save-failure"], welcome: true)
+        XCTAssertTrue(app.buttons["welcome-draw"].waitForExistence(timeout: 5))
+        app.buttons["welcome-draw"].tap()
+        let alert = app.alerts["Your welcome could not be saved"]
+        XCTAssertTrue(alert.waitForExistence(timeout: 5))
+        XCTAssertTrue(alert.staticTexts["Free some space on your phone if needed, then tap Draw my first card to try again. Your saved cards are unchanged."].exists)
+        XCTAssertEqual(alert.buttons.count, 1)
+        // capture() settles on identified app frames, which a native alert covers.
+        Thread.sleep(forTimeInterval: 1)
+        let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        attachment.name = "01-welcome--save-failed"
+        attachment.lifetime = .keepAlways
+        add(attachment)
+        alert.buttons["OK"].tap()
+        XCTAssertTrue(app.buttons["welcome-draw"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.staticTexts["draw-title"].exists)
+        app.buttons["welcome-draw"].tap()
+        XCTAssertTrue(app.staticTexts["draw-title"].waitForExistence(timeout: 5))
     }
 
     func testWelcomeFloatingCardDoesNotDelayTheFirstDraw() {

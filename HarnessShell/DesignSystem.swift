@@ -95,7 +95,7 @@ enum Design {
     }
 
     enum TypeRole {
-        case display, compactDisplay, title, section, button, body, keywords, metadata, secondary, label, caption, tab
+        case display, compactDisplay, title, section, wordmark, button, body, keywords, metadata, secondary, label, caption, tab
 
         var font: Font {
             switch self {
@@ -103,6 +103,8 @@ enum Design {
             case .compactDisplay: .custom("Gabarito-Regular", size: 40, relativeTo: .largeTitle).weight(.bold)
             case .title: .custom("Gabarito-Regular", size: 30, relativeTo: .title).weight(.semibold)
             case .section: .custom("Gabarito-Regular", size: 22, relativeTo: .title2).weight(.semibold)
+            // The app name takes the reference's cut: the smallest section size, in the display weight.
+            case .wordmark: .custom("Gabarito-Regular", size: 20, relativeTo: .title2).weight(.bold)
             case .button: .custom("Gabarito-Regular", size: 18, relativeTo: .headline).weight(.semibold)
             case .body: .custom("HankenGrotesk-Regular", size: 17, relativeTo: .body)
             case .keywords: .custom("HankenGrotesk-Regular", size: 16, relativeTo: .body)
@@ -129,6 +131,13 @@ extension View {
 
     func typeRole(_ role: Design.TypeRole) -> some View {
         font(role.font).tracking(role.tracking)
+    }
+
+    /// Multi-line display copy uses line height 1.0 to 1.05; the font's own is about 1.17.
+    @ViewBuilder func displayLineHeight() -> some View {
+        // ponytail: iOS 17 to 25 keep the font's own leading, because they ignore negative
+        // line spacing. Drop this check when the deployment target reaches iOS 26.
+        if #available(iOS 26.0, *) { lineHeight(.multiple(factor: 1.025)) } else { self }
     }
 }
 
@@ -193,6 +202,8 @@ struct WelcomeCard: View {
     var body: some View {
         TarotCardView(card: nil, width: 146)
             .rotationEffect(.degrees(-3))
+            // Only this card is lifted off its disc; the Draw card backs stay flat.
+            .shadow(color: Design.Palette.night.opacity(0.9), radius: 20, y: 20)
             .offset(y: animationsEnabled && floating ? -6 : 0)
             .animation(animationsEnabled ? Design.Motion.welcomeFloat : nil, value: floating)
             .background {

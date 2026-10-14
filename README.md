@@ -78,6 +78,7 @@ Only Debug builds, with `--test-mode`, read these launch arguments. This mode al
 - `--test-seed <string>` supplies the seed when the store has no installation identity.
 - `--test-memory-store` starts with an empty temporary SwiftData store on each launch.
 - `--test-welcome-completed` preloads a completed Welcome for tests of later screens. Omit it to test first open; completion otherwise persists through the real welcome action in an isolated disk store.
+- `--test-welcome-save-failure` fails the first attempt to save Welcome completion, then lets the retry succeed.
 - `--test-store-id <UUID>` uses an isolated on-device test store that survives process relaunch. UI tests use a new UUID per test; synthetic stores remain in the simulator app container until it is removed.
 - `--test-largest-text` sets the largest SwiftUI Dynamic Type size. `--test-reduce-motion` removes all animations and shows the final ritual states on first paint, without changing simulator settings. The app also honours the real system Reduce Motion setting.
 - `--test-disable-animations` independently switches animations off for deterministic UI checks. Motion-specific tests leave it off.

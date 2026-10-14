@@ -22,6 +22,7 @@ struct LaunchConfiguration {
     var randomIndices: [Int] = []
     var openSavedReading = false
     var welcomeCompleted = false
+    var welcomeSaveFailure = false
 
     static func current() -> LaunchConfiguration {
         var result = LaunchConfiguration()
@@ -51,6 +52,7 @@ struct LaunchConfiguration {
         result.randomIndices = value("--test-random-indices")?.split(separator: ",").compactMap { Int($0) }.filter { $0 >= 0 } ?? []
         result.openSavedReading = arguments.contains("--test-open-saved-reading")
         result.welcomeCompleted = arguments.contains("--test-welcome-completed")
+        result.welcomeSaveFailure = arguments.contains("--test-welcome-save-failure")
         #endif
         return result
     }
@@ -305,6 +307,7 @@ enum AppLaunch {
         }
         #if DEBUG
         if configuration.testMode && configuration.welcomeCompleted { try store.completeWelcome() }
+        store.failsNextWelcomeSave = configuration.welcomeSaveFailure
         if configuration.earlierSnapshot {
             let draw = ReadingEngine.dailyDraw(seed: seed, dateKey: ReadingEngine.dateKey(for: clock.now, timeZone: clock.timeZone),
                                               position: 3, library: library)

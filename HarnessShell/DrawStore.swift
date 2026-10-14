@@ -33,6 +33,9 @@ final class DrawStore {
 
     private let container: ModelContainer
     private var context: ModelContext { container.mainContext }
+    #if DEBUG
+    var failsNextWelcomeSave = false
+    #endif
 
     init(configuration: ModelConfiguration) throws {
         container = try ModelContainer(for: InstallIdentity.self, StoredDailyDraw.self, StoredQuestionReading.self,
@@ -62,6 +65,13 @@ final class DrawStore {
     }
 
     func completeWelcome() throws {
+        #if DEBUG
+        // One failure only, so a test can also follow the retry that the alert promises.
+        if failsNextWelcomeSave {
+            failsNextWelcomeSave = false
+            throw CocoaError(.fileWriteOutOfSpace)
+        }
+        #endif
         guard let identity = try context.fetch(FetchDescriptor<InstallIdentity>()).first else {
             throw CocoaError(.fileReadCorruptFile)
         }
