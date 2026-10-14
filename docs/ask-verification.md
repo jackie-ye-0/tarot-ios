@@ -12,6 +12,14 @@ Commit `95a0393` repairs two test-only integration defects: the synthetic 78-car
 
 The ninth failure was the inherited Today text-exposure test. It correctly recreated its original scrolled geometry, but the new tab bar covered the Relationship row: its paragraph frame ended at 799.7 points while the visible content ended at 738.7. The retained screenshot confirms the cover. The same exact Relationship labels and full-frame visibility are now checked at the already existing lower scroll stop, alongside Social; all original text assertions remain. No audit category or handler changed. These are integration defects, not a native-control contrast dismissal. A fresh check and capture inspection are pending; the historical results below do not establish a pass for the recovered revision.
 
+The second recovery check, `20261014T031611.329661Z-check-e24fb5de` on clean `207268d`, passed **42/47 iOS tests**, with 34 command tests, the design guard, zero skips and zero runtime warnings. The missing identifier and Today exposure corrections passed, as did the Social flow and typed-question persistence. Five tests failed:
+
+- Three largest-text paths exhausted ten half-viewport drags before reaching a distant Today target. The retained recordings show real progress through the longer Today content, ending before the Ask entry or card. The helper now uses up to 80% of the viewport per drag; the iteration bound and full-visibility assertions remain unchanged.
+- The reading audit failed deferred coverage. Native callbacks placed Situation and heading labels above the viewport, while subsequent logged gestures continued upward. The helper now waits for the native scaling audit to finish restoring geometry and retains the native callback frame as a fallback when an off-screen query loses its frame. It still requires each deferred element to be audited fully visible; no coverage requirement or measurement condition is removed. Its content viewport now excludes a pinned footer, while an inline footer remains part of the scrollable content.
+- The inherited card-size proof's direct combined audit flagged the plain static “120 points · Reversed” caption. Its app image and element crop were inspected; it was not a control finding. The proof now calls the existing shared seven-category helper, with Dynamic Type last and the same two audit rules, retaining a named `card-sizes--audit` capture. No control or mixed-content measurement override was added.
+
+Both failed recovery bundles, logs, screenshots and audit records are preserved in task evidence. These repairs still require a fresh full check; no pass is claimed for them yet.
+
 ## Behaviour and coverage
 
 - Today and Ask have labelled icon tabs. The Today entry opens Ask; UI tests switch tabs and check that tabs are absent during Draw, Reveal, composition, picking and reading. Done and Close return to Today.

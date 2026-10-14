@@ -78,10 +78,10 @@ final class HarnessShellUITests: XCTestCase {
             add(attachment)
         }
         var deferred: [String: XCUIElement] = [:]
+        var deferredFrames: [String: CGRect] = [:]
         var covered = Set<String>()
         for _ in 0..<12 {
-            let scroll = app.scrollViews.allElementsBoundByIndex.first { $0.isHittable }
-            let viewport = scroll?.frame.intersection(visibleFrame(in: app)) ?? .null
+            let viewport = scrollViewport(in: app)
             let fullyVisibleBefore = deferred.keys.filter {
                 let element = deferred[$0]!
                 return element.exists && !element.frame.isEmpty && viewport.contains(element.frame)
@@ -105,6 +105,7 @@ final class HarnessShellUITests: XCTestCase {
                 if self.isNotFullyVisible(frame, in: viewport) {
                     print("Audit deferred \(key): \(frame), viewport \(viewport)")
                     deferred[key] = matches.firstMatch
+                    deferredFrames[key] = frame
                     deferredAtThisStop.insert(key)
                     record["disposition"] = "deferred-until-fully-visible"
                     record["alreadyAuditedFullyVisible"] = String(covered.contains(key))
@@ -144,6 +145,7 @@ final class HarnessShellUITests: XCTestCase {
             for auditType in auditTypes {
                 try app.performAccessibilityAudit(for: auditType, handleIssue)
             }
+            waitForStableFrames(app)
             covered.formUnion(fullyVisibleBefore.filter {
                 !deferredAtThisStop.contains($0)
             })
@@ -155,7 +157,12 @@ final class HarnessShellUITests: XCTestCase {
                 positionTodayAuditBelowCard(app, revealing: target)
                 continue
             }
-            let distance = viewport.height * 0.45 * (target.frame.minY < viewport.minY ? -1 : 1)
+            // Clipped SwiftUI nodes can lose their query frame; the native issue retains it.
+            let queryFrame = target.frame
+            let targetFrame = queryFrame.isEmpty || queryFrame.isNull || queryFrame.isInfinite
+                ? deferredFrames[key]! : queryFrame
+            print("Audit navigation \(key): query \(queryFrame), target \(targetFrame)")
+            let distance = viewport.height * 0.45 * (targetFrame.minY < viewport.minY ? -1 : 1)
             let origin = app.coordinate(withNormalizedOffset: .zero)
             let start = origin.withOffset(CGVector(dx: viewport.midX, dy: viewport.midY + distance / 2))
             let end = origin.withOffset(CGVector(dx: viewport.midX, dy: viewport.midY - distance / 2))
@@ -324,7 +331,9 @@ final class HarnessShellUITests: XCTestCase {
     private func scrollViewport(in app: XCUIApplication, abovePinnedFooter: Bool = false) -> CGRect {
         let scroll = app.scrollViews["screen-content"]
         XCTAssertTrue(scroll.exists || scroll.waitForExistence(timeout: 5))
-        return scroll.frame.intersection(visibleFrame(in: app, abovePinnedFooter: abovePinnedFooter))
+        let footer = app.otherElements["screen-footer"]
+        let pinned = footer.exists && !scroll.otherElements["screen-footer"].exists
+        return scroll.frame.intersection(visibleFrame(in: app, abovePinnedFooter: abovePinnedFooter || pinned))
     }
 
     private func scrollTo(_ element: XCUIElement, in app: XCUIApplication, abovePinnedFooter: Bool = false,
@@ -347,8 +356,8 @@ final class HarnessShellUITests: XCTestCase {
             }
             if !frame.isEmpty && viewport.contains(frame) { break }
             let delta = frame.maxY > viewport.maxY
-                ? min(viewport.height / 2, frame.maxY - viewport.maxY + 24)
-                : -min(viewport.height / 2, viewport.minY - frame.minY + 24)
+                ? min(viewport.height * 0.8, frame.maxY - viewport.maxY + 24)
+                : -min(viewport.height * 0.8, viewport.minY - frame.minY + 24)
             let origin = app.coordinate(withNormalizedOffset: .zero)
             let start = origin.withOffset(CGVector(dx: viewport.midX, dy: viewport.midY + delta / 2))
             let end = origin.withOffset(CGVector(dx: viewport.midX, dy: viewport.midY - delta / 2))
@@ -435,7 +444,7 @@ final class HarnessShellUITests: XCTestCase {
                 XCTAssertEqual(face.label, "\(name), Reversed")
                 capture(sizes, "card-sizes--sample-\(page + 1)-width-\(width)")
             }
-            if page == 0 { try sizes.performAccessibilityAudit() }
+            if page == 0 { try auditAndCapture(sizes, "card-sizes--audit", expecting: sizes.buttons["face-proof-next"]) }
             sizes.buttons["face-proof-next"].tap()
         }
         sizes.terminate()
