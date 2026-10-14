@@ -62,8 +62,6 @@ struct HistoryScreen: View {
                                 }
                             }
                             .modifier(HistoryListSurface())
-                            .accessibilityIdentifier("history-entries")
-                            .accessibilityValue("\(visibleEntries.count) entries")
                         }
                     }
                     .foregroundStyle(Design.Palette.ink)

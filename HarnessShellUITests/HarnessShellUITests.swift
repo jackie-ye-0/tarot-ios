@@ -1208,8 +1208,9 @@ final class HarnessShellUITests: XCTestCase {
         scrollTo(app.buttons["history-filter-all"], in: app)
         for area in ["all", "career", "relationship", "social"] {
             let filter = app.buttons["history-filter-\(area)"]
-            XCTAssertGreaterThanOrEqual(filter.frame.height, 44)
-            XCTAssertGreaterThanOrEqual(filter.frame.width, 44)
+            // Frame subtraction can represent an exact 44 points as 43.99999999999994.
+            XCTAssertGreaterThanOrEqual(filter.frame.height + 0.000_001, 44)
+            XCTAssertGreaterThanOrEqual(filter.frame.width + 0.000_001, 44)
         }
         for (index, area) in ["career", "relationship", "social"].enumerated() {
             scrollTo(app.buttons["history-filter-\(area)"], in: app)
@@ -1365,7 +1366,7 @@ final class HarnessShellUITests: XCTestCase {
         capture(large, "10-history--largest-text-filters")
         for area in ["all", "career", "relationship", "social"] {
             scrollTo(large.buttons["history-filter-\(area)"], in: large)
-            XCTAssertGreaterThanOrEqual(large.buttons["history-filter-\(area)"].frame.height, 44)
+            XCTAssertGreaterThanOrEqual(large.buttons["history-filter-\(area)"].frame.height + 0.000_001, 44)
         }
         let daily = large.buttons["history-daily-2026-10-11"]
         for _ in 0..<6 {
@@ -1395,8 +1396,9 @@ final class HarnessShellUITests: XCTestCase {
         let app = app(extra: ["--test-history-days", "365"])
         openHistory(app)
         scrollTo(app.buttons["history-filter-all"], in: app)
-        let list = app.otherElements["history-entries"]
-        XCTAssertEqual(list.value as? String, "368 entries")
+        let rows = app.buttons.matching(NSPredicate(format:
+            "identifier BEGINSWITH 'history-daily-' OR identifier BEGINSWITH 'history-reading-'"))
+        XCTAssertEqual(rows.count, 368)
         let options = XCTMeasureOptions()
         options.iterationCount = 2
         var metrics: [any XCTMetric] = [XCTOSSignpostMetric.scrollingAndDecelerationMetric]
