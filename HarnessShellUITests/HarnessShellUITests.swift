@@ -1236,7 +1236,11 @@ final class HarnessShellUITests: XCTestCase {
             XCTAssertTrue(app.descendants(matching: .any)["spread-slot-\(position)"].firstMatch.label.contains("empty"))
         }
         try auditAndCapture(app, "08-three-card-pick", expecting: app.staticTexts["spread-question"], app.buttons["draw-card-3"])
-        chooseSpread(app)
+        app.buttons["draw-card-3"].tap()
+        try auditAndCapture(app, "08-three-card-pick--one-picked", expecting: app.staticTexts["pick-prompt"], app.buttons["spread-shuffle"])
+        app.buttons["draw-card-1"].tap()
+        try auditAndCapture(app, "08-three-card-pick--two-picked", expecting: app.staticTexts["pick-prompt"], app.buttons["spread-shuffle"])
+        app.buttons["draw-card-5"].tap()
         XCTAssertEqual(app.descendants(matching: .any)["spread-slot-situation"].firstMatch.label, "Situation, The Star, Upright")
         XCTAssertEqual(app.descendants(matching: .any)["spread-slot-action"].firstMatch.label, "Action, The Sun, Reversed")
         XCTAssertEqual(app.descendants(matching: .any)["spread-slot-outcome"].firstMatch.label, "Outcome, The Fool, Upright")
@@ -1352,6 +1356,9 @@ final class HarnessShellUITests: XCTestCase {
             capture(app, "08-three-card-pick--largest-text-\(position)")
         }
         scrollTo(app.buttons["draw-card-3"], in: app)
+        capture(app, "08-three-card-pick--largest-text-fan")
+        scrollTo(app.staticTexts["spread-shuffle-helper"], in: app)
+        assertVisible(app.buttons["spread-shuffle"], in: app)
         capture(app, "08-three-card-pick--largest-text-bottom")
         chooseSpread(app, largest: true)
         capture(app, "08-three-card-pick-complete--largest-text-bottom")
@@ -1416,5 +1423,122 @@ final class HarnessShellUITests: XCTestCase {
             XCTAssertEqual(app.staticTexts["spread-question"].label, "“Where can I grow?”")
             app.terminate()
         }
+    }
+
+    func testSpreadShuffleNeverConsumesPickAndCanBeInterrupted() {
+        for reduced in [false, true] {
+            let app = app(extra: fixedSpread + ["--test-hold-shuffle"] + (reduced ? ["--test-reduce-motion"] : []), animations: true)
+            reachAsk(app)
+            app.buttons["suggestion-0"].tap()
+            app.buttons["submit-question"].tap()
+            for (index, position) in ["situation", "action", "outcome"].enumerated() {
+                XCTAssertEqual(app.staticTexts["spread-progress"].label, "Card \(index + 1) of 3")
+                XCTAssertEqual(app.staticTexts["pick-prompt"].label, "Choose your \(position) card")
+                XCTAssertEqual(app.staticTexts["spread-shuffle-helper"].label, "Shuffling never uses up a pick.")
+                let previous = ["situation", "action", "outcome"].map {
+                    app.descendants(matching: .any)["spread-slot-\($0)"].firstMatch.label
+                }
+                for _ in 0..<2 { app.buttons["spread-shuffle"].tap() }
+                XCTAssertEqual(previous, ["situation", "action", "outcome"].map {
+                    app.descendants(matching: .any)["spread-slot-\($0)"].firstMatch.label
+                })
+                for card in 1...5 { XCTAssertTrue(app.buttons["draw-card-\(card)"].isHittable) }
+                let fan = app.descendants(matching: .any)["spread-fan"].firstMatch
+                XCTAssertEqual(fan.value as? String, reduced ? "settled" : "animating")
+                app.buttons["draw-card-\(index + 1)"].tap()
+                XCTAssertFalse(app.buttons["spread-slot-\(position)"].exists)
+                let filled = app.descendants(matching: .any)["spread-slot-\(position)"].firstMatch
+                let locked = filled.label
+                filled.tap()
+                XCTAssertEqual(filled.label, locked)
+                XCTAssertEqual(app.staticTexts["spread-progress"].label, index == 2 ? "All three drawn" : "Card \(index + 2) of 3")
+            }
+            XCTAssertEqual(app.descendants(matching: .any)["spread-slot-situation"].firstMatch.label, "Situation, The Star, Upright")
+            XCTAssertEqual(app.descendants(matching: .any)["spread-slot-action"].firstMatch.label, "Action, The Sun, Reversed")
+            XCTAssertEqual(app.descendants(matching: .any)["spread-slot-outcome"].firstMatch.label, "Outcome, The Fool, Upright")
+            XCTAssertTrue(app.buttons["read-spread"].isHittable)
+            XCTAssertFalse(app.buttons["spread-shuffle"].exists)
+            app.terminate()
+        }
+    }
+
+    func testSpreadShuffleSettlesEachRound() {
+        let app = app(extra: fixedSpread, animations: true)
+        reachAsk(app)
+        app.buttons["suggestion-0"].tap()
+        app.buttons["submit-question"].tap()
+        for count in 1...3 {
+            let fan = app.descendants(matching: .any)["spread-fan"].firstMatch
+            let settled = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", "settled"), object: fan)
+            XCTAssertEqual(XCTWaiter.wait(for: [settled], timeout: 10), .completed)
+            XCTAssertEqual(app.staticTexts["spread-progress"].label, "Card \(count) of 3")
+            if count == 1 { capture(app, "08-three-card-pick--shuffle-settled") }
+            app.buttons["draw-card-3"].tap()
+        }
+        XCTAssertTrue(app.buttons["read-spread"].isHittable)
+    }
+
+    func testSpreadDraftSurvivesBackgroundRelaunchAndClearsAtReadingOrAsk() {
+        let app = app(extra: fixedSpread + ["--test-store-id", UUID().uuidString], memory: false)
+        reachAsk(app)
+        app.buttons["suggestion-0"].tap()
+        app.buttons["submit-question"].tap()
+        for count in 0...3 {
+            let slots = ["situation", "action", "outcome"].map {
+                app.descendants(matching: .any)["spread-slot-\($0)"].firstMatch.label
+            }
+            XCUIDevice.shared.press(.home)
+            app.activate()
+            XCTAssertEqual(app.staticTexts["spread-question"].label, "“Where is this going?”")
+            app.terminate()
+            app.launch()
+            XCTAssertTrue(app.staticTexts["today-title"].waitForExistence(timeout: 5))
+            app.buttons["tab-ask"].tap()
+            XCTAssertEqual(app.staticTexts["spread-question"].label, "“Where is this going?”")
+            XCTAssertEqual(slots, ["situation", "action", "outcome"].map {
+                app.descendants(matching: .any)["spread-slot-\($0)"].firstMatch.label
+            })
+            app.buttons["go-back"].tap()
+            XCTAssertEqual(app.descendants(matching: .any)["question-field"].firstMatch.value as? String, "Where is this going?")
+            app.buttons["submit-question"].tap()
+            XCTAssertEqual(slots, ["situation", "action", "outcome"].map {
+                app.descendants(matching: .any)["spread-slot-\($0)"].firstMatch.label
+            })
+            if count < 3 { app.buttons["draw-card-3"].tap() }
+        }
+        app.buttons["read-spread"].tap()
+        XCTAssertTrue(app.staticTexts["reading-saved"].waitForExistence(timeout: 5))
+        app.terminate()
+        app.launch()
+        app.buttons["tab-ask"].tap()
+        XCTAssertTrue(app.staticTexts["ask-title"].waitForExistence(timeout: 5))
+        app.buttons["suggestion-0"].tap()
+        app.buttons["submit-question"].tap()
+        app.buttons["draw-card-3"].tap()
+        app.buttons["go-back"].tap()
+        app.buttons["go-back"].tap()
+        XCTAssertTrue(app.staticTexts["ask-title"].exists)
+        app.terminate()
+        app.launch()
+        app.buttons["tab-ask"].tap()
+        XCTAssertTrue(app.staticTexts["ask-title"].waitForExistence(timeout: 5))
+        app.buttons["suggestion-0"].tap()
+        app.buttons["submit-question"].tap()
+        XCTAssertEqual(app.staticTexts["spread-progress"].label, "Card 1 of 3")
+    }
+
+    func testSpreadDraftSaveFailureCanRetry() {
+        let app = app(extra: fixedSpread + ["--test-spread-save-failure", "--test-reduce-motion"])
+        reachAsk(app)
+        app.buttons["suggestion-0"].tap()
+        app.buttons["submit-question"].tap()
+        XCTAssertTrue(app.alerts["Your draft could not be saved"].waitForExistence(timeout: 5))
+        capture(app, "08-three-card-pick--draft-save-failure")
+        app.alerts.buttons["Try again"].tap()
+        XCTAssertTrue(app.alerts.firstMatch.waitForNonExistence(timeout: 5))
+        XCTAssertEqual(app.staticTexts["spread-progress"].label, "Card 1 of 3")
+        chooseSpread(app)
+        app.buttons["read-spread"].tap()
+        XCTAssertTrue(app.staticTexts["reading-saved"].waitForExistence(timeout: 5))
     }
 }

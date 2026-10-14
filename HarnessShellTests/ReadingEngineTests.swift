@@ -386,6 +386,85 @@ final class ReadingEngineTests: XCTestCase {
         XCTAssertEqual(bounds.count, 6)
     }
 
+    func testResumedSpreadKeepsSnapshotAndDrawsOnlyRemainingCards() throws {
+        let library = try CardLibrary.load()
+        let first = try XCTUnwrap(ReadingEngine.nextPick(after: [], library: library, randomIndex: { _ in 0 }))
+        let draft = SpreadDraft(area: .social, question: "What brings us together?", picks: [first], isPicking: true)
+        let restored = try JSONDecoder().decode(SpreadDraft.self, from: JSONEncoder().encode(draft))
+        try restored.validate()
+        XCTAssertEqual(restored, draft)
+        var bounds: [Int] = []
+        let next = try XCTUnwrap(ReadingEngine.nextPick(after: restored.picks, library: library) {
+            bounds.append($0)
+            return $0 - 1
+        })
+        XCTAssertEqual(bounds, [library.cards.count - 1, 2])
+        XCTAssertEqual(next.position, .action)
+        XCTAssertNotEqual(next.card.id, first.card.id)
+        XCTAssertEqual(next.orientation, .reversed)
+        XCTAssertEqual(restored.picks, [first])
+        for picks in [[next], [first, first], [first, next, next, next]] {
+            XCTAssertThrowsError(try SpreadDraft(area: .social, question: draft.question, picks: picks, isPicking: true).validate())
+        }
+        XCTAssertThrowsError(try SpreadDraft(area: .social, question: " ", picks: [], isPicking: true).validate())
+        XCTAssertNoThrow(try SpreadDraft(area: .social, question: "", picks: [first], isPicking: false).validate())
+    }
+
+    @MainActor
+    func testDraftSaveRetryKeepsPickAndReadingSaveClearsDraft() throws {
+        let store = try makeStore()
+        let seed = try store.installSeed { "draft-test" }
+        try store.completeWelcome()
+        let session = try makeSession(store: store, seed: seed)
+        session.openComposer(question: "How can I begin?")
+        session.submitQuestion()
+        store.failsNextSpreadSave = true
+        session.pickCard()
+        let first = session.picks
+        XCTAssertTrue(session.draftSaveFailed)
+        XCTAssertEqual(first.count, 1)
+        XCTAssertEqual(try store.spreadDraft()?.picks.count, 0)
+        session.pickCard()
+        XCTAssertEqual(session.picks, first)
+        session.retryDraftSave()
+        XCTAssertFalse(session.draftSaveFailed)
+        XCTAssertEqual(try store.spreadDraft()?.picks, first)
+        session.backToComposer()
+        session.question = "What can I learn?"
+        session.area = .career
+        let restored = try makeSession(store: store, seed: seed)
+        restored.openAsk()
+        guard case .composer = restored.screen else { return XCTFail("Back should restore the composer") }
+        XCTAssertEqual(restored.question, session.question)
+        XCTAssertEqual(restored.area, .career)
+        restored.submitQuestion()
+        XCTAssertEqual(restored.picks, first)
+        restored.pickCard()
+        restored.pickCard()
+        restored.readSpread()
+        XCTAssertNil(try store.spreadDraft())
+        XCTAssertEqual(try store.latestReading()?.picks, restored.picks)
+    }
+
+    @MainActor
+    func testFailedDraftDiscardRetainsDraftUntilRetry() throws {
+        let store = try makeStore()
+        let seed = try store.installSeed { "discard-test" }
+        let session = try makeSession(store: store, seed: seed)
+        session.openComposer(question: "Where can I grow?")
+        session.submitQuestion()
+        session.pickCard()
+        session.backToComposer()
+        store.failsNextSpreadSave = true
+        session.backToAsk()
+        guard case .composer = session.screen else { return XCTFail("Failed discard must stay in the composer") }
+        XCTAssertNotNil(try store.spreadDraft())
+        session.retryDraftSave()
+        guard case .ask = session.screen else { return XCTFail("Retry should return to Ask") }
+        XCTAssertNil(try store.spreadDraft())
+        XCTAssertTrue(session.picks.isEmpty)
+    }
+
     func testEveryStarterPositionMeaningAndQuestionAreaIsComplete() throws {
         let library = try CardLibrary.load()
         XCTAssertTrue(library.questions.isComplete)

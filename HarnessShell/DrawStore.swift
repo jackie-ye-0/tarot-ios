@@ -37,10 +37,11 @@ final class DrawStore {
     #if DEBUG
     var failsNextWelcomeRead = false
     var failsNextWelcomeSave = false
+    var failsNextSpreadSave = false
     #endif
 
     init(configuration: ModelConfiguration) throws {
-        container = try ModelContainer(for: InstallIdentity.self, StoredDailyDraw.self, StoredQuestionReading.self,
+        container = try ModelContainer(for: InstallIdentity.self, StoredDailyDraw.self, StoredQuestionReading.self, StoredSpreadDraft.self,
                                        configurations: configuration)
         context.autosaveEnabled = false
     }
@@ -111,18 +112,63 @@ final class DrawStore {
     func save(_ reading: QuestionReading) throws -> QuestionReading {
         let id = reading.id
         let request = FetchDescriptor<StoredQuestionReading>(predicate: #Predicate { $0.id == id })
-        if let saved = try context.fetch(request).first {
-            return try JSONDecoder().decode(QuestionReading.self, from: saved.snapshot)
+        do {
+            let existing = try context.fetch(request).first
+            let saved = try existing.map { try JSONDecoder().decode(QuestionReading.self, from: $0.snapshot) } ?? reading
+            if existing == nil { context.insert(try StoredQuestionReading(reading)) }
+            for draft in try context.fetch(FetchDescriptor<StoredSpreadDraft>()) { context.delete(draft) }
+            try context.save()
+            return saved
+        } catch {
+            context.rollback()
+            throw error
         }
-        context.insert(try StoredQuestionReading(reading))
-        do { try context.save() } catch { context.rollback(); throw error }
-        return reading
+    }
+
+    func spreadDraft() throws -> SpreadDraft? {
+        guard let stored = try context.fetch(FetchDescriptor<StoredSpreadDraft>()).first else { return nil }
+        let draft = try JSONDecoder().decode(SpreadDraft.self, from: stored.snapshot)
+        try draft.validate()
+        return draft
+    }
+
+    func saveSpreadDraft(_ draft: SpreadDraft?) throws {
+        #if DEBUG
+        if failsNextSpreadSave {
+            failsNextSpreadSave = false
+            throw StoreError.save(CocoaError(.fileWriteOutOfSpace))
+        }
+        #endif
+        do {
+            try draft?.validate()
+            let stored = try context.fetch(FetchDescriptor<StoredSpreadDraft>()).first
+            if let draft {
+                let snapshot = try JSONEncoder().encode(draft)
+                if let stored { stored.snapshot = snapshot }
+                else { context.insert(StoredSpreadDraft(snapshot: snapshot)) }
+            } else if let stored { context.delete(stored) }
+            try context.save()
+        } catch {
+            context.rollback()
+            throw error
+        }
     }
 
     func latestReading() throws -> QuestionReading? {
         var request = FetchDescriptor<StoredQuestionReading>(sortBy: [SortDescriptor(\.createdAt, order: .reverse)])
         request.fetchLimit = 1
         return try context.fetch(request).first.map { try JSONDecoder().decode(QuestionReading.self, from: $0.snapshot) }
+    }
+}
+
+@Model
+final class StoredSpreadDraft {
+    @Attribute(.unique) var key: String
+    var snapshot: Data
+
+    init(snapshot: Data) {
+        key = "spread"
+        self.snapshot = snapshot
     }
 }
 

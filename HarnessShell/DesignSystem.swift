@@ -13,6 +13,7 @@ enum Design {
         static let textDelay = 0.85
         static let stagger = 0.08
         static let welcomeFloat = Animation.easeInOut(duration: 3).repeatForever(autoreverses: true)
+        static let activeSlotPulse = Animation.easeInOut(duration: 2).repeatForever(autoreverses: true)
     }
 
     enum Palette {
@@ -1263,6 +1264,7 @@ struct NavigationAction: View {
         Button(action: action) {
             Image(systemName: close ? "xmark" : "chevron.left")
                 .typeRole(.section)
+                .dynamicTypeSize(.large) // Keep the glyph's designed size; its target remains at least 44 points.
                 .foregroundStyle(night ? Design.Palette.cream : Design.Palette.ink)
                 .frame(minWidth: Design.Space.target, minHeight: Design.Space.target)
                 .contentShape(Rectangle())
@@ -1318,6 +1320,8 @@ struct EmptySpreadSlot: View {
     let number: Int
     let active: Bool
     let width: CGFloat
+    var animationsEnabled = false
+    @State private var pulsing = false
 
     var body: some View {
         let shape = RoundedRectangle(cornerRadius: width / 10)
@@ -1325,12 +1329,19 @@ struct EmptySpreadSlot: View {
             .overlay {
                 shape.strokeBorder(active ? Design.Palette.gold : Design.Palette.nightSecondary.opacity(0.4),
                                    style: StrokeStyle(lineWidth: 1.5, dash: [3, 3]))
+                    .opacity(active && animationsEnabled && pulsing ? 0.55 : 1)
             }
             .overlay {
                 Text(String(number)).typeRole(.section).foregroundStyle(Design.Palette.gold)
             }
             .frame(width: width, height: width * 1.6)
             .accessibilityHidden(true)
+            .task(id: active && animationsEnabled) {
+                pulsing = false
+                if active && animationsEnabled {
+                    withAnimation(Design.Motion.activeSlotPulse) { pulsing = true }
+                }
+            }
     }
 }
 

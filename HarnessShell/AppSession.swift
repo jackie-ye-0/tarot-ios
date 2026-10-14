@@ -23,6 +23,7 @@ struct LaunchConfiguration {
     var openSavedReading = false
     var welcomeCompleted = false
     var welcomeSaveFailure = false
+    var spreadSaveFailure = false
 
     static func current() -> LaunchConfiguration {
         var result = LaunchConfiguration()
@@ -53,6 +54,7 @@ struct LaunchConfiguration {
         result.openSavedReading = arguments.contains("--test-open-saved-reading")
         result.welcomeCompleted = arguments.contains("--test-welcome-completed")
         result.welcomeSaveFailure = arguments.contains("--test-welcome-save-failure")
+        result.spreadSaveFailure = arguments.contains("--test-spread-save-failure")
         #endif
         return result
     }
@@ -95,9 +97,13 @@ final class AppSession {
     var dayRefreshFailed = false
     var readingSaveFailed = false
     var welcomeSaveFailed = false
-    var area: ReadingArea = .relationship
-    var question = ""
+    var draftSaveFailed = false
+    var area: ReadingArea = .relationship { didSet { persistSpreadDraft() } }
+    var question = "" { didSet { persistSpreadDraft() } }
     private(set) var picks: [SpreadPick] = []
+    private var hasSpreadDraft = false
+    private var draftIsPicking = true
+    private var discardingDraft = false
     private var pendingReading: QuestionReading?
     private var today: DailyDraw?
     private(set) var date: Date
@@ -121,6 +127,13 @@ final class AppSession {
         self.store = store
         self.library = library
         self.randomIndex = randomIndex
+        if let draft = try store.spreadDraft() {
+            area = draft.area
+            question = draft.question
+            picks = draft.picks
+            draftIsPicking = draft.isPicking
+            hasSpreadDraft = true
+        }
         screen = try launchScreen()
     }
 
@@ -226,18 +239,61 @@ final class AppSession {
         screen = .composer
     }
 
+    func openAsk() {
+        screen = hasSpreadDraft ? (draftIsPicking ? .pick : .composer) : .ask
+    }
+
+    func backToComposer() {
+        draftIsPicking = false
+        persistSpreadDraft()
+        screen = .composer
+    }
+
+    func backToAsk() {
+        do {
+            try store.saveSpreadDraft(nil)
+            hasSpreadDraft = false
+            discardingDraft = false
+            draftSaveFailed = false
+            picks = []
+            pendingReading = nil
+            screen = .ask
+        } catch {
+            discardingDraft = true
+            draftSaveFailed = true
+        }
+    }
+
+    private func persistSpreadDraft() {
+        guard hasSpreadDraft else { return }
+        pendingReading = nil
+        do {
+            try store.saveSpreadDraft(SpreadDraft(area: area, question: question, picks: picks, isPicking: draftIsPicking))
+            draftSaveFailed = false
+        } catch { draftSaveFailed = true }
+    }
+
+    func retryDraftSave() {
+        if discardingDraft { backToAsk() }
+        else { persistSpreadDraft() }
+    }
+
     func submitQuestion() {
         guard canSubmit else { return }
         question = question.trimmingCharacters(in: .whitespacesAndNewlines)
-        picks = []
+        if !hasSpreadDraft { picks = [] }
         pendingReading = nil
+        hasSpreadDraft = true
+        draftIsPicking = true
+        persistSpreadDraft()
         screen = .pick
     }
 
     func pickCard() {
-        guard case .pick = screen,
+        guard case .pick = screen, !draftSaveFailed,
               let pick = ReadingEngine.nextPick(after: picks, library: library, randomIndex: randomIndex) else { return }
         picks.append(pick)
+        persistSpreadDraft()
     }
 
     func readSpread() {
@@ -249,6 +305,8 @@ final class AppSession {
             }
             guard let pendingReading else { return }
             screen = .reading(try store.save(pendingReading))
+            hasSpreadDraft = false
+            draftSaveFailed = false
         } catch { readingSaveFailed = true }
     }
 
@@ -316,6 +374,7 @@ enum AppLaunch {
         #if DEBUG
         if configuration.testMode && configuration.welcomeCompleted { try store.completeWelcome() }
         store.failsNextWelcomeSave = configuration.welcomeSaveFailure
+        store.failsNextSpreadSave = configuration.spreadSaveFailure
         if configuration.earlierSnapshot {
             let draw = ReadingEngine.dailyDraw(seed: seed, dateKey: ReadingEngine.dateKey(for: clock.now, timeZone: clock.timeZone),
                                               position: 3, library: library)

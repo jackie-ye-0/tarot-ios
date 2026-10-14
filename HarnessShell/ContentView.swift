@@ -24,13 +24,14 @@ struct ContentView: View {
             case .today(let draw):
                 TodayScreen(draw: draw, dateLabel: session.dateLabel,
                             animationsEnabled: animationsEnabled, testMode: testMode,
-                            ask: { session.screen = .ask }).id("today-\(draw.dateKey)")
+                            ask: session.openAsk).id("today-\(draw.dateKey)")
             case .ask:
                 AskScreen(session: session).id("ask")
             case .composer:
                 QuestionComposerScreen(session: session).id("composer")
             case .pick:
-                ThreeCardPickScreen(session: session).id("pick")
+                ThreeCardPickScreen(session: session, animationsEnabled: animationsEnabled,
+                                    holdShuffle: holdShuffle, testMode: testMode).id("pick")
             case .reading(let reading):
                 QuestionReadingScreen(reading: reading, done: session.goToToday).id("reading")
             }
@@ -38,7 +39,7 @@ struct ContentView: View {
         .safeAreaInset(edge: .bottom, spacing: 0) {
             switch session.screen {
             case .today, .ask:
-                RestingTabBar(askSelected: isAsk, today: session.goToToday, ask: { session.screen = .ask })
+                RestingTabBar(askSelected: isAsk, today: session.goToToday, ask: session.openAsk)
             default: EmptyView()
             }
         }
@@ -61,6 +62,11 @@ struct ContentView: View {
             Button("OK", role: .cancel) { }
         } message: {
             Text("Your three cards are still here. Free some space on your phone if needed, then tap Read my spread to try again.")
+        }
+        .alert("Your draft could not be saved", isPresented: $session.draftSaveFailed) {
+            Button("Try again", action: session.retryDraftSave)
+        } message: {
+            Text("Your latest changes are only in memory. Free some space on your phone if needed, then try again before leaving the app.")
         }
     }
 

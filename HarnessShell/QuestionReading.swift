@@ -104,6 +104,22 @@ struct SpreadPick: Codable, Equatable, Identifiable {
     var id: QuestionPosition { position }
 }
 
+struct SpreadDraft: Codable, Equatable {
+    var area: ReadingArea
+    var question: String
+    var picks: [SpreadPick]
+    var isPicking: Bool
+
+    func validate() throws {
+        guard picks.count <= QuestionPosition.allCases.count,
+              !isPicking || ReadingEngine.canSubmit(question: question),
+              picks.map(\.position) == Array(QuestionPosition.allCases.prefix(picks.count)),
+              Set(picks.map { $0.card.id }).count == picks.count else {
+            throw CocoaError(.coderInvalidValue)
+        }
+    }
+}
+
 struct ReadingSection: Codable, Equatable {
     let position: QuestionPosition
     let text: String
