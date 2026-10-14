@@ -335,6 +335,7 @@ struct TodayScreen: View {
             .padding(.top, Design.Space.page)
             .padding(.bottom, Design.Space.large)
         }
+        .accessibilityIdentifier("screen-content")
         .clipped()
         .background { ScreenGround() }
         .preferredColorScheme(.light)

@@ -575,8 +575,7 @@ final class HarnessShellUITests: XCTestCase {
             "core-interpretation": "Hope may feel more useful when you give it something small to do. Notice what restores a little perspective today, and make room to return to it.",
             "daily-colour": "Colour, Sage", "daily-object": "Object, Something glass", "daily-hour": "Best hour, After 3 pm",
             "score-career": "Career, 72 out of 100", "score-relationship": "Relationship, 81 out of 100", "score-social": "Social, 64 out of 100",
-            "area-label-career": "Career", "line-career": "Share an idea you have been quietly tending.",
-            "area-label-relationship": "Relationship", "line-relationship": "Let a kind word make room for connection."
+            "area-label-career": "Career", "line-career": "Share an idea you have been quietly tending."
         ]
         for (identifier, label) in expected {
             let element = app.descendants(matching: .any)[identifier].firstMatch
@@ -588,9 +587,15 @@ final class HarnessShellUITests: XCTestCase {
             XCTAssertEqual(app.staticTexts[title].label, title)
         }
         scrollTo(app.staticTexts["line-social"], in: app)
-        XCTAssertEqual(app.staticTexts["area-label-social"].label, "Social")
-        XCTAssertEqual(app.staticTexts["line-social"].label, "Notice who gives you space to be yourself.")
-        assertVisible(app.staticTexts["area-label-social"], in: app)
+        // The resting tabs put Relationship below the first stop's viewport.
+        for (identifier, label) in [
+            "area-label-relationship": "Relationship", "line-relationship": "Let a kind word make room for connection.",
+            "area-label-social": "Social", "line-social": "Notice who gives you space to be yourself."
+        ] {
+            let element = app.staticTexts[identifier]
+            assertVisible(element, in: app)
+            XCTAssertEqual(element.label, label)
+        }
         capture(app, "04-today--voiceover-exposure-bottom")
         let bottomHierarchy = XCTAttachment(string: app.debugDescription)
         bottomHierarchy.name = "today-bottom-accessibility-hierarchy"
