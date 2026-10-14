@@ -264,8 +264,7 @@ final class AppSession {
 
     func backToAsk() {
         do {
-            if hasSpreadDraft { try store.saveSpreadDraft(nil) }
-            else { try store.saveDraft(nil) }
+            try store.discardDrafts()
             hasDraft = false
             hasSpreadDraft = false
             draftSaveFailed = false

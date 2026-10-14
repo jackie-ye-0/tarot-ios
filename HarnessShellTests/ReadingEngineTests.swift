@@ -104,6 +104,30 @@ final class ReadingEngineTests: XCTestCase {
     }
 
     @MainActor
+    func testDiscardClearsQuestionDraftAfterFailedSpreadTransition() throws {
+        let store = try makeStore()
+        let seed = try store.installSeed { "failed-spread-transition" }
+        try store.completeWelcome()
+        let session = try makeSession(store: store, seed: seed)
+        session.openComposer(question: "What should I carry forward?")
+        store.failsNextSpreadSave = true
+        session.submitQuestion()
+        store.failsNextSpreadSave = true
+        session.backToComposer()
+        XCTAssertNil(try store.spreadDraft())
+        XCTAssertNotNil(try store.questionDraft())
+
+        session.backToAsk()
+
+        XCTAssertNil(try store.spreadDraft())
+        XCTAssertNil(try store.questionDraft())
+        guard case .ask = session.screen else { return XCTFail("Discarding should return to Ask") }
+        let relaunched = try makeSession(store: store, seed: seed)
+        XCTAssertFalse(relaunched.hasDraft)
+        XCTAssertTrue(relaunched.question.isEmpty)
+    }
+
+    @MainActor
     private func makeStore() throws -> DrawStore {
         try DrawStore(configuration: ModelConfiguration(isStoredInMemoryOnly: true, cloudKitDatabase: .none))
     }
