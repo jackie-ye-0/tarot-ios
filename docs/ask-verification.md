@@ -1,6 +1,6 @@
 # Ask foundation (#13)
 
-Scope: the first complete Today → Ask → composer → three-card pick → reading path. Implementation and the independent comparison are complete, but delivery is **blocked on the strict native composer control audit**. The latest two full checks on unchanged `2c7ab55` each passed 25/26 iOS tests and failed `suggestion-0` contrast. Together with the preceding reflection-caption coverage failure, this reaches the three-consecutive-affected-check stop bound. No further rerun is planned without guidance; a separate simulator scheduling hold is also active. The last complete pass was on `49b2eb9`, before the final composer alignment and caption-test corrections.
+Scope: the first complete Today → Ask → composer → three-card pick → reading path. Implementation, the independent comparison follow-up and final verification are complete. The first full check with native audit categories run separately and Dynamic Type last passed on `3dd2f82`; all 76 exported images and ten reference pairs were inspected. Native control flags remain unsuppressed. Every retained failed full check and failed diagnostic is disclosed below, alongside the before/after observations.
 
 ## Behaviour and coverage
 
@@ -45,32 +45,30 @@ Every audit category stays enabled. Fixtures use the existing Debug Reduce Motio
 
 ## Latest complete verification evidence
 
-`lockf /tmp/tarot-ios-harness.lock ./scripts/harness check --device B8FDA44A-52B0-45F2-9FFE-1E3381435CAC` passed on clean commit `49b2eb97368c20274110a70d0ad1588512bf273f` in `.harness/runs/20261013T201947.958208Z-check-f9595a6b/`. It ran **32 Python command tests, the design-role guard, and 26 iOS tests** (13 engine/font and 13 UI), with zero failures, skips, expected failures or runtime warnings. Toolchain: Xcode 27.0 (27A266a), iPhone 17e Tarot 1, iOS 26.5. This pass includes the independent review's layout/capture changes and Draw test synchronisation, but precedes the final composer helper alignment correction described below.
+`lockf /tmp/tarot-ios-harness.lock ./scripts/harness check --device B8FDA44A-52B0-45F2-9FFE-1E3381435CAC` passed on clean source/test commit `3dd2f826a3c000c26f4c346dad0c25d8bc0ce6ed` in `.harness/runs/20261014T005437.772748Z-check-0a007915/`. It ran **32 Python command tests, the design-role guard, and 26 iOS tests** (13 engine/font and 13 UI), with zero failures, skips, expected failures or runtime warnings. Toolchain: Xcode 27.0 (27A266a), iPhone 17e Tarot 1, iOS 26.5. This pass includes all independent-review corrections, the final composer helper alignment and the corrected reflection-caption stop. Later changes to this report do not change the tested app or tests.
 
-`./scripts/harness evidence` was inspected, and all ten matched states on the generated comparison page were opened with chrome-devtools-axi and visually compared. All **78 exported images** were inspected: 68 full-screen captures and ten contrast crops. The ten main reference states are Draw empty/chosen, Reveal, Today, Ask, composer empty/filled, pick empty/complete and reading. Every touched screen has largest-text captures; Draw, Reveal and both pick states have Reduce Motion captures. Storage-open failure also has standard and largest-text evidence. Missing main references are Welcome, Today’s reminder state, About someone, History and Settings, all outside #13; strict all-screen coverage was not requested.
+`./scripts/harness evidence` was inspected and the generated comparison page opened with chrome-devtools-axi. All ten applicable reference pairs were visually compared, including the full-height references. All **76 exported images** were inspected: 68 full-screen captures and eight contrast crops. The ten main reference states are Draw empty/chosen, Reveal, Today, Ask, composer empty/filled, pick empty/complete and reading. Every touched screen has largest-text captures; Draw, Reveal and both pick states have Reduce Motion captures. Storage-open failure also has standard and largest-text evidence. Missing main references are Welcome, Today’s reminder state, About someone, History and Settings, all outside #13; strict all-screen coverage was not requested.
 
-The author inspection verified the new tabs/entry, all three area labels, complete suggested questions, empty/enabled composer actions, ordered labelled slots, positions/orientations, position passages, lens, reflection and Done. Largest-text captures overlap across long text, include each spread slot, and show reachable actions. Filled-composer top captures include Back, selector and title; separate stops cover the full guidance, field, all three suggestions, footer and keyboard states. Completed-pick top captures include Back, progress and the full question. The focused field is checked and shown above the keyboard at both text sizes. No content or primary action was unreachable in the inspected captures.
+The author inspection verified the tabs/entry, all three area labels, complete suggested questions, empty/enabled composer actions, ordered labelled slots, positions/orientations, position passages, lens, reflection and Done. Largest-text captures overlap across long text, include each spread slot, and show reachable actions. Filled-composer top captures include Back, selector and title; separate stops cover the full guidance, field, all three suggestions, footer and keyboard states. Completed-pick top captures include Back, progress and the full question. The focused field is fully above the keyboard at both text sizes, with the action reachable after dismissal. The standard reading bottom now shows the whole reflection box, including “Something to sit with”, above the pinned footer. No content or primary action was unreachable across the inspected captures.
 
-The original independent-review input remains preserved separately: clean code/test commit `5494309`, full passing run `20261013T180322.383990Z-check-492295a2`, 73 images (65 full-screen and eight contrast crops). The independent report refers to that original packet. The newer passing packet retains its own manifest copy, references, comparison page, screenshots, logs, result bundle, audit records and the failed-run/frequency evidence. It must not be relabelled as a complete pass for the subsequent helper alignment or caption-test correction.
+Final evidence is retained in the task folder at `final-evidence/ordered-audit-3dd2f82/`, including the manifest, references, comparison page, screenshots, result bundle/logs, exact audit records, author inspection, independent report, before/after counts and failed-run records. The original independent input remains unchanged: clean code/test commit `5494309`, run `20261013T180322.383990Z-check-492295a2`, 73 images (65 full-screen and eight crops). The earlier strict passing packet `post-review-49b2eb9/` is also retained as historical evidence, not relabelled as a pass for later changes.
 
 ### Measured contrast dismissals in the latest passing run
 
-These are **all ten** built-in contrast dismissals in run `20261013T201947.958208Z-check-f9595a6b`. Each was contrast-only, plain static text without non-text descendants, fully inside the true viewport and measured from its own kept image. All other screens’ audits passed without a measured dismissal. All categories remained enabled and all controls passed the strict native audit. Ratios below are rounded to six decimal places; kept `accessibility-audit-*` attachments and `audit-records.json` contain full precision, frames, viewport, labels and luminances.
+These are **all eight** contrast dismissals in `20261014T005437.772748Z-check-0a007915`. Each was contrast-only, plain static text without non-text descendants, fully inside the true viewport and measured from its own kept image. All other screens’ audits passed without a measured dismissal. All seven native categories ran once per stop, with Dynamic Type last. No control or composer-heading contrast flag appeared. Ratios below are rounded to six decimal places; kept attachments and `audit-records.json` contain full precision, frames, viewport, labels and luminances.
 
-| Audit capture | Element identifier or semantic key | Measured ratio |
+| Audit capture | Element identifier | Measured ratio |
 | --- | --- | --- |
-| `09-reading` | `reading-situation` | 9.061062:1 |
 | `09-reading` | `reading-action` | 9.060674:1 |
-| `09-reading--action` | `reading-situation` | 9.061062:1 |
+| `09-reading` | `reading-situation` | 9.061062:1 |
 | `09-reading--action` | `reading-action` | 9.060674:1 |
-| `09-reading--outcome` | `reading-situation` | 9.060874:1 |
-| `09-reading--outcome` | `reading-action` | 9.062421:1 |
-| `09-reading--bottom` | `reading-situation` | 9.059955:1 |
-| `09-reading--bottom` | `label:48:Action · The Sun, reversed` | 5.226312:1 |
-| `09-reading--bottom` | `reading-action` | 9.064122:1 |
-| `09-reading--bottom` | `reading-lens` | 9.061047:1 |
+| `09-reading--action` | `reading-situation` | 9.061062:1 |
+| `09-reading--bottom` | `reading-action` | 9.060761:1 |
+| `09-reading--bottom` | `reading-lens` | 9.060963:1 |
+| `09-reading--outcome` | `reading-action` | 9.062036:1 |
+| `09-reading--outcome` | `reading-situation` | 9.061638:1 |
 
-Outcome was deferred at the top and Action audit stops, then audited fully visible at the Outcome stop. The lens and reflection were deferred at the Outcome stop and audited fully visible at the bottom stop. Off-screen Situation, Action and Outcome card-position labels had already been audited fully visible at the top. No unresolved deferral remained, and no other audit category was dismissed. The synthetic near-3:1 control still failed the 4.5 floor in the measurement self-check.
+Outcome was deferred at the top and Action stops, then audited fully visible at the Outcome stop. The reflection was deferred at Outcome and audited fully visible at the bottom. Off-screen Situation text and the Action position heading at the bottom had already been audited fully visible. The final caption was visible and passed. No unresolved deferral remained, and no other audit category was dismissed. The synthetic near-3:1 control still failed the 4.5 floor in the measurement self-check.
 
 ## Independent comparison follow-up
 
@@ -78,7 +76,7 @@ The fresh-session reviewer opened all 65 full-screen images, eight contrast crop
 
 | Review IDs | Disposition |
 | --- | --- |
-| C4, CE4 | Shared dawn footer padding now uses the content’s 20-point guide. Final inspection found the composer helper’s intrinsic-width text still centred about six points inside that guide; its footer stack now uses leading alignment. The primary action already met the guide. All 16 composer captures from `e4b78f9d` were inspected, including empty/filled, standard/largest text, keyboard and keyboard-dismissed states. They confirm the helper/action guide and reachable actions after dismissal. That full run failed the separate strict native suggestion-button audit; final complete verification remains pending. |
+| C4, CE4 | Shared dawn footer padding now uses the content’s 20-point guide. Final inspection found the composer helper’s intrinsic-width text still centred about six points inside that guide; its footer stack now uses leading alignment. The primary action already met the guide. All 16 final composer captures from `0a007915` were inspected, including empty/filled, standard/largest text, keyboard and keyboard-dismissed states. They confirm the helper/action guide and reachable actions after dismissal; the final full check passed. |
 | R6 | Fixed through the same dawn-footer change. Done keeps standard-size pinning and largest-text inline placement. |
 | S2 | Fixed in shared content alignment and footer spacing: short error copy aligns to the leading 20-point guide instead of centring its intrinsic width; retry shares that guide at both sizes. |
 | CE3 | Added a true filled-composer navigation-top capture, guidance stop, separate field capture and complete-suggestions stop; retained footer/keyboard evidence. |
@@ -116,13 +114,13 @@ A bounded diagnostic then ran only the standard filled-composer audit five conse
 
 A later fresh-launch-only filled-composer test failed on its first execution (1/1): the native audit flagged the static heading “Or start from one of these”, then failed the `suggestion-0` Button. The remaining nine authorised executions were not started, and the test-only restructure was reverted completely. The retained isolated observations are now 1/6 executions with flags, alongside 4/9 full-flow filled-composer audits with flags: evidence, not proof of a cause or reliable rates. Earlier Ask/empty-composer audits in the same session are not required for the failure. The failed execution and tested source remain in task evidence; native control flags remain unsuppressed.
 
-The subsequent full strict check on `49b2eb9` passed **26/26**, including the composer control audit and both daily Draw tests. All native controls and mixed/grouped elements retain native failures. Only the ten measured plain-static-text findings listed above were dismissed. The earlier failed runs remain part of the validation record rather than being replaced by the later pass.
+The earlier full strict check on `49b2eb9` passed **26/26**, including the composer control audit and both daily Draw tests. All native controls and mixed/grouped elements retain native failures. Only ten measured plain-static-text findings were dismissed in that historical pass; their exact records remain in its evidence packet. The earlier failed runs remain part of the validation record rather than being replaced by the later pass.
 
 ### Reflection-caption audit coverage follow-up
 
 Run `20261013T213027.896263Z-check-760c90c0` on clean `3eb99a7` passed 32 command tests, the design guard and 25/26 iOS tests, with no skips or runtime warnings. Standard empty/filled and largest filled composer footer images confirm the leading-alignment correction. The sole failure was an unresolved deferred contrast issue on the reading's “Something to sit with” caption. Its recorded frame was `(40, 772.0667, 121, 17)` outside viewport `(0, 47, 390, 658)`. The bottom screenshot shows the question but clips the caption below the pinned footer: the test had scrolled only to `reflection-question`.
 
-The final reading audit stop now scrolls to the caption and explicitly requires the question to remain visible above the footer. It waits for both texts to settle before the audit. App layout, wording and audit policy are unchanged. This targets the coverage gap without suppressing any additional issue. It remains unverified: both later full runs stopped at the composer audit before reaching the corrected reading stop. The failed run and exact audit records are preserved. Xcode took roughly ten minutes after the test suite ended to finalise its result bundle; it was left running and completed without intervention.
+The final reading audit stop now scrolls to the caption and explicitly requires the question to remain visible above the footer. It waits for both texts to settle before the audit. App layout, wording and audit policy are unchanged. This targets the coverage gap without suppressing any additional issue. The next two full runs stopped at the composer audit before reaching the corrected reading stop. The final ordered-audit run `0a007915` subsequently reached it, passed and captured the whole reflection box. The failed run and exact audit records are preserved. Xcode took roughly ten minutes after the test suite ended to finalise its result bundle; it was left running and completed without intervention.
 
 ### Repeated native control failures and stop bound
 
@@ -139,7 +137,56 @@ Each failed filled-composer audit also attached a crop of the plain static text 
 
 All 16 composer captures from `e4b78f9d` were inspected. They confirm the final C4/CE4 leading alignment across empty/filled, standard/largest-text, keyboard and keyboard-dismissed states, with full guidance/suggestions covered by overlapping stops. This visual verification does not turn the failed native control audit into a pass. No inspection of all 65 images from this failed run is claimed.
 
-The three latest full checks failed for contrast-related reasons: unresolved off-screen caption coverage (`760c90c0`), then the native button twice (`73ca2848`, `e4b78f9d`). Applying the instructed stop bound conservatively, further reruns stop here pending guidance. Inbox 012 additionally holds all further simulator runs until release. The source/test branch is committed; the report and evidence identify the remaining gap. No first completion handoff, no-mistakes run or publication has occurred.
+At that stage, three consecutive full checks had failed for contrast-related reasons: unresolved off-screen caption coverage (`760c90c0`), then the native button twice (`73ca2848`, `e4b78f9d`). Further reruns stopped at the instructed bound, and Inbox 012 imposed a simulator hold. Later Firstmate instructions released the bounded diagnostic and full checks described next. No failed run was changed into a pass.
+
+## Audit-ordering follow-up
+
+After the simulator release, one final combined-call check on clean `f40cb0c`, `20261014T004324.397812Z-check-c22e5033`, failed 25/26 with the same heading callback followed by native `suggestion-0` control contrast. It had zero skips and runtime warnings. Its kept composer image and native control crop were inspected; the run remains failed.
+
+The only subsequent test change takes the per-category ordering supplied from the Today work: `elementDetection`, `contrast`, `hitRegion`, `sufficientElementDescription`, `textClipped`, `trait`, then `dynamicType`. Each category runs once per existing stop. The handler is byte-for-byte unchanged, as are the two agreed rules: measured fully visible plain static text at 4.5:1, and off-screen deferrals resolved only by a fully visible audit. No app code, colour, chip style, audit stop, retry, continuation or control exception changed.
+
+The first check with this ordering passed 26/26, with **0/1 runs reporting a control or composer-heading contrast flag**. It stopped the authorised maximum-three sequence at its first complete pass. In the ten preceding retained full-flow runs from `13b64511` through `c22e5033`, **5/10 reported both heading and control flags** at the filled-composer stop. Separately, the fresh-launch diagnostics recorded **1/6 isolated executions with flags**. These small, differing samples are evidence, not proof of the Dynamic Type hypothesis or reliable failure rates. The historical `13b64511` pass measured/dismissed control findings under the old broader handler; that treatment has been removed and is not counted as a strict native control pass.
+
+| Full-flow run | Audit ordering | Filled-composer control flag | Filled-composer heading flag |
+| --- | --- | --- | --- |
+| `20261013T172811.274577Z-check-13b64511` | combined | Yes | Yes |
+| `20261013T180322.383990Z-check-492295a2` | combined | No | No |
+| `20261013T190550.159708Z-check-65ee2119` | combined | No | No |
+| `20261013T191941.856030Z-check-0b7fc21f` | combined | No | No |
+| `20261013T194910.479224Z-check-c4718bc9` | combined | Yes | Yes |
+| `20261013T201947.958208Z-check-f9595a6b` | combined | No | No |
+| `20261013T213027.896263Z-check-760c90c0` | combined | No | No |
+| `20261013T221357.163338Z-check-73ca2848` | combined | Yes | Yes |
+| `20261013T224836.297676Z-check-e4b78f9d` | combined | Yes | Yes |
+| `20261014T004324.397812Z-check-c22e5033` | combined | Yes | Yes |
+| `20261014T005437.772748Z-check-0a007915` | per-category, Dynamic Type last | No | No |
+
+The ordering prevents the Dynamic Type category from running before contrast in the same stop. Whether that was the cause of every earlier native misfire remains unproven. Future control findings still fail the test; a later pass does not erase the failed checks.
+
+## Complete retained failure history
+
+All 14 failed full checks retained for this task are listed below. None is reclassified as passing. Every one ran with zero skipped and expected-failure tests; dirty development snapshots are identified. The result bundles remain under `.harness/runs/`, with summaries, logs and command metadata copied into the final evidence’s `failed-run-records/`.
+
+| Run | Revision | iOS passed/total | Recorded failure |
+| --- | --- | --- | --- |
+| `20261013T132503.563953Z-check-0e831628` | `f6ef8e7` + development changes | 16/23 | Seven UI failures across Ask navigation, first Draw selection, large-text action visibility and relaunch paths. |
+| `20261013T134244.816046Z-check-022432f9` | `f6ef8e7` + development changes | 20/23 | Large-text question-field visibility; native contrast on the Ask and Today tab labels. |
+| `20261013T135345.588164Z-check-8fa04ce2` | `f6ef8e7` + development changes | 21/23 | Native contrast on the Ask and Today tab labels. |
+| `20261013T142631.456392Z-check-1ae3a641` | `f6ef8e7` + development changes | 22/23 | Native contrast on the empty pick’s first slot numeral. |
+| `20261013T151130.778351Z-check-620dda71` | `159e114` | 22/23 | Native contrast on the filled-composer suggestion heading. |
+| `20261013T154558.495948Z-check-2f0876f7` | `6a2435e` | 21/24 | Native reading Situation contrast and two keyboard/typed-question assertions. |
+| `20261013T170154.880762Z-check-ecd94ef2` | `f3d895e` | 23/26 | Large-text Ask, Draw and storage-retry actions not reached by the scroll helper. |
+| `20261013T190550.159708Z-check-65ee2119` | `2977339` | 25/26 | First daily-card tap did not reach Reveal in the five-position regression. |
+| `20261013T191941.856030Z-check-0b7fc21f` | `2977339` | 25/26 | Post-audit Draw interaction did not reach the expected settled elements. |
+| `20261013T194910.479224Z-check-c4718bc9` | `b0d0d40` | 25/26 | Native filled-composer suggestion-0 control contrast. |
+| `20261013T213027.896263Z-check-760c90c0` | `3eb99a7` | 25/26 | Unresolved deferred reflection-caption audit: caption was outside the scroll viewport. |
+| `20261013T221357.163338Z-check-73ca2848` | `2c7ab55` | 25/26 | Native filled-composer suggestion-0 control contrast. |
+| `20261013T224836.297676Z-check-e4b78f9d` | `2c7ab55` | 25/26 | Native filled-composer suggestion-0 control contrast. |
+| `20261014T004324.397812Z-check-c22e5033` | `f40cb0c` | 25/26 | Native filled-composer suggestion-0 control contrast; final combined-call run before the ordering change. |
+
+Failed focused diagnostics are also retained: `reveal-regression-red.xcresult` (0/1, large-text Reveal keywords outside the visible window); `ask-slot-background.xcresult` (0/1, reading Situation heading “Contrast nearly passed”); `ask-reading-three-runs.xcresult` (all three diagnostic executions failed, reporting Situation, Action and off-screen Outcome contrast; the summary aggregates the repeated test as one failed test); and `isolated-filled-composer/iteration-01.xcresult` (0/1, heading flag followed by the native suggestion-button failure). The isolated experiment stopped after the first failure and its test restructure was completely reverted. The measured build-only result ran zero tests and is not used as test verification.
+
+The failed-run counts are a disclosure of development and validation history, not a claim that unrelated failures share one cause. Earlier broad measurement handling is historical: the final helper only permits measured plain static text and never dismisses native control flags.
 
 ## Remaining release limits
 
