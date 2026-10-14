@@ -1250,12 +1250,17 @@ final class HarnessShellUITests: XCTestCase {
         app.buttons["ask-question-entry"].tap()
         XCTAssertEqual(field.value as? String, question)
         field.tap()
+        let deleteKey = app.keyboards.keys["delete"].firstMatch
+        XCTAssertTrue(deleteKey.waitForExistence(timeout: 5))
+        waitForSettled([field, deleteKey])
         // Ensure a character precedes Backspace regardless of the restored caret position.
         field.typeKey(.rightArrow, modifierFlags: [])
-        field.typeKey(.delete, modifierFlags: [])
+        capture(app, "06-composer-question-entered--restored-draft-keyboard")
+        tapWhenSettled(deleteKey)
         XCTAssertEqual(field.value as? String, String(question.dropLast()))
         app.keyboards.buttons["Done"].tap()
         XCTAssertEqual(app.staticTexts["question-count"].label, "299 of 300 characters")
+        capture(app, "06-composer-question-entered--below-limit")
         showNavigationTop(app)
         app.buttons["go-back"].tap()
         app.terminate()
