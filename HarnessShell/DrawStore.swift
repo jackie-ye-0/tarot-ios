@@ -34,7 +34,7 @@ final class DrawStore {
     private var context: ModelContext { container.mainContext }
 
     init(configuration: ModelConfiguration) throws {
-        container = try ModelContainer(for: InstallIdentity.self, StoredDailyDraw.self,
+        container = try ModelContainer(for: InstallIdentity.self, StoredDailyDraw.self, StoredQuestionReading.self,
                                        configurations: configuration)
         context.autosaveEnabled = false
     }
@@ -73,5 +73,35 @@ final class DrawStore {
             let request = FetchDescriptor<StoredDailyDraw>(predicate: #Predicate { $0.dateKey >= start })
             return try context.fetch(request).map { try JSONDecoder().decode(DailyDraw.self, from: $0.snapshot) }
         } catch { throw StoreError.read(error) }
+    }
+
+    func save(_ reading: QuestionReading) throws -> QuestionReading {
+        let id = reading.id
+        let request = FetchDescriptor<StoredQuestionReading>(predicate: #Predicate { $0.id == id })
+        if let saved = try context.fetch(request).first {
+            return try JSONDecoder().decode(QuestionReading.self, from: saved.snapshot)
+        }
+        context.insert(try StoredQuestionReading(reading))
+        do { try context.save() } catch { context.rollback(); throw error }
+        return reading
+    }
+
+    func latestReading() throws -> QuestionReading? {
+        var request = FetchDescriptor<StoredQuestionReading>(sortBy: [SortDescriptor(\.createdAt, order: .reverse)])
+        request.fetchLimit = 1
+        return try context.fetch(request).first.map { try JSONDecoder().decode(QuestionReading.self, from: $0.snapshot) }
+    }
+}
+
+@Model
+final class StoredQuestionReading {
+    @Attribute(.unique) var id: UUID
+    var createdAt: Date
+    var snapshot: Data
+
+    init(_ reading: QuestionReading) throws {
+        id = reading.id
+        createdAt = reading.createdAt
+        snapshot = try JSONEncoder().encode(reading)
     }
 }

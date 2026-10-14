@@ -60,6 +60,7 @@ struct LaunchView: View {
                 }
             } else { ScreenGround() }
         }
+        .environment(\.testViewportEnabled, configuration.testMode)
         .environment(\.dynamicTypeSize, configuration.largestText ? .accessibility5 : systemTextSize)
         .transaction { transaction in
             if !animationsEnabled {

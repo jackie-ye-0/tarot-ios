@@ -26,15 +26,23 @@ enum Design {
         static let gold = colour(0xe2b65c)
         static let cream = colour(0xf6ecdf)
         static let nightSecondary = colour(0xc9bcd8)
+        static let nightHairline = nightSecondary.opacity(0.3)
         static let blue = colour(0x6f8ca2)
         static let clay = colour(0xb0654a)
         static let sage = colour(0x7d8f6a)
         static let ochre = colour(0xc79a3f)
+        static let placeholder = colour(0x7a5f57)
         static let controlTrack = colour(0xead6cd)
+        static let controlBorder = colour(0xe0c9bf)
+        static let disabled = colour(0xdcc6bc)
+        static let disabledInk = colour(0x5f4740)
         static let surfaceHairline = colour(0xefe2dc)
-        static let careerLabel = colour(0x3f596d)
-        static let relationshipLabel = colour(0x8a4a33)
-        static let socialLabel = colour(0x4d5e3d)
+        static let careerLabel = colour(0x415c70)
+        static let relationshipLabel = colour(0x88452f)
+        static let socialLabel = colour(0x4b5b3e)
+        static let dailyCareerLabel = colour(0x3f596d)
+        static let dailyRelationshipLabel = colour(0x8a4a33)
+        static let dailySocialLabel = colour(0x4d5e3d)
 
         static func accent(for area: ReadingArea) -> Color {
             switch area {
@@ -45,6 +53,13 @@ enum Design {
         }
 
         static func label(for area: ReadingArea) -> Color {
+            switch area {
+            case .career: dailyCareerLabel
+            case .relationship: dailyRelationshipLabel
+            case .social: dailySocialLabel
+            }
+        }
+        static func areaLabel(_ area: ReadingArea) -> Color {
             switch area {
             case .career: careerLabel
             case .relationship: relationshipLabel
@@ -78,7 +93,7 @@ enum Design {
     }
 
     enum TypeRole {
-        case display, compactDisplay, title, section, button, body, keywords, metadata, secondary, label, caption
+        case display, compactDisplay, title, section, button, body, keywords, metadata, secondary, label, caption, tab
 
         var font: Font {
             switch self {
@@ -93,6 +108,7 @@ enum Design {
             case .secondary: .custom("HankenGrotesk-Regular", size: 15, relativeTo: .subheadline)
             case .label: .custom("HankenGrotesk-Regular", size: 14, relativeTo: .subheadline).weight(.semibold)
             case .caption: .custom("HankenGrotesk-Regular", size: 13, relativeTo: .footnote)
+            case .tab: .custom("HankenGrotesk-Regular", size: 12, relativeTo: .caption).weight(.semibold)
             }
         }
         var tracking: CGFloat { self == .display ? -0.88 : self == .compactDisplay ? -0.8 : self == .title ? -0.3 : 0 }
@@ -149,9 +165,20 @@ private struct GroundGrain: View {
 
 struct ScreenGround: View {
     var night = false
+    var ritualDisc = false
     var body: some View {
         (night ? Design.Palette.night : Design.Palette.ground)
             .overlay { GroundGrain(night: night) }
+            .overlay {
+                if ritualDisc {
+                    GeometryReader { geometry in
+                        Circle().fill(Design.Palette.disc)
+                            .overlay { GroundGrain(night: true).clipShape(Circle()) }
+                            .frame(width: geometry.size.width * 1.345, height: geometry.size.width * 1.345)
+                            .position(x: geometry.size.width / 2, y: geometry.size.height * 0.82)
+                    }
+                }
+            }
             .ignoresSafeArea()
             .accessibilityHidden(true)
     }
@@ -260,12 +287,36 @@ struct ActionPressStyle: ButtonStyle {
     }
 }
 
+private struct TestViewportEnabledKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+extension EnvironmentValues {
+    var testViewportEnabled: Bool {
+        get { self[TestViewportEnabledKey.self] }
+        set { self[TestViewportEnabledKey.self] = newValue }
+    }
+}
+
+// Only Debug test launches expose geometry; normal accessibility values are unchanged.
+private struct TestViewportValue: ViewModifier {
+    let frame: CGRect
+    @Environment(\.testViewportEnabled) private var enabled
+
+    @ViewBuilder func body(content: Content) -> some View {
+        if enabled {
+            content.accessibilityValue("test-viewport:\(frame.minX),\(frame.minY),\(frame.width),\(frame.height)")
+        } else { content }
+    }
+}
+
 /// Standard-size actions stay pinned; accessibility-size actions follow the scroll content.
 struct ReadingScreenLayout<Content: View, Footer: View>: View {
     var night = false
     var fillsAvailableHeight = false
     var dawnProgress: Double? = nil
     var dawnAnimation: Animation? = nil
+    var ritualDisc = false
     @ViewBuilder var content: () -> Content
     @ViewBuilder var footer: () -> Footer
     @Environment(\.dynamicTypeSize) private var textSize
@@ -275,7 +326,8 @@ struct ReadingScreenLayout<Content: View, Footer: View>: View {
             ScrollView {
                 VStack(spacing: 0) {
                     content()
-                        .frame(minHeight: fillsAvailableHeight && !textSize.isAccessibilitySize ? geometry.size.height : nil,
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .frame(minHeight: fillsAvailableHeight && !textSize.isAccessibilitySize ? max(0, geometry.size.height) : nil,
                                alignment: .top)
                     if textSize.isAccessibilitySize {
                         actions.padding(.top, Design.Space.section)
@@ -285,6 +337,7 @@ struct ReadingScreenLayout<Content: View, Footer: View>: View {
             }
             .accessibilityIdentifier("screen-content")
             .clipped()
+            .modifier(TestViewportValue(frame: geometry.frame(in: .global)))
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if !textSize.isAccessibilitySize { actions }
@@ -292,21 +345,23 @@ struct ReadingScreenLayout<Content: View, Footer: View>: View {
         .background { ground }
         .modifier(RevealStatusBar(progress: dawnProgress ?? (night ? 0 : 1)))
         .animation(dawnAnimation, value: dawnProgress)
+        .preferredColorScheme(night ? .dark : .light)
     }
 
     private var actions: some View {
         footer()
-            .padding(.horizontal, Design.Space.ritual)
+            .padding(.horizontal, night ? Design.Space.ritual : Design.Space.page)
+            .padding(.top, night ? 0 : Design.Space.related)
             .padding(.bottom, Design.Space.related)
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("screen-footer")
-            .background { ground }
+            .background { if !ritualDisc { ground } }
     }
 
     @ViewBuilder private var ground: some View {
         if let dawnProgress {
             RevealGround(progress: dawnProgress).animation(dawnAnimation, value: dawnProgress)
-        } else { ScreenGround(night: night) }
+        } else { ScreenGround(night: night, ritualDisc: ritualDisc) }
     }
 }
 
@@ -315,8 +370,11 @@ struct PrimaryAction: View {
     var night = false
     var arrow = false
     let action: () -> Void
+    @Environment(\.isEnabled) private var isEnabled
+    @Environment(\.dynamicTypeSize) private var textSize
 
     var body: some View {
+        let shape = RoundedRectangle(cornerRadius: textSize.isAccessibilitySize ? 22 : 1000)
         Button(action: action) {
             HStack(spacing: Design.Space.related) {
                 Text(title).fixedSize(horizontal: false, vertical: true)
@@ -328,9 +386,9 @@ struct PrimaryAction: View {
             .padding(.horizontal, Design.Space.group)
             .padding(.vertical, Design.Space.group)
             .frame(minHeight: Design.Space.button)
-            .foregroundStyle(night ? Design.Palette.night : Design.Palette.surface)
-            .background(night ? Design.Palette.cream : Design.Palette.ink, in: Capsule())
-            .contentShape(Capsule())
+            .foregroundStyle(!isEnabled ? Design.Palette.disabledInk : night ? Design.Palette.night : Design.Palette.surface)
+            .background(!isEnabled ? Design.Palette.disabled : night ? Design.Palette.cream : Design.Palette.ink, in: shape)
+            .contentShape(shape)
         }
         .buttonStyle(ActionPressStyle())
     }
@@ -498,17 +556,20 @@ struct TarotCardView: View {
     let card: CardIdentity?
     var orientation: Orientation = .upright
     let width: CGFloat
+    var night = false
 
-    init(card: TarotCard?, orientation: Orientation = .upright, width: CGFloat) {
+    init(card: TarotCard?, orientation: Orientation = .upright, width: CGFloat, night: Bool = false) {
         self.card = card?.identity
         self.orientation = orientation
         self.width = width
+        self.night = night
     }
 
-    init(face: CardIdentity, orientation: Orientation = .upright, width: CGFloat) {
+    init(face: CardIdentity, orientation: Orientation = .upright, width: CGFloat, night: Bool = false) {
         card = face
         self.orientation = orientation
         self.width = width
+        self.night = night
     }
 
     var body: some View {
@@ -528,7 +589,7 @@ struct TarotCardView: View {
             }
             .clipShape(shape)
             .accessibilityHidden(true)
-            shape.strokeBorder(card == nil ? Design.Palette.gold : Design.Palette.ink,
+            shape.strokeBorder(card == nil || night ? Design.Palette.gold : Design.Palette.ink,
                                lineWidth: max(1.3, width / 100))
         }
         .frame(width: width, height: width * 1.6)
@@ -931,11 +992,30 @@ struct CardFan: View {
     let selected: Int?
     var phase = FanPhase.fanned
     var order = Array(1...5)
+    var compact = false
+    var showsDisc = true
     let choose: (Int) -> Void
+
+    init(selected: Int?, phase: FanPhase = .fanned, order: [Int] = Array(1...5),
+         compact: Bool = false, showsDisc: Bool = true, choose: @escaping (Int) -> Void) {
+        self.selected = selected
+        self.phase = phase
+        self.order = order
+        self.compact = compact
+        self.showsDisc = showsDisc
+        self.choose = choose
+    }
+
+    init(selected: Binding<Int?>, compact: Bool = false, showsDisc: Bool = true) {
+        self.init(selected: selected.wrappedValue, compact: compact, showsDisc: showsDisc) {
+            selected.wrappedValue = $0
+        }
+    }
+
     var body: some View {
         GeometryReader { geometry in
-            let width = geometry.size.width
-            let cardWidth = min(112, width * 0.33)
+            let width = max(0, geometry.size.width)
+            let cardWidth = min(compact ? 78 : 112, width * 0.33)
             let selectedWidth = min(124, width * 0.365)
             ZStack {
                 ForEach(1...5, id: \.self) { identity in
@@ -956,7 +1036,7 @@ struct CardFan: View {
                     ForEach(1...5, id: \.self) { position in
                         Button { choose(position) } label: {
                             Rectangle().fill(.clear)
-                                .frame(maxWidth: .infinity, minHeight: 240)
+                                .frame(maxWidth: .infinity, minHeight: compact ? 160 : 240)
                                 .contentShape(Rectangle())
                         }
                         .buttonStyle(ActionPressStyle())
@@ -969,12 +1049,14 @@ struct CardFan: View {
             }
             .frame(width: width, height: geometry.size.height)
             .background {
-                Circle().fill(Design.Palette.disc)
-                    .overlay { GroundGrain(night: true).clipShape(Circle()) }
-                    .frame(width: width * 1.345, height: width * 1.345)
+                if showsDisc {
+                    Circle().fill(Design.Palette.disc)
+                        .overlay { GroundGrain(night: true).clipShape(Circle()) }
+                        .frame(width: width * 1.345, height: width * 1.345)
+                }
             }
         }
-        .frame(height: 360)
+        .frame(height: compact ? 160 : 360)
     }
 
     private func horizontalOffset(distance: CGFloat, width: CGFloat) -> CGFloat {
@@ -982,7 +1064,7 @@ struct CardFan: View {
         case .gathered: distance * width * 0.04
         case .washLeft: -distance * width * 0.12
         case .washRight: distance * width * 0.15
-        case .fanned: distance * width * 0.20
+        case .fanned: distance * width * (compact ? 0.16 : 0.20)
         }
     }
 
@@ -991,7 +1073,7 @@ struct CardFan: View {
         case .gathered: abs(distance) * 4 + 20
         case .washLeft: distance * 12 + 20
         case .washRight: -distance * 12 + 20
-        case .fanned: chosen ? -27 : abs(distance) * 18 + (selected == nil ? 20 : 0)
+        case .fanned: chosen ? -27 : abs(distance) * (compact ? 12 : 18) + (selected == nil && !compact ? 20 : 0)
         }
     }
 
@@ -1000,7 +1082,222 @@ struct CardFan: View {
         case .gathered: Double(distance) * 3
         case .washLeft: Double(-distance) * 12
         case .washRight: Double(distance) * 12
-        case .fanned: chosen ? 0 : Double(distance) * 8
+        case .fanned: chosen ? 0 : Double(distance) * (compact ? 6 : 8)
         }
+    }
+}
+
+struct AreaSelector: View {
+    @Binding var selection: ReadingArea
+    @Environment(\.dynamicTypeSize) private var textSize
+
+    var body: some View {
+        let shape = RoundedRectangle(cornerRadius: textSize.isAccessibilitySize ? 22 : 1000)
+        let layout = textSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(spacing: 4)) : AnyLayout(HStackLayout(spacing: 4))
+        layout {
+            ForEach(ReadingArea.allCases) { area in
+                Button { selection = area } label: {
+                    Text(area.label)
+                        .typeRole(.label)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity, minHeight: Design.Space.target)
+                        .padding(.horizontal, 4)
+                        .foregroundStyle(Design.Palette.ink)
+                        .background(selection == area ? Design.Palette.surface : .clear, in: shape)
+                        .contentShape(shape)
+                }
+                .buttonStyle(ActionPressStyle())
+                .accessibilityIdentifier("area-\(area.rawValue)")
+                .accessibilityAddTraits(selection == area ? .isSelected : [])
+            }
+        }
+        .padding(4)
+        .background(Design.Palette.controlTrack, in: shape)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Reading area")
+    }
+}
+
+struct QuestionChip: View {
+    let title: String
+    let action: () -> Void
+    @Environment(\.dynamicTypeSize) private var textSize
+
+    var body: some View {
+        let shape = RoundedRectangle(cornerRadius: textSize.isAccessibilitySize ? 22 : 1000)
+        Button(action: action) {
+            Text(title).typeRole(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .multilineTextAlignment(.leading)
+                .padding(.horizontal, Design.Space.group)
+                .padding(.vertical, Design.Space.related)
+                .frame(minHeight: Design.Space.target)
+                .foregroundStyle(Design.Palette.ink)
+                .background(Design.Palette.surface, in: shape)
+                .overlay { shape.strokeBorder(Design.Palette.controlBorder, lineWidth: 1) }
+                .contentShape(shape)
+        }
+        .buttonStyle(ActionPressStyle())
+    }
+}
+
+struct QuestionEntry: View {
+    let title: String
+    let action: () -> Void
+    @Environment(\.dynamicTypeSize) private var textSize
+    @ScaledMetric(relativeTo: .headline) private var iconSize = 20.0
+
+    var body: some View {
+        let shape = RoundedRectangle(cornerRadius: textSize.isAccessibilitySize ? 22 : 1000)
+        Button(action: action) {
+            HStack(spacing: Design.Space.related) {
+                Text(title).typeRole(.body).fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 0)
+                Image(systemName: "arrow.right").typeRole(.button)
+                    .frame(width: iconSize, height: iconSize)
+                    .padding(Design.Space.related)
+                    .foregroundStyle(Design.Palette.surface)
+                    .background(Design.Palette.ink, in: Circle())
+                    .accessibilityHidden(true)
+            }
+            .foregroundStyle(Design.Palette.placeholder)
+            .multilineTextAlignment(.leading)
+            .padding(.leading, Design.Space.page)
+            .padding(.trailing, Design.Space.small)
+            .padding(.vertical, Design.Space.small)
+            .background(Design.Palette.surface, in: shape)
+            .overlay { shape.strokeBorder(Design.Palette.ink, lineWidth: 1.5) }
+            .contentShape(shape)
+        }
+        .buttonStyle(ActionPressStyle())
+    }
+}
+
+struct QuestionField: View {
+    @Binding var text: String
+    var onFocus: () -> Void = {}
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        TextField("Your question", text: Binding(get: { text }, set: { proposed in
+            let edit = QuestionEdit.applying(proposed, to: text)
+            text = edit.text
+            if edit.dismissKeyboard { focused = false }
+        }),
+                  prompt: Text("Type your question...").foregroundStyle(Design.Palette.placeholder), axis: .vertical)
+            .typeRole(.body)
+            .foregroundStyle(Design.Palette.ink)
+            .tint(Design.Palette.ink)
+            .lineLimit(4...6)
+            .focused($focused)
+            .onChange(of: focused) { _, isFocused in
+                if isFocused { onFocus() }
+            }
+            .submitLabel(.done)
+            .padding(Design.Space.group)
+            .frame(minHeight: 132, alignment: .topLeading)
+            .background(Design.Palette.surface, in: RoundedRectangle(cornerRadius: 20))
+            .overlay { RoundedRectangle(cornerRadius: 20).strokeBorder(Design.Palette.ink, lineWidth: 1.5) }
+            .accessibilityLabel("Your question")
+            .accessibilityIdentifier("question-field")
+
+    }
+}
+
+struct NavigationAction: View {
+    var close = false
+    var night = false
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: close ? "xmark" : "chevron.left")
+                .typeRole(.section)
+                .foregroundStyle(night ? Design.Palette.cream : Design.Palette.ink)
+                .frame(minWidth: Design.Space.target, minHeight: Design.Space.target)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(ActionPressStyle())
+        .accessibilityLabel(close ? "Close reading" : "Back")
+        .accessibilityIdentifier(close ? "close-reading" : "go-back")
+    }
+}
+
+struct RestingTabBar: View {
+    let askSelected: Bool
+    let today: () -> Void
+    let ask: () -> Void
+
+    var body: some View {
+        HStack {
+            tab("Today", symbol: "rectangle.portrait", selected: !askSelected, action: today)
+            tab("Ask", symbol: "bubble.left", selected: askSelected, action: ask)
+        }
+        .padding(.top, Design.Space.small)
+        .padding(.bottom, Design.Space.small)
+        .background(Design.Palette.surface)
+        .overlay(alignment: .top) { Rectangle().fill(Design.Palette.hairline).frame(height: 1) }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("resting-tabs")
+    }
+
+    private func tab(_ title: String, symbol: String, selected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            VStack(spacing: 4) {
+                Image(systemName: symbol).typeRole(.section)
+                    .foregroundStyle(selected ? Design.Palette.surface : Design.Palette.ink)
+                    .padding(.horizontal, Design.Space.page)
+                    .padding(.vertical, 4)
+                    .background(selected ? Design.Palette.ink : .clear, in: Capsule())
+                    .accessibilityHidden(true)
+                Text(title).typeRole(.tab)
+            }
+            .foregroundStyle(Design.Palette.ink)
+            .frame(maxWidth: .infinity, minHeight: Design.Space.target)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(ActionPressStyle())
+        .tint(Design.Palette.ink)
+        .accessibilityIdentifier("tab-\(title.lowercased())")
+        .accessibilityLabel(title)
+        .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+}
+
+struct EmptySpreadSlot: View {
+    let number: Int
+    let active: Bool
+    let width: CGFloat
+
+    var body: some View {
+        let shape = RoundedRectangle(cornerRadius: width / 10)
+        shape.fill(Design.Palette.night)
+            .overlay {
+                shape.strokeBorder(active ? Design.Palette.gold : Design.Palette.nightSecondary.opacity(0.4),
+                                   style: StrokeStyle(lineWidth: 1.5, dash: [3, 3]))
+            }
+            .overlay {
+                Text(String(number)).typeRole(.section).foregroundStyle(Design.Palette.gold)
+            }
+            .frame(width: width, height: width * 1.6)
+            .accessibilityHidden(true)
+    }
+}
+
+struct ReflectionPanel: View {
+    let question: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Design.Space.related) {
+            Text(question).typeRole(.section).fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("reflection-question")
+            Text("Something to sit with").typeRole(.caption)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(Design.Space.page)
+        .foregroundStyle(Design.Palette.surface)
+        .background(Design.Palette.ink, in: RoundedRectangle(cornerRadius: 22))
     }
 }

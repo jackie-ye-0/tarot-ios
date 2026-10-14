@@ -19,6 +19,8 @@ struct LaunchConfiguration {
     var earlierSnapshot = false
     var cardFaceProof = false
     var cardSizeProof = false
+    var randomIndices: [Int] = []
+    var openSavedReading = false
 
     static func current() -> LaunchConfiguration {
         var result = LaunchConfiguration()
@@ -45,6 +47,8 @@ struct LaunchConfiguration {
         result.earlierSnapshot = arguments.contains("--test-earlier-snapshot")
         result.cardFaceProof = arguments.contains("--test-card-faces")
         result.cardSizeProof = arguments.contains("--test-card-sizes")
+        result.randomIndices = value("--test-random-indices")?.split(separator: ",").compactMap { Int($0) }.filter { $0 >= 0 } ?? []
+        result.openSavedReading = arguments.contains("--test-open-saved-reading")
         #endif
         return result
     }
@@ -79,12 +83,18 @@ final class SessionClock {
 @MainActor @Observable
 final class AppSession {
     enum Screen {
-        case draw, reveal(DailyDraw), today(DailyDraw)
+        case draw, reveal(DailyDraw), today(DailyDraw), ask, composer, pick, reading(QuestionReading)
     }
 
     var screen: Screen = .draw
     var saveFailed = false
     var dayRefreshFailed = false
+    var readingSaveFailed = false
+    var area: ReadingArea = .relationship
+    var question = ""
+    private(set) var picks: [SpreadPick] = []
+    private var pendingReading: QuestionReading?
+    private var today: DailyDraw?
     private(set) var date: Date
     private(set) var timeZone: TimeZone
     private(set) var dateKey: String
@@ -92,8 +102,10 @@ final class AppSession {
     private let seed: String
     private let store: DrawStore
     private let library: CardLibrary
+    private let randomIndex: (Int) -> Int
 
-    init(clock: SessionClock, seed: String, store: DrawStore, library: CardLibrary) throws {
+    init(clock: SessionClock, seed: String, store: DrawStore, library: CardLibrary,
+         randomIndex: @escaping (Int) -> Int) throws {
         self.clock = clock
         let now = clock.now
         let zone = clock.timeZone
@@ -103,7 +115,9 @@ final class AppSession {
         self.seed = seed
         self.store = store
         self.library = library
-        if let saved = try store.draw(for: dateKey) { screen = .today(saved) }
+        self.randomIndex = randomIndex
+        today = try store.draw(for: dateKey)
+        if let today { screen = .today(today) }
     }
 
     var dateLabel: String {
@@ -119,7 +133,11 @@ final class AppSession {
         do {
             // A tap at midnight must not carry yesterday's selection into the new day.
             guard try !updateDay() else { return }
-            if let saved = try store.draw(for: dateKey) { screen = .today(saved); return }
+            if let saved = try store.draw(for: dateKey) {
+                today = saved
+                screen = .today(saved)
+                return
+            }
             let previous = try store.draws(from: ReadingEngine.repeatWindowStart(for: dateKey))
             draw = ReadingEngine.dailyDraw(seed: seed, dateKey: dateKey, position: position,
                                            library: library, previousDraws: previous)
@@ -127,7 +145,11 @@ final class AppSession {
             dayRefreshFailed = true
             return
         }
-        do { screen = .reveal(try store.save(draw)) }
+        do {
+            let saved = try store.save(draw)
+            today = saved
+            screen = .reveal(saved)
+        }
         catch DrawStore.StoreError.read(_) { dayRefreshFailed = true }
         catch { saveFailed = true }
     }
@@ -155,6 +177,7 @@ final class AppSession {
         // A same-date foreground or time-zone event must leave the current ritual untouched.
         guard key != dateKey else { return false }
         let saved = try store.draw(for: key)
+        today = saved
         screen = saved.map(Screen.today) ?? .draw
         dateKey = key
         saveFailed = false
@@ -162,6 +185,52 @@ final class AppSession {
         timeZone = zone
         return true
     }
+
+    var suggestions: [String] { library.questions.content(for: area).suggestions }
+    var canSubmit: Bool { ReadingEngine.canSubmit(question: question) }
+
+    func goToToday() {
+        screen = today.map(Screen.today) ?? .draw
+    }
+
+    func openComposer(question: String = "") {
+        self.question = question
+        picks = []
+        pendingReading = nil
+        screen = .composer
+    }
+
+    func submitQuestion() {
+        guard canSubmit else { return }
+        question = question.trimmingCharacters(in: .whitespacesAndNewlines)
+        picks = []
+        pendingReading = nil
+        screen = .pick
+    }
+
+    func pickCard() {
+        guard case .pick = screen,
+              let pick = ReadingEngine.nextPick(after: picks, library: library, randomIndex: randomIndex) else { return }
+        picks.append(pick)
+    }
+
+    func readSpread() {
+        guard case .pick = screen, picks.count == 3 else { return }
+        do {
+            if pendingReading == nil {
+                pendingReading = try ReadingEngine.compose(id: UUID(), createdAt: clock.now, area: area,
+                                                          question: question, picks: picks, library: library)
+            }
+            guard let pendingReading else { return }
+            screen = .reading(try store.save(pendingReading))
+        } catch { readingSaveFailed = true }
+    }
+
+    #if DEBUG
+    func openSavedReadingForTest() throws {
+        if let reading = try store.latestReading() { screen = .reading(reading) }
+    }
+    #endif
 }
 
 // The only composition point. Test values never enter the reading engine through globals.
@@ -192,9 +261,13 @@ enum AppLaunch {
                                                               social: AreaReading(score: 30, line: "Revised social line.")))
             library = CardLibrary(version: library.version + 1, editorialStatus: library.editorialStatus,
                                   cards: library.cards.map {
-                TarotCard(id: $0.id, name: "Revised \($0.name)", arcana: $0.arcana, suit: $0.suit, rank: $0.rank,
-                          upright: meaning, reversed: meaning)
-            })
+                var upright = meaning
+                upright.questionPositions = $0.upright.questionPositions
+                var reversed = meaning
+                reversed.questionPositions = $0.reversed.questionPositions
+                return TarotCard(id: $0.id, name: "Revised \($0.name)", arcana: $0.arcana, suit: $0.suit, rank: $0.rank,
+                                 upright: upright, reversed: reversed)
+            }, questions: library.questions)
         }
         #endif
         let store = try DrawStore(configuration: modelConfiguration)
@@ -203,6 +276,17 @@ enum AppLaunch {
             configuration.seed ?? (0..<4).map { _ in String(randomness.next(), radix: 16) }.joined(separator: "-")
         }
         let clock = SessionClock(configuration: configuration)
+        var testIndex = 0
+        let randomIndex: (Int) -> Int = { upperBound in
+            #if DEBUG
+            if !configuration.randomIndices.isEmpty {
+                let value = configuration.randomIndices[testIndex % configuration.randomIndices.count]
+                testIndex += 1
+                return value % upperBound
+            }
+            #endif
+            return Int.random(in: 0..<upperBound, using: &randomness)
+        }
         #if DEBUG
         if configuration.earlierSnapshot {
             let draw = ReadingEngine.dailyDraw(seed: seed, dateKey: ReadingEngine.dateKey(for: clock.now, timeZone: clock.timeZone),
@@ -215,6 +299,11 @@ enum AppLaunch {
                                         card: earlierCard, contentVersion: 1))
         }
         #endif
-        return try AppSession(clock: clock, seed: seed, store: store, library: library)
+        let session = try AppSession(clock: clock, seed: seed, store: store,
+                                     library: library, randomIndex: randomIndex)
+        #if DEBUG
+        if configuration.openSavedReading { try session.openSavedReadingForTest() }
+        #endif
+        return session
     }
 }
