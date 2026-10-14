@@ -709,9 +709,9 @@ private struct CardFaceDrawing {
 
     private func crown(_ y: Double, royal: Bool = false) {
         let tips: [(Double, Double)] = royal
-            ? [(26,y), (36,y+8), (40,y-5), (50,y+5), (60,y-5), (64,y+8), (74,y), (69,y+24), (31,y+24)]
-            : [(28,y), (40,y+10), (50,y-8), (60,y+10), (72,y), (67,y+23), (33,y+23)]
-        polygon(tips, fill: ochre)
+            ? [(26,0), (32,10), (38,-4), (44,8), (50,-10), (56,8), (62,-4), (68,10), (74,0), (69,24), (31,24)]
+            : [(28,0), (40,10), (50,-8), (60,10), (72,0), (67,23), (33,23)]
+        polygon(tips.map { ($0.0, $0.1 + y) }, fill: ochre)
         line([(34,y+17), (66,y+17)])
     }
 
@@ -885,6 +885,7 @@ private struct CardFaceDrawing {
         case 15:
             polygon([(28,60),(23,29),(43,49),(57,49),(77,29),(72,60),(65,79),(50,90),(35,79)], fill: clay)
             for x in [33.0,50,67] { ellipse(x-7, 94, 14, 18, fill: paper) }
+            for x in [41.5,58.5] { line([(x-4,103),(x+4,103)]) }
             polygon([(43,67),(57,67),(50,76)], fill: ochre)
         case 16:
             polygon([(30,108),(35,56),(62,56),(70,108)], fill: clay)

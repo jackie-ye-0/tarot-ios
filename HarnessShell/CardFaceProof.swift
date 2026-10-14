@@ -7,7 +7,7 @@ struct CardFaceProof: View {
     var largestText = false
     @Environment(\.dynamicTypeSize) private var systemTextSize
     @State private var page = 0
-    private let sizeSamples = [17, 31, 46, 59, 76]
+    private let sizeSamples = [17, 31, 46, 59, 76, 35, 49, 63, 77]
 
     var body: some View {
         ReadingScreenLayout {

@@ -347,12 +347,14 @@ final class HarnessShellUITests: XCTestCase {
 
     func testFaceSizesAndLargestTextProof() throws {
         let sizes = app(extra: ["--test-card-sizes"])
-        for page in 0..<5 {
+        let sampleNames = ["The Star", "Ten of Wands", "Page of Cups", "Ten of Swords", "Queen of Pentacles",
+                           "King of Wands", "King of Cups", "King of Swords", "King of Pentacles"]
+        for (page, name) in sampleNames.enumerated() {
             for width in [214, 120, 84, 36] {
                 let face = sizes.descendants(matching: .any)["face-size-\(width)"]
                 scrollTo(face, in: sizes, abovePinnedFooter: true)
                 XCTAssertEqual(face.frame.width, CGFloat(width), accuracy: 1)
-                XCTAssertTrue(face.label.hasSuffix(", Reversed"))
+                XCTAssertEqual(face.label, "\(name), Reversed")
                 capture(sizes, "card-sizes--sample-\(page + 1)-width-\(width)")
             }
             if page == 0 { try sizes.performAccessibilityAudit() }
