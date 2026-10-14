@@ -138,7 +138,7 @@ final class AppSession {
         do {
             try updateDay()
             try store.completeWelcome()
-            screen = .draw
+            screen = try store.draw(for: dateKey).map(Screen.today) ?? .draw
         } catch { welcomeSaveFailed = true }
     }
 

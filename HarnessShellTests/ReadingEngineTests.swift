@@ -1,8 +1,65 @@
 import XCTest
+import SwiftData
 import UIKit
 @testable import HarnessShell
 
 final class ReadingEngineTests: XCTestCase {
+    @MainActor
+    func testLegacyInstallWithoutWelcomeFieldSkipsWelcome() throws {
+        let container = try ModelContainer(for: InstallIdentity.self, StoredDailyDraw.self,
+                                           configurations: ModelConfiguration(isStoredInMemoryOnly: true,
+                                                                              cloudKitDatabase: .none))
+        container.mainContext.insert(InstallIdentity(seed: "legacy", welcomeCompleted: nil))
+        try container.mainContext.save()
+
+        let session = try makeSession(store: DrawStore(container: container), seed: "legacy")
+
+        guard case .draw = session.screen else { return XCTFail("Legacy installs should skip Welcome") }
+    }
+
+    @MainActor
+    func testNewInstallShowsWelcomeOnlyOnce() throws {
+        let store = try makeStore()
+        let seed = try store.installSeed { "new-install" }
+        let session = try makeSession(store: store, seed: seed)
+        guard case .welcome = session.screen else { return XCTFail("New installs should show Welcome") }
+
+        session.completeWelcome()
+        guard case .draw = session.screen else { return XCTFail("Completing Welcome should open Draw") }
+        let relaunched = try makeSession(store: store, seed: seed)
+        guard case .draw = relaunched.screen else { return XCTFail("Later launches should skip Welcome") }
+    }
+
+    @MainActor
+    func testCompletingWelcomeWithTodaysDrawRoutesToToday() throws {
+        let store = try makeStore()
+        let seed = try store.installSeed { "existing-draw" }
+        let library = try CardLibrary.load()
+        let draw = ReadingEngine.dailyDraw(seed: seed, dateKey: "2026-10-11", position: 3, library: library)
+        _ = try store.save(draw)
+        let session = try makeSession(store: store, seed: seed, library: library)
+        guard case .welcome = session.screen else { return XCTFail("New installs should show Welcome") }
+
+        session.completeWelcome()
+
+        guard case let .today(saved) = session.screen else { return XCTFail("A saved card should route to Today") }
+        XCTAssertEqual(saved, draw)
+    }
+
+    @MainActor
+    private func makeStore() throws -> DrawStore {
+        try DrawStore(configuration: ModelConfiguration(isStoredInMemoryOnly: true, cloudKitDatabase: .none))
+    }
+
+    @MainActor
+    private func makeSession(store: DrawStore, seed: String, library: CardLibrary? = nil) throws -> AppSession {
+        var configuration = LaunchConfiguration()
+        configuration.fixedDate = try XCTUnwrap(ISO8601DateFormatter().date(from: "2026-10-11T00:00:00Z"))
+        configuration.timeZone = try XCTUnwrap(TimeZone(secondsFromGMT: 0))
+        return try AppSession(clock: SessionClock(configuration: configuration), seed: seed, store: store,
+                              library: try library ?? CardLibrary.load())
+    }
+
     func testStableDailyResultAndAllPositions() throws {
         let library = try CardLibrary.load()
         let first = ReadingEngine.dailyDraw(seed: "reference-3", dateKey: "2026-10-11", position: 1, library: library)

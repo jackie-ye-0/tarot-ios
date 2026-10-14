@@ -5,11 +5,12 @@ import SwiftData
 final class InstallIdentity {
     @Attribute(.unique) var key: String
     var seed: String
-    var welcomeCompleted: Bool = false
+    var welcomeCompleted: Bool?
 
-    init(seed: String) {
+    init(seed: String, welcomeCompleted: Bool?) {
         key = "installation"
         self.seed = seed
+        self.welcomeCompleted = welcomeCompleted
     }
 }
 
@@ -37,9 +38,13 @@ final class DrawStore {
     var failsNextWelcomeSave = false
     #endif
 
-    init(configuration: ModelConfiguration) throws {
-        container = try ModelContainer(for: InstallIdentity.self, StoredDailyDraw.self, StoredQuestionReading.self,
-                                       configurations: configuration)
+    convenience init(configuration: ModelConfiguration) throws {
+        try self.init(container: ModelContainer(for: InstallIdentity.self, StoredDailyDraw.self, StoredQuestionReading.self,
+                                                configurations: configuration))
+    }
+
+    init(container: ModelContainer) {
+        self.container = container
         context.autosaveEnabled = false
     }
 
@@ -48,7 +53,7 @@ final class DrawStore {
             return identity.seed
         }
         let seed = create()
-        context.insert(InstallIdentity(seed: seed))
+        context.insert(InstallIdentity(seed: seed, welcomeCompleted: false))
         do { try context.save() } catch { context.rollback(); throw error }
         return seed
     }
@@ -61,7 +66,8 @@ final class DrawStore {
     }
 
     func hasCompletedWelcome() throws -> Bool {
-        try context.fetch(FetchDescriptor<InstallIdentity>()).first?.welcomeCompleted ?? false
+        guard let identity = try context.fetch(FetchDescriptor<InstallIdentity>()).first else { return false }
+        return identity.welcomeCompleted ?? true
     }
 
     func completeWelcome() throws {
