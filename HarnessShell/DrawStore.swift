@@ -39,6 +39,8 @@ final class DrawStore {
     var failsNextWelcomeSave = false
     var failsNextSpreadSave = false
     var failsNextDraftSave = false
+    var failsNextReadingUpdate = false
+    var failsNextReadingDelete = false
     #endif
 
     init(configuration: ModelConfiguration) throws {
@@ -160,6 +162,44 @@ final class DrawStore {
         var request = FetchDescriptor<StoredQuestionReading>(sortBy: [SortDescriptor(\.createdAt, order: .reverse)])
         request.fetchLimit = 1
         return try context.fetch(request).first.map { try JSONDecoder().decode(QuestionReading.self, from: $0.snapshot) }
+    }
+
+    func updateReading(id: UUID, edit: (inout QuestionReading) -> Void) throws -> QuestionReading {
+        do {
+            let request = FetchDescriptor<StoredQuestionReading>(predicate: #Predicate { $0.id == id })
+            guard let stored = try context.fetch(request).first else { throw CocoaError(.fileNoSuchFile) }
+            var reading = try JSONDecoder().decode(QuestionReading.self, from: stored.snapshot)
+            edit(&reading)
+            stored.snapshot = try JSONEncoder().encode(reading)
+            #if DEBUG
+            if failsNextReadingUpdate {
+                failsNextReadingUpdate = false
+                throw CocoaError(.fileWriteOutOfSpace)
+            }
+            #endif
+            try context.save()
+            return reading
+        } catch {
+            context.rollback()
+            throw error
+        }
+    }
+
+    func deleteReading(id: UUID) throws {
+        do {
+            let request = FetchDescriptor<StoredQuestionReading>(predicate: #Predicate { $0.id == id })
+            for stored in try context.fetch(request) { context.delete(stored) }
+            #if DEBUG
+            if failsNextReadingDelete {
+                failsNextReadingDelete = false
+                throw CocoaError(.fileWriteOutOfSpace)
+            }
+            #endif
+            try context.save()
+        } catch {
+            context.rollback()
+            throw error
+        }
     }
 
     func latestReadingsByArea() throws -> [ReadingArea: QuestionReading] {

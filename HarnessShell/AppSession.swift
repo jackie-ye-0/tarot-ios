@@ -24,6 +24,8 @@ struct LaunchConfiguration {
     var welcomeCompleted = false
     var welcomeSaveFailure = false
     var spreadSaveFailure = false
+    var readingUpdateFailure = false
+    var readingDeleteFailure = false
 
     static func current() -> LaunchConfiguration {
         var result = LaunchConfiguration()
@@ -55,6 +57,8 @@ struct LaunchConfiguration {
         result.welcomeCompleted = arguments.contains("--test-welcome-completed")
         result.welcomeSaveFailure = arguments.contains("--test-welcome-save-failure")
         result.spreadSaveFailure = arguments.contains("--test-spread-save-failure")
+        result.readingUpdateFailure = arguments.contains("--test-reading-update-failure")
+        result.readingDeleteFailure = arguments.contains("--test-reading-delete-failure")
         #endif
         return result
     }
@@ -370,6 +374,23 @@ final class AppSession {
         } catch { readingSaveFailed = true }
     }
 
+    func setReadingResponse(_ response: ReadingResponse?, id: UUID) throws {
+        screen = .reading(try store.updateReading(id: id) { $0.response = response })
+    }
+
+    func saveReadingNote(_ note: String, id: UUID) throws {
+        screen = .reading(try store.updateReading(id: id) {
+            $0.note = note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : note
+        })
+    }
+
+    func deleteReading(id: UUID) throws {
+        try store.deleteReading(id: id)
+        pendingReading = nil
+        picks = []
+        goToToday()
+    }
+
     #if DEBUG
     func openSavedReadingForTest() throws {
         if let reading = try store.latestReading() { screen = .reading(reading) }
@@ -406,12 +427,13 @@ enum AppLaunch {
             library = CardLibrary(version: library.version + 1, editorialStatus: library.editorialStatus,
                                   cards: library.cards.map {
                 var upright = meaning
-                upright.questionPositions = $0.upright.questionPositions
+                upright.questionPositions = QuestionPositionMeanings(situation: "Revised situation.", action: "Revised action.", outcome: "Revised outcome.")
                 var reversed = meaning
-                reversed.questionPositions = $0.reversed.questionPositions
+                reversed.questionPositions = upright.questionPositions
                 return TarotCard(id: $0.id, name: "Revised \($0.name)", arcana: $0.arcana, suit: $0.suit, rank: $0.rank,
                                  upright: upright, reversed: reversed)
-            }, questions: library.questions)
+            }, questions: QuestionContent(career: library.questions.career, relationship: library.questions.relationship,
+                                           social: library.questions.social, reflections: ["A revised reflection?"]))
         }
         #endif
         let store = try DrawStore(configuration: modelConfiguration)
@@ -435,6 +457,8 @@ enum AppLaunch {
         if configuration.testMode && configuration.welcomeCompleted { try store.completeWelcome() }
         store.failsNextWelcomeSave = configuration.welcomeSaveFailure
         store.failsNextSpreadSave = configuration.spreadSaveFailure
+        store.failsNextReadingUpdate = configuration.readingUpdateFailure
+        store.failsNextReadingDelete = configuration.readingDeleteFailure
         if configuration.earlierSnapshot {
             let draw = ReadingEngine.dailyDraw(seed: seed, dateKey: ReadingEngine.dateKey(for: clock.now, timeZone: clock.timeZone),
                                               position: 3, library: library)

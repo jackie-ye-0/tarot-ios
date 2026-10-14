@@ -33,7 +33,7 @@ struct ContentView: View {
                 ThreeCardPickScreen(session: session, animationsEnabled: animationsEnabled,
                                     holdShuffle: holdShuffle, testMode: testMode).id("pick")
             case .reading(let reading):
-                QuestionReadingScreen(reading: reading, done: session.goToToday).id("reading")
+                QuestionReadingScreen(reading: reading, session: session).id("reading-\(reading.id)")
             }
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {

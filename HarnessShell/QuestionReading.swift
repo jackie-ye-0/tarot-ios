@@ -179,6 +179,18 @@ struct ReadingSection: Codable, Equatable {
     let text: String
 }
 
+enum ReadingResponse: String, Codable, CaseIterable, Identifiable {
+    case yes, somewhat, notReally
+    var id: String { rawValue }
+    var label: String {
+        switch self {
+        case .yes: "Yes"
+        case .somewhat: "Somewhat"
+        case .notReally: "Not really"
+        }
+    }
+}
+
 struct QuestionReading: Codable, Equatable, Identifiable {
     let id: UUID
     let createdAt: Date
@@ -189,6 +201,8 @@ struct QuestionReading: Codable, Equatable, Identifiable {
     let connectingPassage: String
     let reflectionQuestion: String
     let contentVersion: Int
+    var response: ReadingResponse? = nil
+    var note: String? = nil
 }
 
 extension ReadingEngine {
