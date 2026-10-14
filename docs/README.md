@@ -32,6 +32,7 @@ Add future research to `docs/research/`, using descriptive, lower-case hyphenate
 - [Today verification](today-verification.md): issue #9 acceptance checks, screenshot comparison and audit evidence.
 - [Card face verification](card-faces-verification.md): issue #12 full-deck identity, rendering evidence and design comparison.
 - [Ask foundation verification](ask-verification.md): issue #13 behaviour, design evidence and scope differences.
+- [Three-card pick verification](three-card-pick-verification.md): issue #15 draft recovery, shuffle, tests and design evidence.
 - [Welcome verification](welcome-verification.md): issue #8 behaviour, independent design review dispositions and evidence.
 - [Harness principles](harness.md)
 
