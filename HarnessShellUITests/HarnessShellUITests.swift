@@ -227,7 +227,7 @@ final class HarnessShellUITests: XCTestCase {
 
     private func visibleFrame(in app: XCUIApplication, abovePinnedFooter: Bool = false) -> CGRect {
         let marker = app.otherElements["test-safe-viewport"]
-        guard marker.waitForExistence(timeout: 5) else {
+        guard marker.exists || marker.waitForExistence(timeout: 5) else {
             XCTFail("Missing safe-area viewport marker: launch a Debug build with --test-mode")
             return .null
         }
@@ -294,7 +294,7 @@ final class HarnessShellUITests: XCTestCase {
 
     private func scrollTo(_ element: XCUIElement, in app: XCUIApplication, abovePinnedFooter: Bool = false,
                           file: StaticString = #filePath, line: UInt = #line) {
-        XCTAssertTrue(element.waitForExistence(timeout: 5), file: file, line: line)
+        XCTAssertTrue(element.exists || element.waitForExistence(timeout: 5), file: file, line: line)
         for _ in 0..<10 {
             let frame = element.frame
             let viewport = visibleFrame(in: app, abovePinnedFooter: abovePinnedFooter)
@@ -318,7 +318,7 @@ final class HarnessShellUITests: XCTestCase {
     }
 
     func testAllSeventyEightFacesRenderInBothOrientations() throws {
-        let app = app(extra: ["--test-card-faces"])
+        let app = app(extra: ["--test-card-faces"], audit: true)
         var renderedFaces = Set<Data>()
         for page in 0..<26 {
             let first = page * 3
@@ -328,7 +328,7 @@ final class HarnessShellUITests: XCTestCase {
                 XCTAssertFalse(name.isEmpty)
                 for orientation in ["upright", "reversed"] {
                     let face = app.descendants(matching: .any)["face-\(index)-\(orientation)"]
-                    XCTAssertTrue(face.waitForExistence(timeout: 5))
+                    XCTAssertTrue(face.exists || face.waitForExistence(timeout: 5))
                     assertVisible(face, in: app, abovePinnedFooter: true)
                     XCTAssertEqual(face.label, "\(name), \(orientation.capitalized)")
                     XCTAssertEqual(face.frame.width, 72, accuracy: 1)
@@ -346,7 +346,7 @@ final class HarnessShellUITests: XCTestCase {
     }
 
     func testFaceSizesAndLargestTextProof() throws {
-        let sizes = app(extra: ["--test-card-sizes"])
+        let sizes = app(extra: ["--test-card-sizes"], audit: true)
         let sampleNames = ["The Star", "Ten of Wands", "Page of Cups", "Ten of Swords", "Queen of Pentacles",
                            "King of Wands", "King of Cups", "King of Swords", "King of Pentacles"]
         for (page, name) in sampleNames.enumerated() {

@@ -5,12 +5,19 @@ struct HarnessShellApp: App {
     private let configuration = LaunchConfiguration.current()
     var body: some Scene {
         WindowGroup {
+            Group {
+                #if DEBUG
+                if configuration.testMode && (configuration.cardFaceProof || configuration.cardSizeProof) {
+                    CardFaceProof(sizes: configuration.cardSizeProof, largestText: configuration.largestText)
+                } else { LaunchView(configuration: configuration) }
+                #else
+                LaunchView(configuration: configuration)
+                #endif
+            }
             #if DEBUG
-            if configuration.testMode && (configuration.cardFaceProof || configuration.cardSizeProof) {
-                CardFaceProof(sizes: configuration.cardSizeProof, largestText: configuration.largestText)
-            } else { LaunchView(configuration: configuration) }
-            #else
-            LaunchView(configuration: configuration)
+            .background {
+                if configuration.testMode { TestSafeAreaViewport() }
+            }
             #endif
         }
     }
@@ -53,11 +60,6 @@ struct LaunchView: View {
                 }
             } else { ScreenGround() }
         }
-        #if DEBUG
-        .background {
-            if configuration.testMode { TestSafeAreaViewport() }
-        }
-        #endif
         .environment(\.dynamicTypeSize, configuration.largestText ? .accessibility5 : systemTextSize)
         .transaction { transaction in
             if !animationsEnabled {
