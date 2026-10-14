@@ -68,4 +68,4 @@ A fresh session reviewed the four references and all 35 relevant built images us
 
 The review did not establish animation duration, first-paint behaviour, target bounds, font identity, contrast or persistence from still images. The functional tests and strict audit above provide that separate evidence. Largest-text partial-spread/error combinations and real-device behaviour were not visually reviewed. The final description must include the verdict, dispositions and `Closes #15`.
 
-No dependencies, services, network calls or simulator settings were added. Questions before their first submission remain in memory until #14. Real-device behaviour and manual VoiceOver order remain unverified; the automated audit is not a substitute for that release check.
+No dependencies, services, network calls or simulator settings were added. This #15 slice left questions before their first submission in memory for #14 to persist. Real-device behaviour and manual VoiceOver order remain unverified; the automated audit is not a substitute for that release check.

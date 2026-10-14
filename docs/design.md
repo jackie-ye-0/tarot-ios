@@ -36,7 +36,7 @@ Used once a card is face up: reveal, Today, Ask, composer, reading, History.
 | Control track | `#ead6cd` | Segmented control background |
 | Control border | `#e0c9bf` | Unselected chips and outlined pills |
 | Disabled | `#dcc6bc` fill, `#5f4740` text | Disabled primary button |
-| Destructive | `#a3331f` | Delete, only inside a menu |
+| Error / destructive | `#a3331f` | Character-limit feedback; delete only inside a menu |
 
 ### Night (dark) screens
 
@@ -169,7 +169,7 @@ The reference screens also change the flow, not only the look. Jackie adopted th
 
 | Change | PRD position |
 |---|---|
-| No birth-data or about-you forms before the first card. Birth details are not collected in the first build; relationship status is asked on Ask and can be changed in Settings | Onboarding screens 2 and 3 come before the first card |
+| No birth-data or about-you forms before the first card. Birth details are not collected in the first build; relationship status is asked on Ask, with Settings editing left to its assigned ticket | Onboarding screens 2 and 3 come before the first card |
 | The area detail screen is replaced by the Ask tab | Each area opens its own detail screen from the daily summary |
 | A three-tab bar with Ask as its own tab | Ask is reached from an area row on the daily summary |
 | The morning reminder is an inline card on Today, on day one only | A full-screen reminder ask follows the reveal |
