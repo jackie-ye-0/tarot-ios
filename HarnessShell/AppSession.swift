@@ -137,8 +137,7 @@ final class AppSession {
     func completeWelcome() {
         do {
             try updateDay()
-            let saved = try store.draw(for: dateKey)
-            try store.completeWelcome()
+            let saved = try store.completeWelcome(for: dateKey)
             screen = saved.map(Screen.today) ?? .draw
         } catch DrawStore.StoreError.read(_) {
             dayRefreshFailed = true
@@ -309,7 +308,9 @@ enum AppLaunch {
             return Int.random(in: 0..<upperBound, using: &randomness)
         }
         #if DEBUG
-        if configuration.testMode && configuration.welcomeCompleted { try store.completeWelcome() }
+        if configuration.testMode && configuration.welcomeCompleted {
+            _ = try store.completeWelcome(for: ReadingEngine.dateKey(for: clock.now, timeZone: clock.timeZone))
+        }
         store.failsNextWelcomeSave = configuration.welcomeSaveFailure
         if configuration.earlierSnapshot {
             let draw = ReadingEngine.dailyDraw(seed: seed, dateKey: ReadingEngine.dateKey(for: clock.now, timeZone: clock.timeZone),

@@ -50,7 +50,10 @@ struct ContentView: View {
             Text("Your choice is still here. Free some space on your phone if needed, then tap Turn it over to try again.")
         }
         .alert("Today's card could not be opened", isPresented: $session.dayRefreshFailed) {
-            Button("Try again") { session.refreshDay() }
+            Button("Try again") {
+                if case .welcome = session.screen { session.completeWelcome() }
+                else { session.refreshDay() }
+            }
         } message: {
             Text("Your saved cards are unchanged. Try again after checking the free space on your phone.")
         }

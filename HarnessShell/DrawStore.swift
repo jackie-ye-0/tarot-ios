@@ -35,6 +35,7 @@ final class DrawStore {
     private let container: ModelContainer
     private var context: ModelContext { container.mainContext }
     #if DEBUG
+    var failsNextWelcomeRead = false
     var failsNextWelcomeSave = false
     #endif
 
@@ -66,19 +67,33 @@ final class DrawStore {
         return identity.welcomeCompleted ?? true
     }
 
-    func completeWelcome() throws {
+    func completeWelcome(for dateKey: String) throws -> DailyDraw? {
+        let identity: InstallIdentity
+        let saved: DailyDraw?
+        do {
+            #if DEBUG
+            if failsNextWelcomeRead {
+                failsNextWelcomeRead = false
+                throw CocoaError(.fileReadCorruptFile)
+            }
+            #endif
+            guard let storedIdentity = try context.fetch(FetchDescriptor<InstallIdentity>()).first else {
+                throw CocoaError(.fileReadCorruptFile)
+            }
+            let request = FetchDescriptor<StoredDailyDraw>(predicate: #Predicate { $0.dateKey == dateKey })
+            saved = try context.fetch(request).first.map { try JSONDecoder().decode(DailyDraw.self, from: $0.snapshot) }
+            identity = storedIdentity
+        } catch { throw StoreError.read(error) }
+
         #if DEBUG
-        // One failure only, so a test can also follow the retry that the alert promises.
         if failsNextWelcomeSave {
             failsNextWelcomeSave = false
-            throw CocoaError(.fileWriteOutOfSpace)
+            throw StoreError.save(CocoaError(.fileWriteOutOfSpace))
         }
         #endif
-        guard let identity = try context.fetch(FetchDescriptor<InstallIdentity>()).first else {
-            throw CocoaError(.fileReadCorruptFile)
-        }
         identity.welcomeCompleted = true
-        do { try context.save() } catch { context.rollback(); throw error }
+        do { try context.save() } catch { context.rollback(); throw StoreError.save(error) }
+        return saved
     }
 
     func save(_ draw: DailyDraw) throws -> DailyDraw {

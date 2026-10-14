@@ -60,28 +60,11 @@ final class ReadingEngineTests: XCTestCase {
     }
 
     @MainActor
-    func testWelcomeRouteReadFailureDoesNotCommitCompletion() throws {
-        let directory = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString,
-                                                                          directoryHint: .isDirectory)
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        defer { try? FileManager.default.removeItem(at: directory) }
-        let configuration = ModelConfiguration(url: directory.appending(path: "corrupt.store"),
-                                               cloudKitDatabase: .none)
-        try autoreleasepool {
-            let container = try ModelContainer(for: HarnessShell.InstallIdentity.self,
-                                               HarnessShell.StoredDailyDraw.self,
-                                               configurations: configuration)
-            container.mainContext.insert(HarnessShell.InstallIdentity(seed: "corrupt", welcomeCompleted: false))
-            let library = try CardLibrary.load()
-            let draw = ReadingEngine.dailyDraw(seed: "corrupt", dateKey: "2026-10-11", position: 3,
-                                               library: library)
-            let stored = try HarnessShell.StoredDailyDraw(draw)
-            stored.snapshot = Data("not-json".utf8)
-            container.mainContext.insert(stored)
-            try container.mainContext.save()
-        }
-        let store = try DrawStore(configuration: configuration)
-        let session = try makeSession(store: store, seed: "corrupt")
+    func testWelcomeReadFailureDoesNotCommitAndCanRetry() throws {
+        let store = try makeStore()
+        let seed = try store.installSeed { "read-retry" }
+        store.failsNextWelcomeRead = true
+        let session = try makeSession(store: store, seed: seed)
 
         session.completeWelcome()
 
@@ -89,6 +72,23 @@ final class ReadingEngineTests: XCTestCase {
         XCTAssertFalse(session.welcomeSaveFailed)
         guard case .welcome = session.screen else { return XCTFail("A read failure should leave Welcome visible") }
         XCTAssertFalse(try store.hasCompletedWelcome())
+
+        session.completeWelcome()
+
+        guard case .draw = session.screen else { return XCTFail("Retrying should complete Welcome") }
+        XCTAssertTrue(try store.hasCompletedWelcome())
+    }
+
+    @MainActor
+    func testMissingWelcomeIdentityIsReportedAsReadFailure() throws {
+        let store = try makeStore()
+        let session = try makeSession(store: store, seed: "missing-identity")
+
+        session.completeWelcome()
+
+        XCTAssertTrue(session.dayRefreshFailed)
+        XCTAssertFalse(session.welcomeSaveFailed)
+        guard case .welcome = session.screen else { return XCTFail("An identity read failure should leave Welcome visible") }
     }
 
     @MainActor
