@@ -1795,29 +1795,35 @@ final class HarnessShellUITests: XCTestCase {
             for _ in 0..<5 { app.swipeUp(velocity: .fast) }
         }
         XCTAssertTrue(app.buttons["tab-history"].isHittable)
-        let visible = app.buttons[try captureHistoryYear(app)]
+        let visible = app.buttons[try captureHistoryYear(app, "10-history--year-scroll")]
         XCTAssertTrue(visible.isHittable)
         visible.tap()
         XCTAssertTrue(app.buttons["back-to-history"].waitForExistence(timeout: 5))
-        capture(app, "04-today--history-year-entry")
+        _ = try captureHistoryYear(app, "04-today--history-year-entry", requiring: "back-to-history")
+        app.buttons["back-to-history"].tap()
+        XCTAssertTrue(app.buttons["tab-history"].isHittable)
+        XCTAssertTrue(visible.isHittable)
     }
 
-    private func captureHistoryYear(_ app: XCUIApplication) throws -> String {
+    private func captureHistoryYear(_ app: XCUIApplication, _ name: String,
+                                    requiring requiredIdentifier: String? = nil) throws -> String {
         let viewport = visibleFrame(in: app)
         var previous: [String: CGRect]?
-        var visibleDaily: String?
+        var visibleTarget: String?
         // Read the retained tree once per sample. Resolving every off-screen element
-        // individually makes the 365-day fixture's screenshot setup quadratic.
+        // individually is slow even while an archive detail covers the 365-day list.
         let settled = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
             guard let snapshot = try? app.snapshot() else { return false }
             var frames: [String: CGRect] = [:]
-            visibleDaily = nil
+            visibleTarget = nil
             func collect(_ node: any XCUIElementSnapshot) {
-                if node.identifier.hasPrefix("history-"), !node.frame.isEmpty, node.frame.intersects(viewport) {
+                if !node.identifier.isEmpty, !node.frame.isEmpty, node.frame.intersects(viewport) {
                     frames[node.identifier] = node.frame
-                    if visibleDaily == nil, node.elementType == .button,
-                       node.identifier.hasPrefix("history-daily-"), viewport.contains(node.frame) {
-                        visibleDaily = node.identifier
+                    let matchesTarget = requiredIdentifier.map { node.identifier == $0 }
+                        ?? node.identifier.hasPrefix("history-daily-")
+                    if visibleTarget == nil, node.elementType == .button,
+                       matchesTarget, viewport.contains(node.frame) {
+                        visibleTarget = node.identifier
                     }
                 }
                 for child in node.children { collect(child) }
@@ -1825,13 +1831,13 @@ final class HarnessShellUITests: XCTestCase {
             collect(snapshot)
             let unchanged = previous == frames
             previous = frames
-            return !frames.isEmpty && visibleDaily != nil && unchanged
+            return !frames.isEmpty && visibleTarget != nil && unchanged
         }, object: nil)
         XCTAssertEqual(XCTWaiter.wait(for: [settled], timeout: 5), .completed, "Visible History frames must settle")
-        let identifier = try XCTUnwrap(visibleDaily)
+        let identifier = try XCTUnwrap(visibleTarget)
         Thread.sleep(forTimeInterval: 0.3)
         let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
-        attachment.name = "10-history--year-scroll"
+        attachment.name = name
         attachment.lifetime = .keepAlways
         add(attachment)
         return identifier
