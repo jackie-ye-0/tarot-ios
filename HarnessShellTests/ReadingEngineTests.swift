@@ -90,7 +90,7 @@ final class ReadingEngineTests: XCTestCase {
         XCTAssertNotNil(try store.questionDraft())
         store.failsNextDraftSave = true
 
-        session.discardQuestion()
+        session.backToAsk()
 
         XCTAssertTrue(session.draftSaveFailed)
         XCTAssertNotNil(try store.questionDraft())

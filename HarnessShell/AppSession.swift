@@ -262,10 +262,6 @@ final class AppSession {
         }
     }
 
-    func discardQuestion() {
-        backToAsk()
-    }
-
     func backToAsk() {
         do {
             if hasSpreadDraft { try store.saveSpreadDraft(nil) }
