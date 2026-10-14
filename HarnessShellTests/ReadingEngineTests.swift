@@ -56,7 +56,7 @@ final class ReadingEngineTests: XCTestCase {
         }
     }
 
-    // The six-card starter cannot exercise a fourteen-day non-repeat run. Content expansion is #12.
+    // The six-card starter cannot exercise a fourteen-day non-repeat run. Interpretations expand in #24–#26.
     private func syntheticDeck() throws -> CardLibrary {
         let template = try CardLibrary.load().cards[0]
         return CardLibrary(version: 1, editorialStatus: "synthetic-test", cards: (0..<78).map {
@@ -158,6 +158,30 @@ final class ReadingEngineTests: XCTestCase {
                 }
                 XCTAssertNotNil(daily.colourHex.range(of: "^#[0-9a-fA-F]{6}$", options: .regularExpression))
             }
+        }
+    }
+
+    func testFullDeckIdentityHasTwentyTwoMajorsAndFourCompleteSuits() throws {
+        let deck = CardIdentity.deck
+        XCTAssertEqual(deck.count, 78)
+        XCTAssertEqual(Set(deck.map(\.id)).count, 78)
+        XCTAssertEqual(Set(deck.map(\.name)).count, 78)
+        let majors = deck.filter { $0.suit == nil }
+        XCTAssertEqual(majors.count, 22)
+        XCTAssertEqual(majors.map(\.rank), Array(0...21))
+        XCTAssertTrue(majors.allSatisfy { $0.arcana.hasPrefix("Major Arcana") })
+        XCTAssertEqual(majors.first?.name, "The Fool")
+        XCTAssertEqual(majors.last?.name, "The World")
+        for suit in ["Wands", "Cups", "Swords", "Pentacles"] {
+            let cards = deck.filter { $0.suit == suit }
+            XCTAssertEqual(cards.map(\.rank), Array(1...14), suit)
+            XCTAssertTrue(cards.allSatisfy { $0.arcana == "Minor Arcana" && $0.name.hasSuffix(" of \(suit)") })
+            XCTAssertEqual(cards.first?.name, "Ace of \(suit)")
+            XCTAssertEqual(Array(cards.suffix(4).map(\.name)), ["Page", "Knight", "Queen", "King"].map { "\($0) of \(suit)" })
+        }
+        // Existing stored content renders the same identity without changing its schema or wording.
+        for card in try CardLibrary.load().cards {
+            XCTAssertEqual(deck.first { $0.id == card.id }, card.identity)
         }
     }
 

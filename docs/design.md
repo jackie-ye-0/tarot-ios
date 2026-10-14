@@ -1,6 +1,6 @@
 # Design manifest
 
-11 October 2026 · Adopted by Jackie as the visual and interaction direction for the tarot app. This is the single source of truth for how the app looks and behaves on screen. Follow it for any design or UI work; change the app's look by changing this file first. Updated 12 October 2026: Settings matches the build spec, and the reference images and design check (§12) were added. Updated 13 October 2026: §11 describes full Today, reopened Reveal and earlier snapshots for issue #9. Updated 14 October 2026: shuffle/reveal motion (§7), completed Reduce Motion states, local-day routing and the Today midnight footer (§11) are documented.
+11 October 2026 · Adopted by Jackie as the visual and interaction direction for the tarot app. This is the single source of truth for how the app looks and behaves on screen. Follow it for any design or UI work; change the app's look by changing this file first. Updated 12 October 2026: Settings matches the build spec, and the reference images and design check (§12) were added. Updated 13 October 2026: §11 describes full Today, reopened Reveal and earlier snapshots for issue #9. Updated 14 October 2026: shuffle/reveal motion (§7), completed Reduce Motion states, local-day routing, the Today midnight footer (§11), and full-deck face grammar (§5) are documented.
 
 **What this does not do.** It does not approve building product features. [Decisions and scope](decisions.md) still governs what may be implemented. Issue #7 implements Draw, Reveal and a basic Today; issue #9 fills Today and makes its card reopen Reveal. Other screens remain reference designs.
 
@@ -113,10 +113,19 @@ Sizes are the default-size reference in points. In SwiftUI map each role to a Dy
 - **Text field.** Surface fill with a 1.5 ink border when it is the main entry on the screen. A single-line entry is a 60 high pill; a multi-line one uses radius 20. It must look like a field, with placeholder text and a character count where there is a limit.
 - **Card back.** Card-back fill, gold outline, a thinner inner frame and a half-sun-on-horizon motif. Identical everywhere.
 - **Card front.** Surface fill with an ink outline (gold outline when shown on night). Art is layered flat pastel shapes with ink linework, abstract rather than illustrative. Reversed cards are rotated 180 degrees and say "reversed" in text as well.
+
 - **Empty slot.** Dashed outline in the card shape with its number. The slot being filled has a gold outline and a slow pulse.
 - **Score strip.** The three area scores sit in one row: area label, numeral, and a 6 point rounded bar in the area's accent on a neutral track. Numbers are always shown as text; the bar never carries the value alone.
 - **List rows.** 60 to 76 high inside a surface group, hairline between rows, chevron at the right when the row navigates.
 - **Destructive actions** live inside a More menu, never beside Share or Done.
+
+### Full-deck face grammar (#12)
+
+All 78 faces share the 5:8 frame, an inset flat sky, a horizon and layered sage/clay ground. The Star retains the reference's four-point star, smaller light star and flowing landscape. The other Major Arcana each have a large rank-specific geometric emblem: the Fool's cliff and travelling staff; Magician's wand and infinity; Priestess's pillars and crescent; Empress's crown and grain; Emperor's square throne; Hierophant's crossed keys; Lovers' paired forms; Chariot's canopy and wheels; Strength's lion and infinity; Hermit's lantern; Wheel's spokes; Justice's scales; Hanged Man's inverted figure; Death's cut stem and new shoot; Temperance's pouring vessels; Devil's horns and chain; Tower's broken crown and bolt; Moon's crescent and twin towers; Sun's disc and rays; Judgement's trumpet; World's wreath.
+
+Minor Arcana use four silhouettes, never colour alone: a leafy staff for Wands, a bowl and stem for Cups, a blade and crossguard for Swords, and a five-point star within a disc for Pentacles. Aces have one large emblem. Two through Ten have that many emblems in balanced columns, with an extra central emblem for odd ranks. Ten uses smaller emblems so its five rows remain separate, including sword tips and hilts. Courts retain a large suit emblem with rank-specific framing: Page's leaf, Knight's diagonal pennant, Queen's three-point crown and curved seat, King's five-point crown and square throne. Ink outlines keep the silhouettes readable at Reveal (214-point width), Today (120), spread (84) and thumbnail (36). Small faces omit no identity-bearing marks. Names and orientation are real, scalable text beside or below the artwork, never tiny text baked into it. Major Arcana are unsuited (`nil`); their ranks run 0–21, Minor ranks 1–14 (Ace through King).
+
+The Debug-only card proof states have no reference image. The face gallery uses dawn ground, a title, three named pairs of upright/reversed cards per page, caption-role orientation labels and one next-page action. It scrolls and moves its action inline at accessibility sizes using the shared layout. The size proof is a scrolling stack of labelled faces at the four widths above; it is test evidence, not app navigation. Both use existing typography, spacing and colour roles.
 
 ## 6. Navigation and flow
 
