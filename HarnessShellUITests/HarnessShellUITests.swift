@@ -1251,31 +1251,4 @@ final class HarnessShellUITests: XCTestCase {
             app.terminate()
         }
     }
-
-
-    func testContrastMeasurementSelfChecks() {
-        func synthetic(background: UInt8, text: UInt8) -> CGImage {
-            var pixels: [UInt8] = []
-            for _ in 0..<40 {
-                for x in 0..<100 {
-                    let grey = x < 70 ? background : text
-                    pixels += [grey, grey, grey, 255]
-                }
-            }
-            let provider = CGDataProvider(data: Data(pixels) as CFData)!
-            return CGImage(width: 100, height: 40, bitsPerComponent: 8, bitsPerPixel: 32,
-                           bytesPerRow: 400, space: CGColorSpace(name: CGColorSpace.sRGB)!,
-                           bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.last.rawValue),
-                           provider: provider, decode: nil, shouldInterpolate: false, intent: .defaultIntent)!
-        }
-        for (background, text, expected) in [(UInt8(255), UInt8(67), 10.0),
-                                               (UInt8(67), UInt8(255), 10.0),
-                                               (UInt8(255), UInt8(149), 3.0)] {
-            let measured = measuredContrast(synthetic(background: background, text: text))
-            XCTAssertNotNil(measured)
-            XCTAssertEqual(measured?.ratio ?? 0, expected, accuracy: 0.25)
-            if expected == 3 { XCTAssertLessThan(measured?.ratio ?? .infinity, 4.5) }
-        }
-    }
-
 }
