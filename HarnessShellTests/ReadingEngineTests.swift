@@ -81,6 +81,29 @@ final class ReadingEngineTests: XCTestCase {
     }
 
     @MainActor
+    func testDraftDeleteFailureRetryDeletesInsteadOfSaving() throws {
+        let store = try makeStore()
+        let seed = try store.installSeed { "draft-delete-retry" }
+        try store.completeWelcome()
+        let session = try makeSession(store: store, seed: seed)
+        session.openComposer(question: "What should I notice?")
+        XCTAssertNotNil(try store.questionDraft())
+        store.failsNextDraftSave = true
+
+        session.discardQuestion()
+
+        XCTAssertTrue(session.draftSaveFailed)
+        XCTAssertNotNil(try store.questionDraft())
+        guard case .composer = session.screen else { return XCTFail("A failed discard should keep the composer open") }
+
+        session.retryDraftSave()
+
+        XCTAssertFalse(session.draftSaveFailed)
+        XCTAssertNil(try store.questionDraft())
+        guard case .ask = session.screen else { return XCTFail("Retrying the discard should return to Ask") }
+    }
+
+    @MainActor
     private func makeStore() throws -> DrawStore {
         try DrawStore(configuration: ModelConfiguration(isStoredInMemoryOnly: true, cloudKitDatabase: .none))
     }

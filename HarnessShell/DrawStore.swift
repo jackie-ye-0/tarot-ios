@@ -38,6 +38,7 @@ final class DrawStore {
     var failsNextWelcomeRead = false
     var failsNextWelcomeSave = false
     var failsNextSpreadSave = false
+    var failsNextDraftSave = false
     #endif
 
     init(configuration: ModelConfiguration) throws {
@@ -181,6 +182,12 @@ final class DrawStore {
     }
 
     func saveDraft(_ draft: QuestionDraft?) throws {
+        #if DEBUG
+        if failsNextDraftSave {
+            failsNextDraftSave = false
+            throw StoreError.save(CocoaError(.fileWriteOutOfSpace))
+        }
+        #endif
         do {
             let saved = try context.fetch(FetchDescriptor<StoredQuestionDraft>()).first
             if let draft {

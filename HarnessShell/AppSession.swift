@@ -92,6 +92,10 @@ final class AppSession {
         case welcome, draw, reveal(DailyDraw), today(DailyDraw), ask, composer, pick, reading(QuestionReading)
     }
 
+    private enum DraftSaveOperation {
+        case persistQuestion, persistSpread, discard
+    }
+
     var screen: Screen = .draw
     var saveFailed = false
     var dayRefreshFailed = false
@@ -105,10 +109,10 @@ final class AppSession {
     private(set) var relationshipStatus: RelationshipStatus?
     private(set) var relationshipStatusAsked = false
     private var latestReadings: [ReadingArea: QuestionReading] = [:]
+    private var failedDraftSaveOperation: DraftSaveOperation?
     private(set) var picks: [SpreadPick] = []
     private var hasSpreadDraft = false
     private var draftIsPicking = true
-    private var discardingDraft = false
     private var pendingReading: QuestionReading?
     private var today: DailyDraw?
     private(set) var date: Date
@@ -251,7 +255,11 @@ final class AppSession {
         do {
             try store.saveDraft(QuestionDraft(area: area, question: question))
             draftSaveFailed = false
-        } catch { draftSaveFailed = true }
+            failedDraftSaveOperation = nil
+        } catch {
+            failedDraftSaveOperation = .persistQuestion
+            draftSaveFailed = true
+        }
     }
 
     func discardQuestion() {
@@ -264,15 +272,24 @@ final class AppSession {
             else { try store.saveDraft(nil) }
             hasDraft = false
             hasSpreadDraft = false
-            discardingDraft = false
             draftSaveFailed = false
+            failedDraftSaveOperation = nil
             question = ""
             picks = []
             pendingReading = nil
             screen = .ask
         } catch {
-            discardingDraft = true
+            failedDraftSaveOperation = .discard
             draftSaveFailed = true
+        }
+    }
+
+    func retryDraftSave() {
+        switch failedDraftSaveOperation {
+        case .persistQuestion: persistDraft()
+        case .persistSpread: persistSpreadDraft()
+        case .discard: backToAsk()
+        case nil: break
         }
     }
 
@@ -313,14 +330,10 @@ final class AppSession {
         do {
             try store.saveSpreadDraft(SpreadDraft(area: area, question: question, picks: picks, isPicking: draftIsPicking))
             draftSaveFailed = false
-        } catch { draftSaveFailed = true }
-    }
-
-    func retryDraftSave() {
-        if discardingDraft { backToAsk() }
-        else {
-            persistDraft()
-            persistSpreadDraft()
+            failedDraftSaveOperation = nil
+        } catch {
+            failedDraftSaveOperation = .persistSpread
+            draftSaveFailed = true
         }
     }
 
