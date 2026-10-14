@@ -6,7 +6,7 @@ struct QuestionEdit: Equatable {
     let text: String
     let dismissKeyboard: Bool
 
-    static func applying(_ proposed: String, to previous: String, characterLimit: Int? = nil) -> QuestionEdit {
+    static func applying(_ proposed: String, to previous: String) -> QuestionEdit {
         let old = Array(previous)
         let new = Array(proposed)
         var prefix = 0
@@ -27,7 +27,6 @@ struct QuestionEdit: Equatable {
                 inBreak = false
             }
         }
-        if let characterLimit { text = String(text.prefix(max(0, characterLimit))) }
         return QuestionEdit(text: text, dismissKeyboard: isReturn)
     }
 }
