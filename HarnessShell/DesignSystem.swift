@@ -1264,6 +1264,7 @@ struct NavigationAction: View {
         Button(action: action) {
             Image(systemName: close ? "xmark" : "chevron.left")
                 .typeRole(.section)
+                .dynamicTypeSize(.large) // Keep the glyph's designed size; its target remains at least 44 points.
                 .foregroundStyle(night ? Design.Palette.cream : Design.Palette.ink)
                 .frame(minWidth: Design.Space.target, minHeight: Design.Space.target)
                 .contentShape(Rectangle())

@@ -1,6 +1,6 @@
 # Three-card pick in full (#15)
 
-15 October 2026. Implementation and author comparison complete; independent design comparison pending. No push or delivery pipeline has run yet.
+15 October 2026. Independent design comparison completed with one required correction, P06. The glyph correction is implemented; its full check and four replacement opening captures are pending. No push or delivery pipeline has run yet.
 
 ## Verified run
 
@@ -44,6 +44,24 @@ The comparison page also reports missing Today-first-day, About Someone, History
 
 ## Independent comparison and limits
 
-Pending firstmate's fresh-session comparison of the final images and manifest. Its findings and dispositions must be recorded before the first done handoff and included in the eventual description with `Closes #15`.
+A fresh session reviewed the four references and all 35 relevant built images using only the images, manifest and state list. Its verdict was **pass after P06, the fixed-size Back glyph correction**. Firstmate authorised fixing only P06, retaining the other differences below, and an author inspection of four replacement largest-text opening captures without another independent round. The complete original report is retained in the task's final evidence as `independent-review.md`.
+
+| Review IDs | Disposition and manifest reason |
+| --- | --- |
+| P06, C06, E06/Q06 glyph portion | Fixed once inside the glyph-only `NavigationAction`: `.dynamicTypeSize(.large)` keeps the symbol at its standard size while the existing frame retains a minimum 44 × 44-point target. No text label is constrained. This implements §11's fixed decorative-icon rule and keeps the composer's separate Back row. Four opening captures require inspection after the clean-commit full check. |
+| P02, C01 spacing portion | Retained the modest ordinary-size vertical-rhythm difference at firstmate's direction. The native safe area, existing section-spacing roles and compact fan remain consistent with §§4/11a, leaving clear space for the prompt and five separate tap lanes. No forced reference-pixel offsets or shared-layout compression were introduced. Fan overlap and motif proportions remain acceptable under §11a's compact-offset treatment. |
+| E02, Q01 spacing/wrapping portion | Retained the existing selector-to-title and guidance-to-field spacing roles and natural title wrapping. §§4/12 permit native type metrics and scalable layout; matching the web wrap with forced breaks or tighter fixed gaps would weaken that consistency. This is an accepted fidelity difference, not deferred work in another ticket. |
+| P01, E01, C01 native-chrome portion | Accepted native status chrome, normal-size symbol weight, reserved Back target and 24-point night/20-point dawn guides under §§4/6. The large-glyph exception is fixed by P06. |
+| P03, E04, Q01 texture/control-metric portion | Accepted original deterministic grain, decorative disc extent, slightly different field/chip metrics and solid night slot fill under §§2/5/12. The fill stabilises numeral contrast; the disc has no prescribed exact diameter. |
+| P04 | Accepted minor outline/type weight, shuffle-footer clearance and the helper's final full stop. Named roles and hierarchy remain intact; §§11a/12 specify the copy and allow native rendering differences. |
+| P05 | Accepted extra name/orientation rows and differing filled/empty position baselines in intermediate states. §11a requires explicit names, orientations and sequential slots; all positions and the next-pick instruction remain visible. |
+| P07 | Accepted the native save-error alert and its system font/colours, explicitly described by §11a. The normal-size alert fits; no largest-text error-state visual claim is made. |
+| C02, C03 | Accepted actual fixture cards, full-deck face grammar, equal slot/front footprints and explicit Upright/Reversed text. §§5/11a govern these identities and labels; reference cards are examples. |
+| C04, E05, Q03 | Accepted native footer wrapping, symbol weight and bottom clearance. Actions remain full width within their night/dawn guides, with one primary action and the correct enabled/disabled wording; §§4/11a preserve the adaptive button shape. |
+| C05, E06 reflow portion | Accepted stacked slots/selector, separate composer Back row and multiline inline actions at accessibility sizes under §§11/11a. Only the decorative glyph stops scaling. |
+| E03, Q02 | Accepted missing character counter/limit and miniature slot preview because #14 explicitly owns both, as documented in §11a. |
+| Q04, Q05 | Accepted editable keyboard-fixture wording, field scrolling to the top and below-viewport suggestions/actions. §11a defines this focus/dismissal behaviour; adjacent and dismissed captures show the complete content. Viewport cropping does not establish a clipped control layout. |
+
+The review did not establish animation duration, first-paint behaviour, target bounds, font identity, contrast or persistence from still images. The functional tests and strict audit above provide that separate evidence. Largest-text partial-spread/error combinations and real-device behaviour were not visually reviewed. The final description must include the verdict, dispositions and `Closes #15`.
 
 No dependencies, services, network calls or simulator settings were added. Questions before their first submission remain in memory until #14. Real-device behaviour and manual VoiceOver order remain unverified; the automated audit is not a substitute for that release check.
