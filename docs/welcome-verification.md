@@ -1,6 +1,6 @@
 # Welcome on first open (#8)
 
-Scope: the Welcome screen shown before Draw on first open, and saving its completion on the device. Draw, Reveal, Today and the storage-open error are unchanged; their captures in the same run are regression coverage. No reading rule, dependency or service changed.
+Scope: the Welcome screen shown before Draw on first open, and saving its completion on the device. Installations created before Welcome existed are treated as having seen it. Draw, Reveal, Today and the storage-open error screen are unchanged; a read failure just after Welcome is saved now also leads to that screen. Their captures in the same run are regression coverage. No reading rule, dependency or service changed.
 
 ## Behaviour and evidence
 
@@ -9,7 +9,8 @@ Scope: the Welcome screen shown before Draw on first open, and saving its comple
 - `testWelcomeFloatingCardDoesNotDelayTheFirstDraw` reaches Draw and Reveal with ordinary animation on.
 - `testWelcomeLargestTextAndReducedMotion` captures the largest text size at three scroll positions (top, promise, bottom), asserting the whole headline is visible at the top and the primary action is reachable at the bottom. With Reduce Motion it captures the screen and compares two content images a second apart to show the card is still.
 - `testWelcomeSaveFailureKeepsWelcomeAndAllowsRetry` uses the Debug-only `--test-welcome-save-failure` switch to fail the first save. It asserts the native alert's title, message and single button, keeps the `01-welcome--save-failed` capture, confirms Welcome is still in place after dismissal, and follows the retry through to Draw.
-- No engine rule changed, so the existing engine tests remain the rule seam. Routing and real SwiftData persistence across relaunch are exercised through the UI seam.
+- Unit tests cover the store and routing rules. `testLegacyInstallWithoutWelcomeFieldSkipsWelcome` saves an identity in the pre-Welcome store format to a temporary file and reopens it through the app's store: Welcome is skipped. `testNewInstallShowsWelcomeOnlyOnce`, `testCompletingWelcomeWithTodaysDrawRoutesToToday` and `testReadFailureAfterSavingWelcomeRetriesPastWelcome` show that completing Welcome hands off through the launch routing: Draw, Today when today's card is already drawn, and, after a read failure, the storage-failure screen's retry lands past Welcome.
+- No reading rule changed. Routing and real SwiftData persistence across relaunch are also exercised through the UI seam.
 
 ## Independent findings and dispositions
 
@@ -50,6 +51,6 @@ Two earlier runs passed every Welcome test but each failed one Draw test whose c
 ## Limits
 
 - The headline's line-height adjustment needs iOS 18. iOS 17 keeps Gabarito's own line height, with everything else the same.
-- The save-failure alert is system UI. It is captured and its text and behaviour are asserted, but it was not put through the accessibility audit, the same as the two existing native alerts.
+- The save-failure alert is system UI. It is captured and its text and behaviour are asserted, but it is not put through the accessibility audit, the same as the two existing native alerts. An audit of the presented alert with all seven categories (run `20261014T062832.698617Z-check-7836e8bb`, commit `759ea00`) passed six and flagged only the alert's own message text under Dynamic Type. iOS draws that text and the app supplies only its words, so no exception was added.
 - Still images show the card at rest. The float (six points over three seconds) is covered by the Reduce Motion stillness assertion and the animation-on test, not by a recording.
 - Only the 390 by 844 point phone at default and largest text is captured. Real-device behaviour and a manual VoiceOver pass remain release checks, as in the foundation slice.
