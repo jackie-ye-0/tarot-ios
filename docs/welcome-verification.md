@@ -43,9 +43,9 @@ The first fix for W-01 set a shorter line height on the text itself. The unfilte
 
 ## Full validation
 
-`./scripts/harness check` passed on commit `2ad92f9` in `.harness/runs/20261014T025642.263196Z-check-917a99e6/`: **38 iOS tests (15 engine and font, 23 UI) and 34 command tests, plus the design-role guard**, with zero failures, skips or expected failures. Device: the checkout's dedicated iPhone 17e simulator on iOS 26.5, Xcode 27.0. `./scripts/harness evidence` was read, all six Welcome captures were inspected and measured against `01-welcome`, and the comparison page was opened.
+After rebasing onto the card-face work (#37), `./scripts/harness check` passed on commit `e024f7a` in `.harness/runs/20261014T044013.838512Z-check-1586bdd1/`: **41 iOS tests (16 engine and font, 25 UI) and 34 command tests, plus the design-role guard**, with zero failures, skips or expected failures. Device: the checkout's dedicated iPhone 17e simulator on iOS 26.5, Xcode 27.0. `./scripts/harness evidence` was read, all six Welcome captures were inspected, and the comparison page was opened. Below the status bar the six captures are pixel-identical to those measured above (run `20261014T025642.263196Z-check-917a99e6`, before the rebase), so those measurements stand.
 
-An earlier run of the same commit passed every Welcome test but failed one unrelated Draw test, whose first tap after a cold launch was not registered; the app stayed on an unselected Draw screen. The rerun passed unchanged.
+Two earlier runs passed every Welcome test but each failed one Draw test whose card tap was not registered: once just after a cold launch, and once, after the rebase, while the screen was still re-laying out after the Dynamic Type audit (the run's screen recording shows it). The UI tests now tap a Draw card only once it is hittable and its frame is unchanged between two reads, through one shared helper with a five-second limit, with no fixed pause or retry.
 
 ## Limits
 
