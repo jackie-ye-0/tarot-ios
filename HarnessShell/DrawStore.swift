@@ -41,11 +41,12 @@ final class DrawStore {
     var failsNextDraftSave = false
     var failsNextReadingUpdate = false
     var failsNextReadingDelete = false
+    var failsNextSettingsSave = false
     #endif
 
     init(configuration: ModelConfiguration) throws {
         container = try ModelContainer(for: InstallIdentity.self, StoredDailyDraw.self, StoredQuestionReading.self, StoredSpreadDraft.self,
-                                       StoredQuestionDraft.self, StoredRelationshipPreference.self,
+                                       StoredQuestionDraft.self, StoredRelationshipPreference.self, StoredAreaPreference.self,
                                        configurations: configuration)
         context.autosaveEnabled = false
     }
@@ -264,11 +265,55 @@ final class DrawStore {
     }
 
     func saveRelationshipStatus(_ status: RelationshipStatus?) throws {
+        try checkSettingsSave()
         do {
             if let saved = try relationshipPreference() { saved.status = status?.rawValue }
             else { context.insert(StoredRelationshipPreference(status: status)) }
             try context.save()
         } catch { context.rollback(); throw error }
+    }
+
+    func hiddenAreas() throws -> Set<ReadingArea> {
+        let values = try context.fetch(FetchDescriptor<StoredAreaPreference>()).first?.hiddenAreas ?? []
+        let hidden = Set(values.compactMap(ReadingArea.init(rawValue:)))
+        guard hidden.count < ReadingArea.allCases.count else {
+            throw StoreError.read(CocoaError(.fileReadCorruptFile))
+        }
+        return hidden
+    }
+
+    func saveHiddenAreas(_ hidden: Set<ReadingArea>) throws {
+        try checkSettingsSave()
+        guard hidden.count < ReadingArea.allCases.count else {
+            throw StoreError.save(CocoaError(.coderInvalidValue))
+        }
+        do {
+            let values = hidden.map(\.rawValue).sorted()
+            if let saved = try context.fetch(FetchDescriptor<StoredAreaPreference>()).first {
+                saved.hiddenAreas = values
+            } else { context.insert(StoredAreaPreference(hiddenAreas: values)) }
+            try context.save()
+        } catch { context.rollback(); throw error }
+    }
+
+    private func checkSettingsSave() throws {
+        #if DEBUG
+        if failsNextSettingsSave {
+            failsNextSettingsSave = false
+            throw StoreError.save(CocoaError(.fileWriteOutOfSpace))
+        }
+        #endif
+    }
+}
+
+@Model
+final class StoredAreaPreference {
+    @Attribute(.unique) var key: String
+    var hiddenAreas: [String]
+
+    init(hiddenAreas: [String]) {
+        key = "areas"
+        self.hiddenAreas = hiddenAreas
     }
 }
 

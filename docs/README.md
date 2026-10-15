@@ -36,6 +36,7 @@ Add future research to `docs/research/`, using descriptive, lower-case hyphenate
 - [Welcome verification](welcome-verification.md): issue #8 behaviour, independent design review dispositions and evidence.
 - [Full Ask and composer verification](ask-composer-verification.md): issue #14 drafts, relationship lenses, tests and design evidence.
 - [Reading in full verification](reading-verification.md): issue #16 annotations, deletion, independent review dispositions and verification status.
+- [Settings verification](settings-verification.md): issue #20 preferences, retention, screenshots and design comparison.
 - [Harness principles](harness.md)
 
 Add a link here when adding a document. Keep each document's status clear and record approved scope changes in [decisions](decisions.md).

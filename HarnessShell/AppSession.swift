@@ -26,6 +26,7 @@ struct LaunchConfiguration {
     var spreadSaveFailure = false
     var readingUpdateFailure = false
     var readingDeleteFailure = false
+    var settingsSaveFailure = false
 
     static func current() -> LaunchConfiguration {
         var result = LaunchConfiguration()
@@ -59,6 +60,7 @@ struct LaunchConfiguration {
         result.spreadSaveFailure = arguments.contains("--test-spread-save-failure")
         result.readingUpdateFailure = arguments.contains("--test-reading-update-failure")
         result.readingDeleteFailure = arguments.contains("--test-reading-delete-failure")
+        result.settingsSaveFailure = arguments.contains("--test-settings-save-failure")
         #endif
         return result
     }
@@ -107,6 +109,9 @@ final class AppSession {
     var welcomeSaveFailed = false
     var draftSaveFailed = false
     var relationshipSaveFailed = false
+    var showsSettings = false
+    var settingsSaveFailed = false
+    private(set) var hiddenAreas: Set<ReadingArea> = []
     var area: ReadingArea = .relationship { didSet { persistDraft(); persistSpreadDraft() } }
     var question = "" { didSet { persistDraft(); persistSpreadDraft() } }
     private(set) var hasDraft = false
@@ -148,6 +153,8 @@ final class AppSession {
             hasSpreadDraft = true
         }
         screen = try launchScreen()
+        hiddenAreas = try store.hiddenAreas()
+        if hiddenAreas.contains(area), let first = visibleAreas.first { area = first }
     }
 
     /// Welcome until it is completed, then Today once today's card is drawn, otherwise Draw.
@@ -253,6 +260,17 @@ final class AppSession {
     var todayAreaReading: AreaReading? { today?.meaning.daily?.reading(for: area) }
     var todayCardName: String? { today?.card.name }
     var latestReading: QuestionReading? { latestReadings[area] }
+    var visibleAreas: [ReadingArea] { ReadingArea.allCases.filter { !hiddenAreas.contains($0) } }
+
+    func setArea(_ area: ReadingArea, visible: Bool) {
+        let hidden = ReadingEngine.settingVisibility(visible, for: area, hiddenAreas: hiddenAreas)
+        guard hidden != hiddenAreas else { return }
+        do {
+            try store.saveHiddenAreas(hidden)
+            hiddenAreas = hidden
+            if hidden.contains(self.area), let first = visibleAreas.first { self.area = first }
+        } catch { settingsSaveFailed = true }
+    }
 
     func persistDraft() {
         guard hasDraft else { return }
@@ -297,7 +315,10 @@ final class AppSession {
             try store.saveRelationshipStatus(status)
             relationshipStatus = status
             relationshipStatusAsked = true
-        } catch { relationshipSaveFailed = true }
+        } catch {
+            if showsSettings { settingsSaveFailed = true }
+            else { relationshipSaveFailed = true }
+        }
     }
 
     func goToToday() {
@@ -463,6 +484,7 @@ enum AppLaunch {
         store.failsNextSpreadSave = configuration.spreadSaveFailure
         store.failsNextReadingUpdate = configuration.readingUpdateFailure
         store.failsNextReadingDelete = configuration.readingDeleteFailure
+        store.failsNextSettingsSave = configuration.settingsSaveFailure
         if configuration.earlierSnapshot {
             let draw = ReadingEngine.dailyDraw(seed: seed, dateKey: ReadingEngine.dateKey(for: clock.now, timeZone: clock.timeZone),
                                               position: 3, library: library)

@@ -685,3 +685,87 @@ struct AskComposerRulesTests {
         #expect(neutral.connectingPassage == content.lens)
     }
 }
+
+struct AreaVisibilityTests {
+    @Test(arguments: ReadingArea.allCases)
+    func lastAreaCannotBeHidden(last: ReadingArea) {
+        var hidden: Set<ReadingArea> = []
+        for area in ReadingArea.allCases where area != last {
+            hidden = ReadingEngine.settingVisibility(false, for: area, hiddenAreas: hidden)
+        }
+        #expect(ReadingEngine.settingVisibility(false, for: last, hiddenAreas: hidden) == hidden)
+        #expect(ReadingEngine.settingVisibility(true, for: last, hiddenAreas: hidden) == hidden)
+        for area in ReadingArea.allCases {
+            hidden = ReadingEngine.settingVisibility(true, for: area, hiddenAreas: hidden)
+        }
+        #expect(hidden.isEmpty)
+    }
+
+    @MainActor @Test
+    func preferencesPreserveSnapshotsAndSurviveReopening() throws {
+        let directory = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let configuration = ModelConfiguration(url: directory.appending(path: "settings.store"), cloudKitDatabase: .none)
+        let library = try CardLibrary.load()
+        let draw = ReadingEngine.dailyDraw(seed: "settings", dateKey: "2026-10-11", position: 3, library: library)
+        var picks: [SpreadPick] = []
+        for _ in 0..<3 {
+            picks.append(try #require(ReadingEngine.nextPick(after: picks, library: library, randomIndex: { _ in 0 })))
+        }
+        let reading = try ReadingEngine.compose(id: UUID(), createdAt: Date(), area: .relationship,
+                                                question: "What should I notice?", picks: picks, library: library)
+        try autoreleasepool {
+            let store = try DrawStore(configuration: configuration)
+            _ = try store.installSeed { "settings" }
+            #expect(try store.hiddenAreas().isEmpty)
+            _ = try store.save(draw)
+            _ = try store.save(reading)
+            try store.saveHiddenAreas([.relationship, .social])
+            try store.saveRelationshipStatus(.complicated)
+        }
+        let reopened = try DrawStore(configuration: configuration)
+        #expect(try reopened.hiddenAreas() == [.relationship, .social])
+        #expect(try reopened.draw(for: draw.dateKey) == draw)
+        #expect(try reopened.latestReadingsByArea()[.relationship] == reading)
+        #expect(try reopened.relationshipPreference()?.status == RelationshipStatus.complicated.rawValue)
+        try reopened.saveHiddenAreas([])
+        try reopened.saveRelationshipStatus(nil)
+        #expect(try reopened.latestReadingsByArea()[.relationship] == reading)
+        #expect(try reopened.draw(for: draw.dateKey) == draw)
+        #expect(try reopened.relationshipPreference() != nil)
+        #expect(try reopened.relationshipPreference()?.status == nil)
+        #expect(throws: (any Error).self) { try reopened.saveHiddenAreas(Set(ReadingArea.allCases)) }
+        #expect(try reopened.hiddenAreas().isEmpty)
+    }
+
+    @MainActor @Test
+    func failedSettingsSaveKeepsPreviousChoiceAndRetryWorks() throws {
+        let store = try DrawStore(configuration: ModelConfiguration(isStoredInMemoryOnly: true, cloudKitDatabase: .none))
+        let seed = try store.installSeed { "settings-failure" }
+        try store.completeWelcome()
+        let session = try AppSession(clock: SessionClock(configuration: LaunchConfiguration()), seed: seed,
+                                     store: store, library: CardLibrary.load(), randomIndex: { _ in 0 })
+        session.showsSettings = true
+        session.openComposer(question: "Keep these words")
+        store.failsNextSettingsSave = true
+        session.setArea(.relationship, visible: false)
+        #expect(session.settingsSaveFailed)
+        #expect(session.hiddenAreas.isEmpty)
+        #expect(session.area == .relationship)
+        session.settingsSaveFailed = false
+        session.setArea(.relationship, visible: false)
+        #expect(session.area == .career)
+        #expect(session.question == "Keep these words")
+        #expect(try store.questionDraft()?.area == .career)
+        session.setRelationshipStatus(.single)
+        store.failsNextSettingsSave = true
+        session.setRelationshipStatus(.complicated)
+        #expect(session.settingsSaveFailed)
+        #expect(session.relationshipStatus == .single)
+        #expect(try store.relationshipPreference()?.status == RelationshipStatus.single.rawValue)
+        session.setRelationshipStatus(nil)
+        #expect(session.relationshipStatus == nil)
+        #expect(session.relationshipStatusAsked)
+    }
+}
