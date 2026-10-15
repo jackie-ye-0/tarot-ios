@@ -35,7 +35,7 @@ A fresh session reviewed seven references and all 123 in-scope images on 15 Octo
 
 | Finding | Disposition and verification to complete |
 | --- | --- |
-| T01: oversized archive back glyph | Archive Today already uses the shared `NavigationAction`. Inherit the central fixed-size glyph change from main during the authorised rebase; do not add a second local pin. Compare ordinary/largest archive captures afterwards. |
+| T01: oversized archive back glyph | Archive Today uses the shared `NavigationAction` and now inherits main’s central fixed-size glyph after the authorised rebase onto `37d3b9a`. No local pin was added. Ordinary/largest archive comparison awaits replay. |
 | T02: missing archive Today tabs | Added the existing `RestingTabBar` to the daily cover, with History selected at both text sizes. Existing routes dismiss the cover for Today, Ask or the retained History list. Added selected-tab and destination assertions; reading and Reveal still require hidden tabs. No navigation restructure. |
 | C01: chosen Draw header | Added an actual-top largest-text capture asserting the complete date and History control, before the existing content/action captures. |
 | V01: archive Reveal | Added ordinary, largest-text overlapping and Reduce Motion captures using 10 October's Strength, distinct from the live 11 October Star. Tests assert “Back to daily card” and return to the saved 10 October detail. The ordinary archive Reveal also runs the unchanged audit. |

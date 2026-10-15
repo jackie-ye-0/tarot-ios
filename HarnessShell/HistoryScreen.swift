@@ -100,7 +100,7 @@ struct HistoryScreen: View {
                                 session.goToToday()
                             }, ask: {
                                 opened = nil
-                                session.screen = .ask
+                                session.openAsk()
                             }, history: { opened = nil })
                         }
                 case .reading(let reading):
