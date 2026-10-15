@@ -1,6 +1,6 @@
 # History verification (#19)
 
-Status: implementation and focused replay complete; the final full iOS check and independent comparison remain pending. The individual results below do not establish a full passing check.
+Status: implementation and the clean full iOS check passed; final screenshots have been inspected. Independent comparison is pending with firstmate.
 
 ## Behaviour and tests
 
@@ -13,9 +13,9 @@ Status: implementation and focused replay complete; the final full iOS check and
 
 ## Design comparison
 
-The final run's comparison page and screenshot paths will be recorded here after inspection. History follows `10-history`; archive details reuse `04-today` and `09-reading` with variant names. The manifest describes empty, read-error and accessible calendar layouts.
+The final comparison page is `.harness/runs/20261014T233756.745278Z-check-f4047a05/design-comparison.html`, opened and inspected with chrome-devtools-axi. Named images are in that run's `screenshots/` directory. History follows `10-history`; archive details reuse `04-today` and `09-reading` with variant names. The manifest describes empty, read-error and accessible calendar layouts.
 
-Deliberate scope/layout differences to check against the final images:
+Accepted differences observed in the final images, subject to the independent comparison:
 
 - History's Settings icon is absent because #20 explicitly owns the top-right Settings entry on Today and History.
 - The reference's “A missed day is just a day off” sentence is omitted; the issue requires no scolding, and the calendar does not need commentary about absence.
@@ -23,7 +23,11 @@ Deliberate scope/layout differences to check against the final images:
 - October's weekday placement follows the real 2026 calendar. Older entries show an explicit day, month and year; the reference mixes “Yesterday” with yearless dates. Both month arrows remain enabled to browse either direction, including future months.
 - Selected tabs retain the established high-contrast ink pill. Future calendar dates use secondary ink with full text contrast.
 - Largest text stacks the calendar dates and filters and wraps row text. Archive daily detail adds Back to History and its saved date; live Ask/midnight actions are absent. Snapshot content is unchanged.
-- The existing generated card art, six-card starter content, native rendering and previously documented scope differences on Draw, Today, Ask and Reading remain as described in their verification documents.
+- Filter labels use the shared semibold metadata role, slightly heavier than the web example. The 24-point weekday row and 44-point date cells retain native text growth. Both choices follow the manifest's History rules and existing type roles.
+- Draw retains the established native safe-area fan/disc and action placement, original card-back motif, generated grain and correct weekday. The new History entry matches the reference at ordinary size and stacks below the date at largest text. Reveal retains the established 5:8 card, code-drawn face, native footer/arrow and omitted Share (#23). See [foundation](foundation-verification.md) and [ritual motion](ritual-motion-verification.md) for those existing differences.
+- Today retains the original starter copy, compact 5:8 thumbnail, wrapping extras/area sentences and darker area-text partners. Settings is #20; the separate first-day reminder is #21. The native scroll viewport and three tabs leave less of the long reference artboard visible at once. See [Today verification](today-verification.md).
+- Ask retains its foundation content: context/recent-reading/status content belongs to #14 and named-person entry to #18. The resulting open space and original suggestion text remain accepted scope differences. Reading retains original cards/meanings, explicit upright/reversed lines, darker area headings, omitted decorative area dot, and the native Done footer; feedback/More is #16 and Share is #23. See [Ask verification](ask-verification.md).
+- `09-reading--history-bottom` aligns the complete reflection question above Done but stops before “Something to sit with”. This is a capture-position limitation, accepted because `09-reading--bottom` shows the whole same shared reading panel at ordinary size and `09-reading--history-largest-text-bottom` shows that caption in the archive at largest text. Both images were inspected; the caption is not removed from the screen.
 
 ## Results
 
@@ -42,9 +46,10 @@ Deliberate scope/layout differences to check against the final images:
 - Seventh full check (`20261014T195454.068965Z-check-4c768a68`, rebased commit `a0f1f75`) was interrupted under the agreed three-minute performance-method limit. The new list capture succeeded, but the ordinary archive-detail capture still resolved the underlying retained list individually. The same snapshot-per-sample helper now captures both states and verifies returning to the same History entry. This run also failed the largest-text Career-row viewport assertion after ten alternating scroll adjustments. It is incomplete, not a passing check; its result bundle has no readable `Info.plist`, so the failure recording could not be exported.
 - Eighth focused reproduction (`20261014T215046.876587Z-test-ab332945`): the unchanged largest-text test passed in 206.133 seconds. The Welcome rebase left `scrollTo`, `activeScrollView`, `visibleFrame` and that History test byte-for-byte unchanged; its test-launch helper adds the Welcome-completed fixture flag. The replay positioned the Career reading in two drags. No scroll implementation, assertion or tolerance was changed.
 - Ninth focused replay (`20261014T231614.927068Z-test-5a848d17`): both affected tests passed, zero failures/skips. Largest text completed in 203.494 seconds; the 368-entry performance method completed in 89.751 seconds, including both kept captures and returning to History. The two exported scrolling-duration measurements are 2.584585 and 2.585164 seconds. No hitch value was exported, and its absence is not evidence of zero hitches. All 16 named screenshots were inspected: full filter labels, wrapped rows and empty/error copy, reachable Retry and Done, and the saved-date archive card are visible at the appropriate scroll stops. The two focused commands used temporary test selection in this worktree's scheme through the plain harness; the exact original scheme was restored after each. Their one-/two-test totals intentionally do not satisfy the unchanged four-test harness minimum.
-- Final full iOS harness check after the focused replay: pending.
+- Final clean full check (`20261014T233756.745278Z-check-f4047a05`, source commit `1c2f70b170f2c4338034bdeef939dcf8abcd8d67`): **passed, exit 0; 64/64 iOS tests, zero failures, skips or expected failures**, plus 34/34 command tests and the design-role guard. All four History UI methods passed: snapshot/update/deletion 227.208 seconds; calendar/filter/audits 149.920 seconds; empty/error/largest text 206.514 seconds; 368-entry performance/captures/return 88.985 seconds. The engine rules and bundled-font checks also passed. The final result bundle's metrics queries return an empty array, so no full-run duration or hitch value is claimed. The focused duration measurements above remain the available timing evidence.
+- The full check exported 246 named images including artwork proofs and contrast crops, with 12/15 main references matched. The three missing references are the separate Today first-day reminder (#21), About someone (#18), and Settings (#20), outside this issue. Every screen changed by History has a main capture, largest-text variants, and the required Draw/Reveal/pick Reduce Motion captures. The strict audit helper and its documented measured-static-text exception are unchanged; logs and kept contrast crops retain every disposition.
 - The third run's browser comparison page and History's standard, empty, error, filter, list and archive largest-text images were inspected. The weekday-header row had excess space compared with the reference; its minimum height is now 24 points, retaining natural text growth. The final comparison must use the next run's images.
-- Exported screenshot inspection: pending.
+- Final author inspection: compared the seven main pairs for Draw empty/chosen, Reveal, Today, Ask, Reading and History in the browser; inspected all 15 History screen captures and all nine daily/reading archive variants, plus affected largest-text and required Reduce Motion captures. Filters, empty/error copy and accessible calendar wrap without truncation; the list and detail views scroll, and Retry/Done/return actions are reachable. The archive-bottom capture limitation is listed above. This does not claim inspection of every unrelated artwork proof or contrast crop.
 - Independent comparison: pending, arranged by firstmate after final evidence is committed.
 
 Simulator metrics do not establish physical-device smoothness. Real-device behaviour and manual VoiceOver reading order remain unverified.
