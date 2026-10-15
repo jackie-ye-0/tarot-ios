@@ -94,6 +94,15 @@ struct HistoryScreen: View {
                                 animationsEnabled: animationsEnabled, testMode: testMode,
                                 visibleAreas: ReadingArea.allCases, settings: nil, ask: {},
                                 backToHistory: { opened = nil })
+                        .safeAreaInset(edge: .bottom, spacing: 0) {
+                            RestingTabBar(selection: "History", today: {
+                                opened = nil
+                                session.goToToday()
+                            }, ask: {
+                                opened = nil
+                                session.screen = .ask
+                            }, history: { opened = nil })
+                        }
                 case .reading(let reading):
                     QuestionReadingScreen(reading: reading) { opened = nil }
                 }
