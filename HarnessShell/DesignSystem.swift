@@ -1644,8 +1644,17 @@ struct AreaVisibilityToggle: View {
             if textSize.isAccessibilitySize {
                 VStack(alignment: .leading, spacing: Design.Space.related) {
                     areaLabel.accessibilityHidden(true)
-                    toggle.labelsHidden()
-                        .frame(maxWidth: .infinity, minHeight: Design.Space.target, alignment: .trailing)
+                    Button { isOn.toggle() } label: {
+                        Toggle("", isOn: .constant(isOn))
+                            .labelsHidden()
+                            .tint(Design.Palette.ink)
+                            .allowsHitTesting(false)
+                            .frame(maxWidth: .infinity, minHeight: Design.Space.target, alignment: .trailing)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(ActionPressStyle())
+                    .disabled(locked)
+                    .accessibilityRepresentation { toggle }
                 }
             } else { toggle }
         }

@@ -1,6 +1,6 @@
 # Settings verification (#20)
 
-Status: initial full harness check passed. Visual inspection found a split Relationship switch label at the largest text size; its stacked-row correction is committed for a new full check. Independent design verification is pending.
+Status: initial full harness check passed. The follow-up check on the stacked largest-text layout failed its new 44-point switch-target assertion (75/76). The native switch was only 28 points high despite its surrounding layout frame. A button hit area using the existing shared-control pattern now wraps the unchanged native artwork, with native Toggle accessibility representation. Focused and full verification of that correction, then independent design comparison, are pending.
 
 ## Behaviour and evidence
 
@@ -36,3 +36,5 @@ Reference differences recorded during the first comparison:
 The full `./scripts/harness check` run `20261015T131900.614113Z-check-1625bdf2` passed with 76 tests, zero failures and zero skips, after all 34 command-contract tests and the unchanged design-role guard passed. Doctor passed in `20261015T131021.455040Z-doctor-92234b57`. Both used this checkout's dedicated iPhone simulator on iOS 26.5. The run exported `design-comparison.html`, reference copies and all new Settings captures. Exported-image inspection and firstmate's independent comparison are pending.
 
 The first comparison opened the run's `design-comparison.html` with `chrome-devtools-axi` and inspected the exported Settings child pages, normal and largest-text Settings, Today, Ask and composer, plus hidden-area variants. The only new layout defect found was the largest-text Relationship switch label splitting inside the word. The corrected layout places each native switch below a full-width area label, and tests now operate all three switches at the largest text size. The new build requires a fresh full check and final screenshot inspection.
+
+The failure in `20261015T174102.653786Z-check-9fb81632` was `testSettingsStatusInformationAndLargestTextEvidence`, at the Career switch (`visible-career`) after relaunching at the largest text size. The 44-point assertion remains unchanged; the test also taps near the top of the expanded hit area to prove it is interactive, not only a larger reported frame.
