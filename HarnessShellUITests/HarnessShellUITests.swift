@@ -572,7 +572,8 @@ final class HarnessShellUITests: XCTestCase {
             scrollTo(toggle, in: app)
             XCTAssertEqual(toggle.label, area.capitalized)
             XCTAssertGreaterThanOrEqual(toggle.frame.height, 44)
-            toggle.tap()
+            // Exercise the added hit area above the native switch's 28-point artwork.
+            toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.05)).tap()
             XCTAssertEqual(toggle.value as? String, "0")
             toggle.tap()
             XCTAssertEqual(toggle.value as? String, "1")
