@@ -1294,9 +1294,10 @@ final class HarnessShellUITests: XCTestCase {
         XCTAssertTrue(try XCTUnwrap(visibleTabs(in: app)).buttons["tab-history"].isSelected)
         app.buttons["today-card"].tap()
         XCTAssertEqual(app.buttons["back-to-today"].label, "Back to daily card")
-        XCTAssertEqual(app.staticTexts["card-name"].label, "Strength")
+        let archiveRevealName = activeScrollView(in: app).staticTexts["card-name"]
+        XCTAssertEqual(archiveRevealName.label, "Strength")
         XCTAssertNil(visibleTabs(in: app), "Reveal keeps the resting tabs hidden")
-        try auditAndCapture(app, "03-reveal--history", expecting: app.buttons["back-to-today"], app.staticTexts["card-name"])
+        try auditAndCapture(app, "03-reveal--history", expecting: app.buttons["back-to-today"], archiveRevealName)
         app.buttons["back-to-today"].tap()
         XCTAssertEqual(app.staticTexts["today-title"].label, "Saturday 10 October 2026")
         try XCTUnwrap(visibleTabs(in: app)).buttons["tab-ask"].tap()
@@ -1315,7 +1316,7 @@ final class HarnessShellUITests: XCTestCase {
         reduced.buttons["history-daily-2026-10-10"].tap()
         reduced.buttons["today-card"].tap()
         XCTAssertEqual(reduced.buttons["back-to-today"].label, "Back to daily card")
-        XCTAssertEqual(reduced.staticTexts["card-name"].label, "Strength")
+        XCTAssertEqual(activeScrollView(in: reduced).staticTexts["card-name"].label, "Strength")
         XCTAssertEqual(reduced.descendants(matching: .any)["revealed-card"].value as? String, "settled")
         capture(reduced, "03-reveal--history-reduce-motion")
         reduced.buttons["back-to-today"].tap()
@@ -1467,8 +1468,12 @@ final class HarnessShellUITests: XCTestCase {
         capture(large, "10-history--largest-text-relationship-entry")
         let oldest = large.buttons["history-reading-00000000-0000-0000-0000-000000000003"]
         captureOverlappingContent(large, through: oldest, named: "10-history--largest-text-list-end")
-        dragContent(large, up: true)
+        // The 608-point row fits, but not together with the bottom padding.
+        // Keep its complete bounds and the absolute scroll end as separate stops.
         assertVisible(oldest, in: large)
+        capture(large, "10-history--largest-text-last-entry")
+        dragContent(large, up: true)
+        assertVisible(large.staticTexts["history-entry-detail-reading-00000000-0000-0000-0000-000000000003"], in: large)
         capture(large, "10-history--largest-text-bottom")
         scrollTo(large.buttons["history-filter-social"], in: large)
         large.buttons["history-filter-social"].tap()
