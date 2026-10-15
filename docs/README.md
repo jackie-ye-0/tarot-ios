@@ -35,6 +35,7 @@ Add future research to `docs/research/`, using descriptive, lower-case hyphenate
 - [Three-card pick verification](three-card-pick-verification.md): issue #15 draft recovery, shuffle, tests and design evidence.
 - [Welcome verification](welcome-verification.md): issue #8 behaviour, independent design review dispositions and evidence.
 - [Full Ask and composer verification](ask-composer-verification.md): issue #14 drafts, relationship lenses, tests and design evidence.
+- [Settings verification](settings-verification.md): issue #20 preferences, retention, screenshots and design comparison.
 - [Harness principles](harness.md)
 
 Add a link here when adding a document. Keep each document's status clear and record approved scope changes in [decisions](decisions.md).

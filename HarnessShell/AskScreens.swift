@@ -8,7 +8,7 @@ struct AskScreen: View {
         ReadingScreenLayout {
             VStack(alignment: .leading, spacing: Design.Space.section) {
                 Text("What's on your mind?").typeRole(Design.TypeRole.title).accessibilityIdentifier("ask-title")
-                AreaSelector(selection: $session.area)
+                AreaSelector(selection: $session.area, areas: session.visibleAreas)
                 if let reading = session.todayAreaReading, let name = session.todayCardName {
                     AskContextPanel(area: session.area, cardName: name, reading: reading)
                 }
@@ -101,11 +101,11 @@ struct QuestionComposerScreen: View {
                 VStack(alignment: .leading, spacing: Design.Space.section) {
                     if textSize.isAccessibilitySize {
                         back
-                        AreaSelector(selection: $session.area)
+                        AreaSelector(selection: $session.area, areas: session.visibleAreas)
                     } else {
                         HStack(spacing: Design.Space.small) {
                             back
-                            AreaSelector(selection: $session.area)
+                            AreaSelector(selection: $session.area, areas: session.visibleAreas)
                         }
                     }
                     VStack(alignment: .leading, spacing: Design.Space.small) {
