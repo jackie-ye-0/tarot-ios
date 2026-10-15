@@ -1566,9 +1566,16 @@ final class HarnessShellUITests: XCTestCase {
         app.buttons["reading-delete"].tap()
         let confirmation = app.alerts["Delete this reading?"]
         XCTAssertTrue(confirmation.waitForExistence(timeout: 5))
-        try auditAndCapture(app, "09-reading--delete-confirmation", expecting: confirmation)
+        waitForSettled([confirmation.buttons["Cancel"], confirmation.buttons["Delete"]])
+        XCTAssertTrue(confirmation.buttons["Cancel"].exists && confirmation.buttons["Cancel"].isHittable)
+        XCTAssertTrue(confirmation.buttons["Delete"].exists && confirmation.buttons["Delete"].isHittable)
+        capture(app, "09-reading--delete-confirmation")
+        // Audit the app after the native alert stops covering its scroll view.
         confirmation.buttons["Cancel"].tap()
+        XCTAssertTrue(confirmation.waitForNonExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["reading-saved"].exists)
+        try auditAndCapture(app, "09-reading--delete-cancelled", expecting: app.staticTexts["reading-question"], app.buttons["reading-more"])
+        scrollTo(app.buttons["reading-more"], in: app)
         app.buttons["reading-more"].tap()
         app.buttons["reading-delete"].tap()
         confirmation.buttons["Delete"].tap()
