@@ -92,18 +92,27 @@ final class AppSession {
         case welcome, draw, reveal(DailyDraw), today(DailyDraw), ask, composer, pick, reading(QuestionReading)
     }
 
+    private enum DraftSaveOperation {
+        case persistQuestion, persistSpread, discard
+    }
+
     var screen: Screen = .draw
     var saveFailed = false
     var dayRefreshFailed = false
     var readingSaveFailed = false
     var welcomeSaveFailed = false
     var draftSaveFailed = false
-    var area: ReadingArea = .relationship { didSet { persistSpreadDraft() } }
-    var question = "" { didSet { persistSpreadDraft() } }
+    var relationshipSaveFailed = false
+    var area: ReadingArea = .relationship { didSet { persistDraft(); persistSpreadDraft() } }
+    var question = "" { didSet { persistDraft(); persistSpreadDraft() } }
+    private(set) var hasDraft = false
+    private(set) var relationshipStatus: RelationshipStatus?
+    private(set) var relationshipStatusAsked = false
+    private var latestReadings: [ReadingArea: QuestionReading] = [:]
+    private var failedDraftSaveOperation: DraftSaveOperation?
     private(set) var picks: [SpreadPick] = []
     private var hasSpreadDraft = false
     private var draftIsPicking = true
-    private var discardingDraft = false
     private var pendingReading: QuestionReading?
     private var today: DailyDraw?
     private(set) var date: Date
@@ -141,6 +150,16 @@ final class AppSession {
     private func launchScreen() throws -> Screen {
         if try !store.hasCompletedWelcome() { return .welcome }
         today = try store.draw(for: dateKey)
+        latestReadings = try store.latestReadingsByArea()
+        if let preference = try store.relationshipPreference() {
+            relationshipStatusAsked = true
+            relationshipStatus = preference.status.flatMap(RelationshipStatus.init(rawValue:))
+        }
+        if !hasSpreadDraft, let draft = try store.questionDraft() {
+            area = draft.area
+            question = draft.question
+            hasDraft = true
+        }
         return today.map(Screen.today) ?? .draw
     }
 
@@ -227,13 +246,64 @@ final class AppSession {
 
     var suggestions: [String] { library.questions.content(for: area).suggestions }
     var canSubmit: Bool { ReadingEngine.canSubmit(question: question) }
+    var todayAreaReading: AreaReading? { today?.meaning.daily?.reading(for: area) }
+    var todayCardName: String? { today?.card.name }
+    var latestReading: QuestionReading? { latestReadings[area] }
+
+    func persistDraft() {
+        guard hasDraft else { return }
+        do {
+            try store.saveDraft(QuestionDraft(area: area, question: question))
+            draftSaveFailed = false
+            failedDraftSaveOperation = nil
+        } catch {
+            failedDraftSaveOperation = .persistQuestion
+            draftSaveFailed = true
+        }
+    }
+
+    func backToAsk() {
+        do {
+            try store.discardDrafts()
+            hasDraft = false
+            hasSpreadDraft = false
+            draftSaveFailed = false
+            failedDraftSaveOperation = nil
+            question = ""
+            picks = []
+            pendingReading = nil
+            screen = .ask
+        } catch {
+            failedDraftSaveOperation = .discard
+            draftSaveFailed = true
+        }
+    }
+
+    func retryDraftSave() {
+        switch failedDraftSaveOperation {
+        case .persistQuestion: persistDraft()
+        case .persistSpread: persistSpreadDraft()
+        case .discard: backToAsk()
+        case nil: break
+        }
+    }
+
+    func setRelationshipStatus(_ status: RelationshipStatus?) {
+        do {
+            try store.saveRelationshipStatus(status)
+            relationshipStatus = status
+            relationshipStatusAsked = true
+        } catch { relationshipSaveFailed = true }
+    }
 
     func goToToday() {
         screen = today.map(Screen.today) ?? .draw
     }
 
-    func openComposer(question: String = "") {
-        self.question = question
+    func openComposer(question: String? = nil) {
+        hasDraft = true
+        if let question { self.question = question }
+        else { persistDraft() }
         picks = []
         pendingReading = nil
         screen = .composer
@@ -249,33 +319,17 @@ final class AppSession {
         screen = .composer
     }
 
-    func backToAsk() {
-        do {
-            try store.saveSpreadDraft(nil)
-            hasSpreadDraft = false
-            discardingDraft = false
-            draftSaveFailed = false
-            picks = []
-            pendingReading = nil
-            screen = .ask
-        } catch {
-            discardingDraft = true
-            draftSaveFailed = true
-        }
-    }
-
     private func persistSpreadDraft() {
         guard hasSpreadDraft else { return }
         pendingReading = nil
         do {
             try store.saveSpreadDraft(SpreadDraft(area: area, question: question, picks: picks, isPicking: draftIsPicking))
             draftSaveFailed = false
-        } catch { draftSaveFailed = true }
-    }
-
-    func retryDraftSave() {
-        if discardingDraft { backToAsk() }
-        else { persistSpreadDraft() }
+            failedDraftSaveOperation = nil
+        } catch {
+            failedDraftSaveOperation = .persistSpread
+            draftSaveFailed = true
+        }
     }
 
     func submitQuestion() {
@@ -284,6 +338,7 @@ final class AppSession {
         if !hasSpreadDraft { picks = [] }
         pendingReading = nil
         hasSpreadDraft = true
+        hasDraft = false
         draftIsPicking = true
         persistSpreadDraft()
         screen = .pick
@@ -301,12 +356,17 @@ final class AppSession {
         do {
             if pendingReading == nil {
                 pendingReading = try ReadingEngine.compose(id: UUID(), createdAt: clock.now, area: area,
-                                                          question: question, picks: picks, library: library)
+                                                          question: question, picks: picks, library: library,
+                                                          relationshipStatus: relationshipStatus)
             }
             guard let pendingReading else { return }
-            screen = .reading(try store.save(pendingReading))
+            let saved = try store.save(pendingReading)
+            latestReadings[saved.area] = saved
+            hasDraft = false
             hasSpreadDraft = false
             draftSaveFailed = false
+            question = ""
+            screen = .reading(saved)
         } catch { readingSaveFailed = true }
     }
 

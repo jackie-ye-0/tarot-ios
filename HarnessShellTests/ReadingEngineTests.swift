@@ -1,5 +1,6 @@
 import XCTest
 import SwiftData
+import Testing
 import UIKit
 @testable import HarnessShell
 
@@ -77,6 +78,53 @@ final class ReadingEngineTests: XCTestCase {
         guard case .draw = try makeSession(store: store, seed: seed).screen else {
             return XCTFail("Retrying should open Draw without showing Welcome again")
         }
+    }
+
+    @MainActor
+    func testDraftDeleteFailureRetryDeletesInsteadOfSaving() throws {
+        let store = try makeStore()
+        let seed = try store.installSeed { "draft-delete-retry" }
+        try store.completeWelcome()
+        let session = try makeSession(store: store, seed: seed)
+        session.openComposer(question: "What should I notice?")
+        XCTAssertNotNil(try store.questionDraft())
+        store.failsNextDraftSave = true
+
+        session.backToAsk()
+
+        XCTAssertTrue(session.draftSaveFailed)
+        XCTAssertNotNil(try store.questionDraft())
+        guard case .composer = session.screen else { return XCTFail("A failed discard should keep the composer open") }
+
+        session.retryDraftSave()
+
+        XCTAssertFalse(session.draftSaveFailed)
+        XCTAssertNil(try store.questionDraft())
+        guard case .ask = session.screen else { return XCTFail("Retrying the discard should return to Ask") }
+    }
+
+    @MainActor
+    func testDiscardClearsQuestionDraftAfterFailedSpreadTransition() throws {
+        let store = try makeStore()
+        let seed = try store.installSeed { "failed-spread-transition" }
+        try store.completeWelcome()
+        let session = try makeSession(store: store, seed: seed)
+        session.openComposer(question: "What should I carry forward?")
+        store.failsNextSpreadSave = true
+        session.submitQuestion()
+        store.failsNextSpreadSave = true
+        session.backToComposer()
+        XCTAssertNil(try store.spreadDraft())
+        XCTAssertNotNil(try store.questionDraft())
+
+        session.backToAsk()
+
+        XCTAssertNil(try store.spreadDraft())
+        XCTAssertNil(try store.questionDraft())
+        guard case .ask = session.screen else { return XCTFail("Discarding should return to Ask") }
+        let relaunched = try makeSession(store: store, seed: seed)
+        XCTAssertFalse(relaunched.hasDraft)
+        XCTAssertTrue(relaunched.question.isEmpty)
     }
 
     @MainActor
@@ -565,5 +613,50 @@ private final class StoredDailyDraw {
     init(dateKey: String, snapshot: Data) {
         self.dateKey = dateKey
         self.snapshot = snapshot
+    }
+}
+
+struct AskComposerRulesTests {
+    @Test func characterLimitPreservesWholeCharactersAndExistingWords() {
+        let full = String(repeating: "👩🏽‍💻", count: 300)
+        #expect(QuestionEdit.applying(full + "x", to: full).text == full)
+        #expect(QuestionEdit.applying("x" + full, to: full).text == full)
+        #expect(QuestionEdit.applying(full + "extra", to: "").text == full)
+        let almostFull = String(repeating: "a", count: 294) + " tail"
+        #expect(QuestionEdit.applying("xyz" + almostFull, to: almostFull).text == "x" + almostFull)
+        #expect(QuestionEdit.applying(String(full.dropLast()), to: full).text.count == 299)
+        #expect(QuestionEdit.applying(full + "\n", to: full).dismissKeyboard)
+        #expect(ReadingEngine.canSubmit(question: full))
+        #expect(!ReadingEngine.canSubmit(question: full + "x"))
+    }
+
+    @Test(arguments: [RelationshipStatus.single, .inRelationship, .complicated, .preferNotToSay])
+    func relationshipLensMatchesStatusAndOtherAreasStayUnchanged(status: RelationshipStatus) throws {
+        let library = try CardLibrary.load()
+        let picks = zip(QuestionPosition.allCases, library.cards.prefix(3)).map {
+            SpreadPick(position: $0, card: $1, orientation: .upright)
+        }
+        let content = library.questions.relationship
+        let variants = content.relationshipLenses
+        let expected: String
+        switch status {
+        case .single: expected = variants.single
+        case .inRelationship: expected = variants.inRelationship
+        case .complicated: expected = variants.complicated
+        case .preferNotToSay: expected = content.lens
+        }
+        #expect(Set([content.lens, variants.single, variants.inRelationship, variants.complicated]).count == 4)
+        for area in ReadingArea.allCases {
+            let id = UUID()
+            let date = Date(timeIntervalSince1970: 1234)
+            let reading = try ReadingEngine.compose(id: id, createdAt: date, area: area, question: "What matters?",
+                picks: picks, library: library, relationshipStatus: status)
+            #expect(reading.connectingPassage == (area == .relationship ? expected : library.questions.content(for: area).lens))
+            #expect(reading == (try ReadingEngine.compose(id: id, createdAt: date, area: area, question: "What matters?",
+                picks: picks, library: library, relationshipStatus: status)))
+        }
+        let neutral = try ReadingEngine.compose(id: UUID(), createdAt: Date(), area: .relationship,
+            question: "What matters?", picks: picks, library: library)
+        #expect(neutral.connectingPassage == content.lens)
     }
 }

@@ -39,6 +39,7 @@ enum Design {
         static let controlBorder = colour(0xe0c9bf)
         static let disabled = colour(0xdcc6bc)
         static let disabledInk = colour(0x5f4740)
+        static let error = colour(0xa3331f)
         static let surfaceHairline = colour(0xefe2dc)
         static let careerLabel = colour(0x415c70)
         static let relationshipLabel = colour(0x88452f)
@@ -52,6 +53,14 @@ enum Design {
             case .career: blue
             case .relationship: clay
             case .social: sage
+            }
+        }
+
+        static func areaTint(_ area: ReadingArea) -> Color {
+            switch area {
+            case .career: colour(0xdfe5ea)
+            case .relationship: colour(0xf0d6cb)
+            case .social: colour(0xe2e6d9)
             }
         }
 
@@ -446,12 +455,13 @@ struct PrimaryAction: View {
 struct QuietAction: View {
     let title: String
     var underlined = false
+    var night = true
     let action: () -> Void
     var body: some View {
         Button(action: action) {
             Text(title)
                 .typeRole(underlined ? .button : .secondary)
-                .foregroundStyle(underlined ? Design.Palette.cream : Design.Palette.nightSecondary)
+                .foregroundStyle(night ? (underlined ? Design.Palette.cream : Design.Palette.nightSecondary) : Design.Palette.secondary)
                 // Keep the gold rule separate so the contrast audit can assess the text colour.
                 .overlay(alignment: .bottom) {
                     if underlined {
@@ -1171,6 +1181,7 @@ struct AreaSelector: View {
 
 struct QuestionChip: View {
     let title: String
+    var fillsWidth = false
     let action: () -> Void
     @Environment(\.dynamicTypeSize) private var textSize
 
@@ -1180,6 +1191,7 @@ struct QuestionChip: View {
             Text(title).typeRole(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
                 .multilineTextAlignment(.leading)
+                .frame(maxWidth: fillsWidth ? .infinity : nil, alignment: .leading)
                 .padding(.horizontal, Design.Space.group)
                 .padding(.vertical, Design.Space.related)
                 .frame(minHeight: Design.Space.target)
@@ -1227,31 +1239,98 @@ struct QuestionEntry: View {
 struct QuestionField: View {
     @Binding var text: String
     var onFocus: () -> Void = {}
+    @State private var editBuffer: String
     @FocusState private var focused: Bool
 
-    var body: some View {
-        TextField("Your question", text: Binding(get: { text }, set: { proposed in
-            let edit = QuestionEdit.applying(proposed, to: text)
-            text = edit.text
-            if edit.dismissKeyboard { focused = false }
-        }),
-                  prompt: Text("Type your question...").foregroundStyle(Design.Palette.placeholder), axis: .vertical)
-            .typeRole(.body)
-            .foregroundStyle(Design.Palette.ink)
-            .tint(Design.Palette.ink)
-            .lineLimit(4...6)
-            .focused($focused)
-            .onChange(of: focused) { _, isFocused in
-                if isFocused { onFocus() }
-            }
-            .submitLabel(.done)
-            .padding(Design.Space.group)
-            .frame(minHeight: 132, alignment: .topLeading)
-            .background(Design.Palette.surface, in: RoundedRectangle(cornerRadius: 20))
-            .overlay { RoundedRectangle(cornerRadius: 20).strokeBorder(Design.Palette.ink, lineWidth: 1.5) }
-            .accessibilityLabel("Your question")
-            .accessibilityIdentifier("question-field")
+    init(text: Binding<String>, onFocus: @escaping () -> Void = {}) {
+        _text = text
+        _editBuffer = State(initialValue: text.wrappedValue)
+        self.onFocus = onFocus
+    }
 
+    var body: some View {
+        VStack(alignment: .trailing, spacing: Design.Space.small) {
+            TextField("Your question", text: $editBuffer,
+                      prompt: Text("Type your question...").foregroundStyle(Design.Palette.placeholder), axis: .vertical)
+                .onChange(of: editBuffer) { _, proposed in
+                    let edit = QuestionEdit.applying(proposed, to: text)
+                    // A changed native buffer makes SwiftUI visibly undo rejected input.
+                    if editBuffer != edit.text { editBuffer = edit.text }
+                    if text != edit.text { text = edit.text }
+                    if edit.dismissKeyboard { focused = false }
+                }
+                .onChange(of: text) { _, updated in
+                    if editBuffer != updated { editBuffer = updated }
+                }
+                .typeRole(.body)
+                .foregroundStyle(Design.Palette.ink)
+                .tint(Design.Palette.ink)
+                .lineLimit(4...6)
+                .focused($focused)
+                .onChange(of: focused) { _, isFocused in
+                    if isFocused { onFocus() }
+                }
+                .submitLabel(.done)
+                .padding(Design.Space.group)
+                .frame(minHeight: 132, alignment: .topLeading)
+                .background(Design.Palette.surface, in: RoundedRectangle(cornerRadius: 20))
+                .overlay { RoundedRectangle(cornerRadius: 20).strokeBorder(Design.Palette.ink, lineWidth: 1.5) }
+                .accessibilityLabel("Your question")
+                .accessibilityIdentifier("question-field")
+            Text(text.count == QuestionEdit.limit ? "Limit reached · \(text.count) / \(QuestionEdit.limit)" : "\(text.count) / \(QuestionEdit.limit)")
+                .typeRole(.caption)
+                .foregroundStyle(text.count == QuestionEdit.limit ? Design.Palette.error : Design.Palette.secondary)
+                .accessibilityLabel("\(text.count) of \(QuestionEdit.limit) characters\(text.count == QuestionEdit.limit ? ", limit reached" : "")")
+                .accessibilityIdentifier("question-count")
+        }
+    }
+}
+
+struct AskContextPanel: View {
+    let area: ReadingArea
+    let cardName: String
+    let reading: AreaReading
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Design.Space.related) {
+            Text(cardName).typeRole(.section).foregroundStyle(Design.Palette.ink)
+            Text(reading.line).typeRole(.body).foregroundStyle(Design.Palette.ink)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("ask-area-line")
+            Text("\(area.label) today: \(reading.score) of 100")
+                .typeRole(.label).foregroundStyle(Design.Palette.label(for: area))
+                .accessibilityLabel("\(area.label), \(reading.score) out of 100")
+                .accessibilityIdentifier("ask-area-score")
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(Design.Space.page)
+        .background(Design.Palette.areaTint(area), in: RoundedRectangle(cornerRadius: 22))
+    }
+}
+
+struct ComposerPreview: View {
+    @Environment(\.dynamicTypeSize) private var textSize
+
+    var body: some View {
+        let layout = textSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: Design.Space.group))
+            : AnyLayout(HStackLayout(alignment: .center, spacing: Design.Space.group))
+        layout {
+            HStack(spacing: Design.Space.small) {
+                ForEach(QuestionPosition.allCases) { position in
+                    RoundedRectangle(cornerRadius: 3.4)
+                        .strokeBorder(Design.Palette.secondary, style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
+                        .frame(width: 34, height: 54.4)
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel("\(position.label), empty")
+                        .accessibilityIdentifier("composer-preview-\(position.rawValue)")
+                }
+            }
+            Text("Next you'll draw three cards: one for the situation, one for an action, one for the outcome.")
+                .typeRole(.secondary).foregroundStyle(Design.Palette.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityIdentifier("composer-preview-helper")
+        }
     }
 }
 

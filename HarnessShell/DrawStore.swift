@@ -38,10 +38,12 @@ final class DrawStore {
     var failsNextWelcomeRead = false
     var failsNextWelcomeSave = false
     var failsNextSpreadSave = false
+    var failsNextDraftSave = false
     #endif
 
     init(configuration: ModelConfiguration) throws {
         container = try ModelContainer(for: InstallIdentity.self, StoredDailyDraw.self, StoredQuestionReading.self, StoredSpreadDraft.self,
+                                       StoredQuestionDraft.self, StoredRelationshipPreference.self,
                                        configurations: configuration)
         context.autosaveEnabled = false
     }
@@ -117,6 +119,7 @@ final class DrawStore {
             let saved = try existing.map { try JSONDecoder().decode(QuestionReading.self, from: $0.snapshot) } ?? reading
             if existing == nil { context.insert(try StoredQuestionReading(reading)) }
             for draft in try context.fetch(FetchDescriptor<StoredSpreadDraft>()) { context.delete(draft) }
+            for draft in try context.fetch(FetchDescriptor<StoredQuestionDraft>()) { context.delete(draft) }
             try context.save()
             return saved
         } catch {
@@ -132,7 +135,7 @@ final class DrawStore {
         return draft
     }
 
-    func saveSpreadDraft(_ draft: SpreadDraft?) throws {
+    func saveSpreadDraft(_ draft: SpreadDraft) throws {
         #if DEBUG
         if failsNextSpreadSave {
             failsNextSpreadSave = false
@@ -140,13 +143,12 @@ final class DrawStore {
         }
         #endif
         do {
-            try draft?.validate()
+            try draft.validate()
             let stored = try context.fetch(FetchDescriptor<StoredSpreadDraft>()).first
-            if let draft {
-                let snapshot = try JSONEncoder().encode(draft)
-                if let stored { stored.snapshot = snapshot }
-                else { context.insert(StoredSpreadDraft(snapshot: snapshot)) }
-            } else if let stored { context.delete(stored) }
+            let snapshot = try JSONEncoder().encode(draft)
+            if let stored { stored.snapshot = snapshot }
+            else { context.insert(StoredSpreadDraft(snapshot: snapshot)) }
+            for questionDraft in try context.fetch(FetchDescriptor<StoredQuestionDraft>()) { context.delete(questionDraft) }
             try context.save()
         } catch {
             context.rollback()
@@ -158,6 +160,94 @@ final class DrawStore {
         var request = FetchDescriptor<StoredQuestionReading>(sortBy: [SortDescriptor(\.createdAt, order: .reverse)])
         request.fetchLimit = 1
         return try context.fetch(request).first.map { try JSONDecoder().decode(QuestionReading.self, from: $0.snapshot) }
+    }
+
+    func latestReadingsByArea() throws -> [ReadingArea: QuestionReading] {
+        let request = FetchDescriptor<StoredQuestionReading>(sortBy: [SortDescriptor(\.createdAt, order: .reverse)])
+        var latest: [ReadingArea: QuestionReading] = [:]
+        for stored in try context.fetch(request) {
+            let reading = try JSONDecoder().decode(QuestionReading.self, from: stored.snapshot)
+            if latest[reading.area] == nil { latest[reading.area] = reading }
+            if latest.count == ReadingArea.allCases.count { break }
+        }
+        return latest
+    }
+
+    func questionDraft() throws -> QuestionDraft? {
+        try context.fetch(FetchDescriptor<StoredQuestionDraft>()).first.map {
+            try JSONDecoder().decode(QuestionDraft.self, from: $0.snapshot)
+        }
+    }
+
+    func saveDraft(_ draft: QuestionDraft) throws {
+        #if DEBUG
+        if failsNextDraftSave {
+            failsNextDraftSave = false
+            throw StoreError.save(CocoaError(.fileWriteOutOfSpace))
+        }
+        #endif
+        do {
+            let saved = try context.fetch(FetchDescriptor<StoredQuestionDraft>()).first
+            let data = try JSONEncoder().encode(draft)
+            if let saved { saved.snapshot = data }
+            else { context.insert(StoredQuestionDraft(snapshot: data)) }
+            try context.save()
+        } catch { context.rollback(); throw error }
+    }
+
+    func discardDrafts() throws {
+        #if DEBUG
+        if failsNextSpreadSave {
+            failsNextSpreadSave = false
+            throw StoreError.save(CocoaError(.fileWriteOutOfSpace))
+        }
+        if failsNextDraftSave {
+            failsNextDraftSave = false
+            throw StoreError.save(CocoaError(.fileWriteOutOfSpace))
+        }
+        #endif
+        do {
+            for draft in try context.fetch(FetchDescriptor<StoredSpreadDraft>()) { context.delete(draft) }
+            for draft in try context.fetch(FetchDescriptor<StoredQuestionDraft>()) { context.delete(draft) }
+            try context.save()
+        } catch {
+            context.rollback()
+            throw error
+        }
+    }
+
+    func relationshipPreference() throws -> StoredRelationshipPreference? {
+        try context.fetch(FetchDescriptor<StoredRelationshipPreference>()).first
+    }
+
+    func saveRelationshipStatus(_ status: RelationshipStatus?) throws {
+        do {
+            if let saved = try relationshipPreference() { saved.status = status?.rawValue }
+            else { context.insert(StoredRelationshipPreference(status: status)) }
+            try context.save()
+        } catch { context.rollback(); throw error }
+    }
+}
+
+@Model
+final class StoredQuestionDraft {
+    @Attribute(.unique) var key: String
+    var snapshot: Data
+
+    init(snapshot: Data) {
+        key = "question"
+        self.snapshot = snapshot
+    }
+}
+
+@Model
+final class StoredRelationshipPreference {
+    @Attribute(.unique) var key: String
+    var status: String?
+
+    init(status: RelationshipStatus?) {
+        key = "relationship"
+        self.status = status?.rawValue
     }
 }
 

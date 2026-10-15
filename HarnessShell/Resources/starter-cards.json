@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "editorialStatus": "Original first-draft content. Requires Jackie's editorial review before release to real users.",
   "cards": [
     {
@@ -436,7 +436,12 @@
         "What am I not saying?",
         "What do I actually want?"
       ],
-      "lens": "Read together, these cards invite you to notice how you make room for closeness, boundaries and honest expression. Whether you are exploring a connection or reflecting on what you want, consider what you can say or choose without assuming how another person feels."
+      "lens": "Read together, these cards invite you to notice how you make room for closeness, boundaries and honest expression. Whether you are exploring a connection or reflecting on what you want, consider what you can say or choose without assuming how another person feels.",
+      "relationshipLenses": {
+        "single": "Read together, these cards invite you to consider what connection means to you while single. Notice the space you want for yourself, what draws you towards closeness and one choice that honours your own pace.",
+        "inRelationship": "Read together, these cards invite you to reflect on the relationship you are in. Notice what you each bring, where a need could be named more clearly and one shared conversation that might make room for understanding.",
+        "complicated": "Read together, these cards invite you to make room for uncertainty when a connection feels complicated. Notice what is clear to you, what remains unknown and one boundary or honest conversation that could help you find your own next step."
+      }
     },
     "social": {
       "suggestions": [

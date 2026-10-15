@@ -214,4 +214,4 @@ The failed-run counts are a disclosure of development and validation history, no
 
 ## Remaining release limits
 
-Content remains original draft writing requiring editorial review. Unfinished question/pick persistence is #14/#15; crisis handling is #17; History, export and deletion are their own tickets. No account, network, AI service or dependency was introduced. Manual VoiceOver reading order and real-device behaviour are not established by simulator screenshots or XCTest audits.
+Content remains original draft writing requiring editorial review. This #13 slice deferred unfinished question/pick persistence to #14/#15; crisis handling is #17, while History, export and deletion retain their own tickets. No account, network, AI service or dependency was introduced. Manual VoiceOver reading order and real-device behaviour are not established by simulator screenshots or XCTest audits.
