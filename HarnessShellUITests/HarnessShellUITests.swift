@@ -1463,9 +1463,12 @@ final class HarnessShellUITests: XCTestCase {
             let viewport = scrollViewport(in: app)
             let frame = last.frame
             if viewport.contains(frame) { break }
+            // Near-full-height rows cannot leave 24 points clear. Aim within the
+            // available space while retaining enough movement to start a drag.
+            let settlingDistance = min(24, 12 + max(0, viewport.height - frame.height) / 2)
             let delta = frame.maxY > viewport.maxY
-                ? min(viewport.height / 2, frame.maxY - viewport.maxY + 24)
-                : -min(viewport.height / 2, viewport.minY - frame.minY + 24)
+                ? min(viewport.height / 2, frame.maxY - viewport.maxY + settlingDistance)
+                : -min(viewport.height / 2, viewport.minY - frame.minY + settlingDistance)
             let origin = app.coordinate(withNormalizedOffset: .zero)
             let start = origin.withOffset(CGVector(dx: viewport.midX, dy: viewport.midY + delta / 2))
             let end = origin.withOffset(CGVector(dx: viewport.midX, dy: viewport.midY - delta / 2))
