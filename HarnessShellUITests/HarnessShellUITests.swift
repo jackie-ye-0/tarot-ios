@@ -1515,7 +1515,21 @@ final class HarnessShellUITests: XCTestCase {
         XCTAssertEqual(large.staticTexts["card-name"].label, "Strength")
         try XCTUnwrap(visibleTabs(in: large)).buttons["tab-history"].tap()
         XCTAssertTrue(large.buttons["history-filter-all"].isSelected)
-        scrollTo(reading, in: large)
+        // This return only needs to open the row; its complete bounds were captured above.
+        for _ in 0..<40 {
+            if reading.isHittable { break }
+            let viewport = scrollViewport(in: large)
+            let frame = reading.frame
+            let settlingDistance = min(24, 12 + max(0, viewport.height - frame.height) / 2)
+            let delta = frame.maxY > viewport.maxY
+                ? min(viewport.height / 2, frame.maxY - viewport.maxY + settlingDistance)
+                : -min(viewport.height / 2, viewport.minY - frame.minY + settlingDistance)
+            let origin = large.coordinate(withNormalizedOffset: .zero)
+            let start = origin.withOffset(CGVector(dx: viewport.midX, dy: viewport.midY + delta / 2))
+            let end = origin.withOffset(CGVector(dx: viewport.midX, dy: viewport.midY - delta / 2))
+            start.press(forDuration: 0.1, thenDragTo: end, withVelocity: .slow, thenHoldForDuration: 0.2)
+        }
+        XCTAssertTrue(reading.isHittable)
         reading.tap()
         XCTAssertNil(visibleTabs(in: large))
         capture(large, "09-reading--history-largest-text")
