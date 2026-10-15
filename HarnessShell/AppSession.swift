@@ -375,17 +375,21 @@ final class AppSession {
     }
 
     func setReadingResponse(_ response: ReadingResponse?, id: UUID) throws {
-        screen = .reading(try store.updateReading(id: id) { $0.response = response })
+        let saved = try store.updateReading(id: id) { $0.response = response }
+        if latestReadings[saved.area]?.id == id { latestReadings[saved.area] = saved }
+        screen = .reading(saved)
     }
 
     func saveReadingNote(_ note: String, id: UUID) throws {
-        screen = .reading(try store.updateReading(id: id) {
+        let saved = try store.updateReading(id: id) {
             $0.note = note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : note
-        })
+        }
+        if latestReadings[saved.area]?.id == id { latestReadings[saved.area] = saved }
+        screen = .reading(saved)
     }
 
     func deleteReading(id: UUID) throws {
-        try store.deleteReading(id: id)
+        latestReadings = try store.deleteReading(id: id)
         pendingReading = nil
         picks = []
         goToToday()

@@ -185,8 +185,9 @@ final class DrawStore {
         }
     }
 
-    func deleteReading(id: UUID) throws {
+    func deleteReading(id: UUID) throws -> [ReadingArea: QuestionReading] {
         do {
+            let remaining = try latestReadingsByArea(excluding: id)
             let request = FetchDescriptor<StoredQuestionReading>(predicate: #Predicate { $0.id == id })
             for stored in try context.fetch(request) { context.delete(stored) }
             #if DEBUG
@@ -196,16 +197,18 @@ final class DrawStore {
             }
             #endif
             try context.save()
+            return remaining
         } catch {
             context.rollback()
             throw error
         }
     }
 
-    func latestReadingsByArea() throws -> [ReadingArea: QuestionReading] {
+    func latestReadingsByArea(excluding id: UUID? = nil) throws -> [ReadingArea: QuestionReading] {
         let request = FetchDescriptor<StoredQuestionReading>(sortBy: [SortDescriptor(\.createdAt, order: .reverse)])
         var latest: [ReadingArea: QuestionReading] = [:]
         for stored in try context.fetch(request) {
+            if stored.id == id { continue }
             let reading = try JSONDecoder().decode(QuestionReading.self, from: stored.snapshot)
             if latest[reading.area] == nil { latest[reading.area] = reading }
             if latest.count == ReadingArea.allCases.count { break }
