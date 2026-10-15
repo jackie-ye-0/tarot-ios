@@ -758,6 +758,17 @@ final class HarnessShellUITests: XCTestCase {
         app.launch()
         app.buttons["open-settings"].tap()
         capture(app, "11-settings--largest-text")
+        for area in ["career", "relationship", "social"] {
+            let toggle = app.switches["visible-\(area)"]
+            scrollTo(toggle, in: app)
+            XCTAssertEqual(toggle.label, area.capitalized)
+            XCTAssertGreaterThanOrEqual(toggle.frame.height, 44)
+            toggle.tap()
+            XCTAssertEqual(toggle.value as? String, "0")
+            toggle.tap()
+            XCTAssertEqual(toggle.value as? String, "1")
+            capture(app, "11-settings--largest-text-\(area)")
+        }
         scrollTo(app.buttons["settings-privacy"], in: app)
         capture(app, "11-settings--largest-text-bottom")
         scrollTo(app.buttons["settings-relationship"], in: app)
