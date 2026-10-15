@@ -1,6 +1,6 @@
 # History verification (#19)
 
-Status: the pre-review clean full iOS check passed. Independent comparison returned a conditional pass with required fixes and capture gaps. The follow-up code and capture changes pass static checks; simulator replay is deferred until firstmate authorises the final rebase.
+Status: the pre-review full check passed. After the authorised rebase onto `37d3b9a`, every affected UI method has a passing focused result, including the corrected capture sequences. Independent comparison remains conditional until the new full check and final image inspection are complete.
 
 ## Behaviour and tests
 
@@ -31,7 +31,7 @@ Accepted differences observed in the pre-review images (the independent review a
 
 ## Independent comparison follow-up
 
-A fresh session reviewed seven references and all 123 in-scope images on 15 October 2026, using only the images, manifest and touched-state handoff. Its verdict was **“pass after the listed must-fix items”**, not an unconditional pass. Firstmate supplied the following dispositions; the changed capture sequences are in the existing UI tests and still need simulator replay after rebase.
+A fresh session reviewed seven references and all 123 in-scope images on 15 October 2026, using only the images, manifest and touched-state handoff. Its verdict was **“pass after the listed must-fix items”**, not an unconditional pass. Firstmate supplied the following dispositions; the changed capture sequences are in the existing UI tests and have passing focused replays. The final full check and complete refreshed-image inspection remain required.
 
 | Finding | Disposition and verification to complete |
 | --- | --- |
@@ -76,5 +76,7 @@ The capture-only scrolling helper uses at most half-viewport drags and a hold be
 - Follow-up focused run after rebasing onto `37d3b9a` (`20261015T131228.833273Z-test-8e92f1ae`, source `39e697a`): six tests executed, four passed, two failed, zero skipped. Earlier-snapshot bridging, snapshot/update/deletion, chosen Draw largest text/Reduce Motion and 368-entry scrolling passed; the performance method completed in 89.332 seconds. The archive Reveal name assertion matched both the covered Today and Reveal labels; it now uses the existing foreground-scroll query. The largest-text final Social row was fully captured and verified before a final scroll exposed the bottom padding, cropping its bounds by 20 points; its full-row assertion/capture and actual-bottom capture are now separate stops, with the complete date/type subtitle required at the bottom. Both failure recordings and their final frames were inspected, as were the kept full-row, chosen-header, archive-tab and complete reading-reflection images. No app layout, audit rule or visibility tolerance changed for these two capture corrections. Focused replay is pending.
 
 - Two-test follow-up replay (`20261015T142503.338396Z-test-291d6ef8`, source `4a14543`): the calendar/filter/archive-Reveal test passed in 231.282 seconds, including its unfiltered audit, ordinary and Reduce Motion captures and tab destinations. The largest-text test passed the separate complete-last-row and actual-bottom stops, then failed in the new selected-Social capture sequence: 25.7-point drags alternated the 608-point row across a 620.333-point viewport, ending 1.667 points above it. The last two kept images show the same fully readable content at alternating boundaries. The new capture helper now sizes its settling distance to the remaining vertical space (retaining movement to activate the drag), rather than demanding a fixed 24-point clearance. The existing `scrollTo`, strict containment assertion, audit and tolerances remain unchanged. This focused run is failed, not a passing harness check; one-method diagnostic replay is pending.
+
+- One-method diagnostic replay (`20261015T152633.866941Z-test-3412c5e6`, source `b9233a1`): **1/1 native UI test passed, zero failures/skips**, in 705.624 seconds. The selected Social row now settles fully inside the viewport; all largest-text archive Today, Reveal and Career-reading captures and return actions complete. The run exported 75 named images. Inspected the complete selected Social row, archive Today’s fixed-size back glyph and History-selected tabs, and reachable Reveal/reading actions and disclaimers. The ordinary archive Reveal and actual-list-bottom images from the preceding replay were also inspected. The diagnostic command exits 1 solely because its one test is below the unchanged four-test harness minimum; this is not presented as a passing full check. The exact original scheme was restored after each focused invocation. The six touched methods now each have a passing focused result; a single clean full check is next.
 
 Simulator metrics do not establish physical-device smoothness. Real-device behaviour and manual VoiceOver reading order remain unverified.
