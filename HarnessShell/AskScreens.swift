@@ -397,9 +397,7 @@ struct QuestionReadingScreen: View {
         NavigationStack {
             ReadingScreenLayout {
                 VStack(alignment: .leading, spacing: Design.Space.section) {
-                    Button("Cancel") { editingNote = false }
-                        .typeRole(Design.TypeRole.secondary)
-                        .frame(minHeight: Design.Space.target)
+                    QuietAction(title: "Cancel", night: false) { editingNote = false }
                         .accessibilityIdentifier("note-cancel")
                     Text("Your note").typeRole(Design.TypeRole.title).accessibilityIdentifier("note-title")
                     NoteField(text: $noteDraft)
