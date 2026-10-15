@@ -1511,22 +1511,38 @@ struct AreaVisibilityToggle: View {
     let area: ReadingArea
     @Binding var isOn: Bool
     var locked: Bool
+    @Environment(\.dynamicTypeSize) private var textSize
 
     var body: some View {
-        Toggle(isOn: $isOn) {
-            HStack(spacing: Design.Space.related) {
-                Circle().fill(Design.Palette.accent(for: area)).frame(width: 10, height: 10)
-                    .accessibilityHidden(true)
-                Text(area.label).typeRole(.body).fixedSize(horizontal: false, vertical: true)
-            }
+        Group {
+            if textSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: Design.Space.related) {
+                    areaLabel.accessibilityHidden(true)
+                    toggle.labelsHidden()
+                        .frame(maxWidth: .infinity, minHeight: Design.Space.target, alignment: .trailing)
+                }
+            } else { toggle }
         }
-        .tint(Design.Palette.ink)
-        .disabled(locked)
-        .accessibilityHint(locked ? "Keep at least one area on so Today and Ask have an area to show" : "Hidden areas keep their past readings")
-        .accessibilityIdentifier("visible-\(area.rawValue)")
         .padding(.horizontal, Design.Space.group)
         .padding(.vertical, Design.Space.related)
         .frame(minHeight: 60)
+    }
+
+    private var areaLabel: some View {
+        HStack(spacing: Design.Space.related) {
+            Circle().fill(Design.Palette.accent(for: area)).frame(width: 10, height: 10)
+                .accessibilityHidden(true)
+            Text(area.label).typeRole(.body).fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private var toggle: some View {
+        Toggle(isOn: $isOn) { areaLabel }
+            .tint(Design.Palette.ink)
+            .disabled(locked)
+            .accessibilityLabel(area.label)
+            .accessibilityHint(locked ? "Keep at least one area on so Today and Ask have an area to show" : "Hidden areas keep their past readings")
+            .accessibilityIdentifier("visible-\(area.rawValue)")
     }
 }
 

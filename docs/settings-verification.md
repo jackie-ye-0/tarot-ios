@@ -1,6 +1,6 @@
 # Settings verification (#20)
 
-Status: implementation and full harness check passed; exported-image inspection and independent design verification pending.
+Status: initial full harness check passed. Visual inspection found a split Relationship switch label at the largest text size; its stacked-row correction is committed for a new full check. Independent design verification is pending.
 
 ## Behaviour and evidence
 
@@ -23,7 +23,7 @@ Touched screens: Today, Ask, composer, Settings, relationship-status editor, Abo
 
 The settings child pages and last-area state have no reference. Their layout, wording, selection and error behaviour are specified in design manifest §11c. The design-role guard is unchanged. Existing bundled-font tests and strict, unfiltered all-category audits remain the verification mechanism.
 
-Expected reference differences for review:
+Reference differences recorded during the first comparison:
 
 - Settings omits Morning reminder because #21 explicitly owns its switch, and omits Export/Delete because #22 explicitly owns those actions. No inert controls are shown.
 - Relationship status starts as “Not set” rather than the reference's example “In a relationship”. Status is optional and the test uses a fresh synthetic store.
@@ -34,3 +34,5 @@ Expected reference differences for review:
 ## Run and independent comparison
 
 The full `./scripts/harness check` run `20261015T131900.614113Z-check-1625bdf2` passed with 76 tests, zero failures and zero skips, after all 34 command-contract tests and the unchanged design-role guard passed. Doctor passed in `20261015T131021.455040Z-doctor-92234b57`. Both used this checkout's dedicated iPhone simulator on iOS 26.5. The run exported `design-comparison.html`, reference copies and all new Settings captures. Exported-image inspection and firstmate's independent comparison are pending.
+
+The first comparison opened the run's `design-comparison.html` with `chrome-devtools-axi` and inspected the exported Settings child pages, normal and largest-text Settings, Today, Ask and composer, plus hidden-area variants. The only new layout defect found was the largest-text Relationship switch label splitting inside the word. The corrected layout places each native switch below a full-width area label, and tests now operate all three switches at the largest text size. The new build requires a fresh full check and final screenshot inspection.
