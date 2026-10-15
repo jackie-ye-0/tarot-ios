@@ -109,6 +109,17 @@ enum ReadingArea: String, Codable, CaseIterable, Identifiable {
     }
 }
 
+extension ReadingEngine {
+    /// Visibility is a presentation preference, separate from every reading snapshot.
+    static func settingVisibility(_ visible: Bool, for area: ReadingArea,
+                                  hiddenAreas: Set<ReadingArea>) -> Set<ReadingArea> {
+        var hidden = hiddenAreas
+        if visible { hidden.remove(area) }
+        else if hidden.count < ReadingArea.allCases.count - 1 { hidden.insert(area) }
+        return hidden
+    }
+}
+
 enum QuestionPosition: String, Codable, CaseIterable, Identifiable {
     case situation, action, outcome
     var id: String { rawValue }
