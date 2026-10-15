@@ -84,6 +84,15 @@ struct HistoryScreen: View {
                     TodayScreen(draw: draw, dateLabel: HistoryMonth.label(for: draw.dateKey),
                                 animationsEnabled: animationsEnabled, testMode: testMode, ask: {},
                                 backToHistory: { opened = nil })
+                        .safeAreaInset(edge: .bottom, spacing: 0) {
+                            RestingTabBar(selection: "History", today: {
+                                opened = nil
+                                session.goToToday()
+                            }, ask: {
+                                opened = nil
+                                session.screen = .ask
+                            }, history: { opened = nil })
+                        }
                 case .reading(let reading):
                     QuestionReadingScreen(reading: reading) { opened = nil }
                 }
