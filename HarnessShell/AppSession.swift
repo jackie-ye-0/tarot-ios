@@ -446,25 +446,24 @@ final class AppSession {
         } catch { readingSaveFailed = true }
     }
 
-    func setReadingResponse(_ response: ReadingResponse?, id: UUID) throws {
+    func setReadingResponse(_ response: ReadingResponse?, id: UUID) throws -> QuestionReading {
         let saved = try store.updateReading(id: id) { $0.response = response }
         if latestReadings[saved.area]?.id == id { latestReadings[saved.area] = saved }
-        screen = .reading(saved)
+        return saved
     }
 
-    func saveReadingNote(_ note: String, id: UUID) throws {
+    func saveReadingNote(_ note: String, id: UUID) throws -> QuestionReading {
         let saved = try store.updateReading(id: id) {
             $0.note = note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : note
         }
         if latestReadings[saved.area]?.id == id { latestReadings[saved.area] = saved }
-        screen = .reading(saved)
+        return saved
     }
 
     func deleteReading(id: UUID) throws {
         latestReadings = try store.deleteReading(id: id)
         pendingReading = nil
         picks = []
-        goToToday()
     }
 
     #if DEBUG

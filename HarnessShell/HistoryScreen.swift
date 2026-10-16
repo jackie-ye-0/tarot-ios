@@ -113,7 +113,7 @@ struct HistoryScreen: View {
                             }, history: { opened = nil })
                         }
                 case .reading(let reading):
-                    QuestionReadingScreen(reading: reading) { opened = nil }
+                    QuestionReadingScreen(reading: reading, session: session) { opened = nil }
                 }
             }
             .environment(\.dynamicTypeSize, textSize)

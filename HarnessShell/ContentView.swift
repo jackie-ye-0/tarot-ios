@@ -48,7 +48,8 @@ struct ContentView: View {
                 case .support:
                     SupportScreen(session: session).id("support")
                 case .reading(let reading):
-                    QuestionReadingScreen(reading: reading, session: session).id("reading-\(reading.id)")
+                    QuestionReadingScreen(reading: reading, session: session, done: session.goToToday)
+                        .id("reading-\(reading.id)")
                 }
             }
         }
