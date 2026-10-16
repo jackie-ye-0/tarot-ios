@@ -1,6 +1,6 @@
 # Settings verification (#20)
 
-Status: both independent-review capture corrections passed their assertions and were visually inspected. The post-review full check `20261016T022341.962700Z-check-3c1519bc` on clean commit `4a8dca71c4dd01ab3e313df199d0f904bea5e141` passed **75/76 iOS tests**, with one failure in the unchanged composer keyboard-dismissal test and zero skips or expected failures. All **34 command-contract tests** and the unchanged design-role guard passed. Firstmate authorised one focused rerun of that existing intermittent interaction; `20261016T043417.343365Z-focused-keyboard-a7519fc5` on clean `4b917e8406529d65ed8ea1c92dd4f454c77b572d` passed **1/1**, with zero failures or skips. These are separate results; the focused pass does not relabel the full check as green.
+Status: both independent-review capture corrections passed their assertions and were visually inspected. The delivery full check `20261016T063832.756516Z-check-77dbacdc` on clean commit `e755389e2e91ea20d827f8dba0a7eea54f067b28` passed **76/76 iOS tests**, with zero failures, skips or expected failures. All **34 command-contract tests** and the design-role guard passed. The earlier 75/76 post-review run and its passing 1/1 focused rerun remain recorded below as evidence of the known intermittent composer Done interaction.
 
 The previous full check, `20261015T215219.051931Z-check-815ecaaf`, built clean commit `d7b4123963b6cca2278fd046165f863203035daa` and passed **76/76 iOS tests** with zero failures, skips or expected failures. App code and the manifest are unchanged since that pass. The new capture assertions are covered by the post-review run described below.
 
@@ -102,7 +102,11 @@ The reviewer accepted every remaining finding for these manifest-based reasons:
 
 The review does not certify the combined hidden-area/largest-text state or largest-text last-area/save-error variants; those combinations were not captured. It found no other obvious broken settled layout in the retained regression images. Still screenshots cannot establish behaviour, persistence, native semantics, exact fonts, measured contrast or motion timing. The test evidence supplies applicable runtime checks; manual VoiceOver order and real-device behaviour remain unverified.
 
-## Post-review full check and focused rerun
+## Post-review checks and focused rerun
+
+The delivery `./scripts/harness check`, `20261016T063832.756516Z-check-77dbacdc`, ran on clean `e755389` and passed **76/76 iOS tests**, with zero failures, skips or expected failures, plus all **34 command-contract tests** and the design-role guard. This passing full run is the delivery result for the final source and test set.
+
+The earlier failed full run and focused rerun remain recorded separately below; the focused result is not used to relabel that failed full run.
 
 `./scripts/harness check` ran once as authorised on clean `4a8dca7`. Its own completed `summary.json` reports exit 65, 75 passed, one failed and zero skipped tests. The sole failure is `testComposerKeyboardLayoutEvidence` at `HarnessShellUITests.swift:1804`: after tapping the native Done key at largest text, the keyboard still existed throughout the five-second disappearance wait. The standard-size pass through that test completed. The keyboard test and composer implementation are unchanged by the review correction; no cause or permanent product defect is inferred from this single failure.
 
