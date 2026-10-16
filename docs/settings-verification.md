@@ -1,6 +1,8 @@
 # Settings verification (#20)
 
-Status: the independent comparison requires two additional screenshot stops, now added to the existing tests and awaiting a full check. The previous full `./scripts/harness check`, `20261015T215219.051931Z-check-815ecaaf`, built clean commit `d7b4123963b6cca2278fd046165f863203035daa` and passed **76/76 iOS tests**, with zero failures, skips or expected failures, plus **34 command-contract tests** and the unchanged design-role guard. App code and the manifest are unchanged; that run does not verify the new capture assertions.
+Status: both independent-review capture corrections passed their assertions and were visually inspected. The post-review full check `20261016T022341.962700Z-check-3c1519bc` on clean commit `4a8dca71c4dd01ab3e313df199d0f904bea5e141` passed **75/76 iOS tests**, with one failure in the unchanged composer keyboard-dismissal test and zero skips or expected failures. All **34 command-contract tests** and the unchanged design-role guard passed. The full-check failure is pending firstmate's direction; this is not a green delivery result.
+
+The previous full check, `20261015T215219.051931Z-check-815ecaaf`, built clean commit `d7b4123963b6cca2278fd046165f863203035daa` and passed **76/76 iOS tests** with zero failures, skips or expected failures. App code and the manifest are unchanged since that pass. The new capture assertions are covered by the post-review run described below.
 
 The run used Xcode 27.0 (27A266a), iOS 26.5 and this checkout's dedicated iPhone 17e simulator. Doctor passed in `20261015T131021.455040Z-doctor-92234b57`. `./scripts/harness evidence --run .harness/runs/20261015T215219.051931Z-check-815ecaaf` was read, the final `design-comparison.html` was opened with `chrome-devtools-axi`, and the exported images described below were inspected.
 
@@ -71,8 +73,8 @@ A fresh agent completed the image-only comparison on 16 October 2026 using the m
 
 | Finding | Disposition |
 | --- | --- |
-| C5: hidden-area composer's final chip not fully captured | Added `06-composer--hidden-areas-bottom` after scrolling to the last suggestion. The test requires its whole frame to be visible and at least an 8-point gap above the pinned footer. Runtime verification and image inspection are pending. |
-| R2: largest-text relationship editor's current value not fully captured | Added `11-settings--relationship-largest-text-current-status` between the top and bottom captures. The test requires the complete “Current status: Not set” label and first choice to be visible together. Runtime verification and image inspection are pending. |
+| C5: hidden-area composer's final chip not fully captured | Added `06-composer--hidden-areas-bottom` after scrolling to the last suggestion. The whole-frame and minimum 8-point-gap assertions passed in `3c1519bc`. Author inspection confirms the complete final Career chip, a clear gap, preview and disabled action are visible. |
+| R2: largest-text relationship editor's current value not fully captured | Added `11-settings--relationship-largest-text-current-status` between the top and bottom captures. The complete-label and first-choice visibility assertions passed in `3c1519bc`. Author inspection confirms the complete “Current status: Not set” line above the whole Single row and start of the choices. |
 | C2, also noted in E1: composer spacing | Retained unchanged per firstmate: the layout belongs to the already-merged Ask ticket and is a follow-up, not a Settings change. The reviewer calls this non-blocking and does not identify inaccessible content. The exact finding and recommendation are retained below for the pull request. |
 
 > The native upper stack is more spread out. At normalised 390-point width the field begins about 27 points lower than the reference; the last suggestion ends about 38 points lower, while the pinned footer starts higher. The breathing space between the last chip and the preview is therefore much tighter, roughly 20–25 points instead of roughly 75.
@@ -99,3 +101,11 @@ The reviewer accepted every remaining finding for these manifest-based reasons:
 | B1–B2, P1–P2 | Quiet scrolling pages contain the required full disclaimer and phone-only paragraphs; their paired largest-text captures cover the complete copy. |
 
 The review does not certify the combined hidden-area/largest-text state or largest-text last-area/save-error variants; those combinations were not captured. It found no other obvious broken settled layout in the retained regression images. Still screenshots cannot establish behaviour, persistence, native semantics, exact fonts, measured contrast or motion timing. The test evidence supplies applicable runtime checks; manual VoiceOver order and real-device behaviour remain unverified.
+
+## Post-review check awaiting direction
+
+`./scripts/harness check` ran once as authorised on clean `4a8dca7`. Its own completed `summary.json` reports exit 65, 75 passed, one failed and zero skipped tests. The sole failure is `testComposerKeyboardLayoutEvidence` at `HarnessShellUITests.swift:1804`: after tapping the native Done key at largest text, the keyboard still existed throughout the five-second disappearance wait. The standard-size pass through that test completed. The keyboard test and composer implementation are unchanged by the review correction; no cause or permanent product defect is inferred from this single failure.
+
+Both corrected Settings tests passed: `testSettingsStatusInformationAndLargestTextEvidence` in 157.095 seconds and `testSettingsVisibilityPersistsWithoutChangingDailyCard` in 145.644 seconds. Their two new kept captures were opened and inspected, as was the largest-text keyboard capture immediately before the failed Done interaction. The latter shows the complete question and native keyboard/key; it does not establish what happened after the tap. `./scripts/harness evidence --run .harness/runs/20261016T022341.962700Z-check-3c1519bc` was read.
+
+The failed run's summary, logs, screenshots, manifest/reference copies and keyboard attachments are retained separately in the task folder's `post-review-check-3c1519bc/`. The original independent-review `final-evidence/` is unchanged. No additional simulator run or keyboard workaround has been attempted; firstmate's instruction authorised one full check and keeps the shipping pipeline on hold.
