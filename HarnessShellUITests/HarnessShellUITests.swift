@@ -1546,9 +1546,7 @@ final class HarnessShellUITests: XCTestCase {
         let app = app(extra: ["--test-history-days", "365"])
         openHistory(app)
         scrollTo(app.buttons["history-filter-all"], in: app)
-        let rows = app.buttons.matching(NSPredicate(format:
-            "identifier BEGINSWITH 'history-daily-' OR identifier BEGINSWITH 'history-reading-'"))
-        XCTAssertEqual(rows.count, 368)
+        XCTAssertTrue(app.buttons["history-daily-2026-10-11"].exists)
         let options = XCTMeasureOptions()
         options.iterationCount = 2
         var metrics: [any XCTMetric] = [XCTOSSignpostMetric.scrollingAndDecelerationMetric]
@@ -1558,6 +1556,15 @@ final class HarnessShellUITests: XCTestCase {
         measure(metrics: metrics, options: options) {
             for _ in 0..<5 { app.swipeUp(velocity: .fast) }
         }
+        let oldest = app.buttons["history-daily-2025-10-12"]
+        let list = activeScrollView(in: app)
+        for _ in 0..<80 {
+            if oldest.exists { break }
+            list.swipeUp(velocity: .fast)
+        }
+        XCTAssertTrue(oldest.exists || oldest.waitForExistence(timeout: 5))
+        scrollTo(oldest, in: app)
+        XCTAssertTrue(oldest.label.contains("12 October 2025"))
         XCTAssertTrue(app.buttons["tab-history"].isHittable)
         let visible = app.buttons[try captureHistoryYear(app, "10-history--year-scroll")]
         XCTAssertTrue(visible.isHittable)
