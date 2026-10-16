@@ -331,6 +331,7 @@ struct QuestionReadingScreen: View {
                 HStack {
                     NavigationAction(close: true, action: session.goToToday)
                     Spacer()
+                    ShareImageButton(content: .reading(reading))
                     ReadingMoreMenu(hasNote: reading.note != nil) {
                         noteDraft = reading.note ?? ""
                         editingNote = true
@@ -338,9 +339,7 @@ struct QuestionReadingScreen: View {
                 }
                 VStack(alignment: .leading, spacing: Design.Space.small) {
                     Text("“\(reading.question)”").typeRole(Design.TypeRole.title).accessibilityIdentifier("reading-question")
-                    Text("\(reading.area.label) · Saved on this phone")
-                        .typeRole(Design.TypeRole.secondary).foregroundStyle(Design.Palette.secondary)
-                        .accessibilityIdentifier("reading-saved")
+                    ReadingSavedMetadata(area: reading.area)
                 }
                 SpreadCards(picks: reading.picks)
                 ForEach(reading.picks) { pick in
@@ -384,7 +383,8 @@ struct QuestionReadingScreen: View {
                 : AnyLayout(HStackLayout(spacing: Design.Space.small))
             layout {
                 ForEach(ReadingResponse.allCases) { response in
-                    QuestionChip(title: response.label, selected: reading.response == response) {
+                    QuestionChip(title: response.label, fillsWidth: !textSize.isAccessibilitySize,
+                                 centresTitle: !textSize.isAccessibilitySize, selected: reading.response == response) {
                         do { try session.setReadingResponse(reading.response == response ? nil : response, id: reading.id) }
                         catch { operationFailed = true }
                     }

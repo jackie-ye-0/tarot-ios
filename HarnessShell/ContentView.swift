@@ -281,6 +281,7 @@ struct RevealScreen: View {
     let continueAction: () -> Void
     @State private var appeared = false
     @State private var motionSettled = false
+    @Environment(\.dynamicTypeSize) private var textSize
 
     private var revealed: Bool { !animationsEnabled || appeared }
 
@@ -292,13 +293,12 @@ struct RevealScreen: View {
                     if let backAction {
                         BackToTodayAction(progress: revealed ? 1 : 0, action: backAction)
                     }
-                    Text("You picked card \(draw.position) of five")
-                        .typeRole(Design.TypeRole.secondary)
-                        .modifier(RevealPersistentCopy(progress: revealed ? 1 : 0))
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .accessibilityIdentifier("draw-position")
+                    if !textSize.isAccessibilitySize { selectionLabel }
+                    else { Spacer() }
+                    ShareImageButton(content: .card(draw), showsTitle: true)
                 }
                 .padding(.bottom, Design.Space.small)
+                if textSize.isAccessibilitySize { selectionLabel }
                 TurningTarotCard(draw: draw, progress: revealed ? 1 : 0, width: 214)
                     .animation(animationsEnabled ? Design.Motion.flip : nil, value: revealed)
                     .background {
@@ -349,6 +349,14 @@ struct RevealScreen: View {
             withAnimation(Design.Motion.dawn, completionCriteria: .removed) { appeared = true }
             completion: { motionSettled = true }
         }
+    }
+
+    private var selectionLabel: some View {
+        Text("You picked card \(draw.position) of five")
+            .typeRole(Design.TypeRole.secondary)
+            .modifier(RevealPersistentCopy(progress: revealed ? 1 : 0))
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityIdentifier("draw-position")
     }
 }
 
