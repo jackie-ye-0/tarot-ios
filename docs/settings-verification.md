@@ -1,6 +1,8 @@
 # Settings verification (#20)
 
-Status: initial full harness check passed. The follow-up check on the stacked largest-text layout failed its new 44-point switch-target assertion (75/76). The native switch was only 28 points high despite its surrounding layout frame. A button hit area using the existing shared-control pattern now wraps the unchanged native artwork, with native Toggle accessibility representation. Focused and full verification of that correction, then independent design comparison, are pending.
+Status: implementation and author inspection complete; independent design comparison pending. The final full `./scripts/harness check`, `20261015T215219.051931Z-check-815ecaaf`, built clean commit `d7b4123963b6cca2278fd046165f863203035daa` and passed **76/76 iOS tests**, with zero failures, skips or expected failures, plus **34 command-contract tests** and the unchanged design-role guard. Later changes to this report do not alter the tested app, tests or manifest.
+
+The run used Xcode 27.0 (27A266a), iOS 26.5 and this checkout's dedicated iPhone 17e simulator. Doctor passed in `20261015T131021.455040Z-doctor-92234b57`. `./scripts/harness evidence --run .harness/runs/20261015T215219.051931Z-check-815ecaaf` was read, the final `design-comparison.html` was opened with `chrome-devtools-axi`, and the exported images described below were inspected.
 
 ## Behaviour and evidence
 
@@ -11,30 +13,58 @@ Status: initial full harness check passed. The follow-up check on the stacked la
 | At least one area stays visible, with a reason | Parameterised engine test `lastAreaCannotBeHidden` tries each possible last area; UI test checks the disabled switch and explanatory hint |
 | Hiding preserves the daily card, all scores and saved readings | `preferencesPreserveSnapshotsAndSurviveReopening` compares full daily and question snapshots through disk reopening; the UI test restores all scores and reopens the original Relationship reading |
 | Relationship status can change or clear | `testSettingsStatusInformationAndLargestTextEvidence` exercises all four choices, clear and relaunch; store tests check persistence and the retained answered/skipped flag |
-| About and Privacy | UI tests open both pages, run the strict accessibility audit and capture them at normal and largest text sizes |
+| About and Privacy | UI tests open both pages, check the disclaimer and phone-only copy, run the existing all-category accessibility audit and capture normal and largest text sizes |
 | No birth-details or pronoun rows | UI assertions and the Settings source |
 | Failed saves are recoverable | `testSettingsSaveFailureRetainsSettingAndCanRetry` and `failedSettingsSaveKeepsPreviousChoiceAndRetryWorks` prove the previous preference remains, and a repeated choice succeeds |
 
-History (#19) is not in this branch's base. No store query is filtered by visibility, and hidden-area saved readings remain retrievable. When History lands, its existing all-area filters must remain independent of `session.visibleAreas`; its header can use `SettingsAction` to set `session.showsSettings`. This ticket does not create History.
+History (#19) is not in this branch's base, so its conditional Settings entry and filter UI cannot be exercised here. No store query is filtered by visibility, and hidden-area saved readings remain retrievable, as the snapshot/reopening tests prove. History's all-area filters must remain independent of `session.visibleAreas`; its header can use `SettingsAction` to set `session.showsSettings`. This ticket does not create History.
 
 ## Design evidence
 
 Touched screens: Today, Ask, composer, Settings, relationship-status editor, About these readings and Privacy. The existing standard and largest-text Today/Ask/composer tests remain in the full run. New captures use `11-settings` plus named variants for the three child pages, largest text, last-area hint and save error; hidden-area variants cover Today, Ask and composer. Draw, Reveal and the pick are unchanged; their existing Reduce Motion evidence remains in the full suite.
 
-The settings child pages and last-area state have no reference. Their layout, wording, selection and error behaviour are specified in design manifest §11c. The design-role guard is unchanged. Existing bundled-font tests and strict, unfiltered all-category audits remain the verification mechanism.
+The Settings child pages, hidden-area variants, last-area hint and save alert have no separate reference. Their layout, wording, selection and error behaviour are specified in design manifest §11c in the same change. The design-role guard is unchanged, and the existing bundled-font test passed for both fonts. All native accessibility audit categories remain enabled in the existing settled-screen helper; this ticket changes neither that helper nor its contrast measurement rules.
 
-Reference differences recorded during the first comparison:
+The final run's Settings overview/bottom and About audits reported no issues. Three new-screen plain-static-text contrast flags were resolved by the existing measured-image rule, with their element crops, frames, viewport and luminance values retained in the run's audit attachments:
 
-- Settings omits Morning reminder because #21 explicitly owns its switch, and omits Export/Delete because #22 explicitly owns those actions. No inert controls are shown.
-- Relationship status starts as “Not set” rather than the reference's example “In a relationship”. Status is optional and the test uses a fresh synthetic store.
-- About and Privacy rows have chevrons because they navigate, following manifest §5.
-- Native switches use the system's accessible semantics and the design system's ink tint.
-- Today, Ask and composer retain previously documented content/artwork and unfinished-sibling differences in `today-verification.md`, `ask-verification.md` and `ask-composer-verification.md`. Settings adds the requested gear and intentional hidden-area states.
+| Capture | Element | Measured contrast |
+| --- | --- | --- |
+| `11-settings--last-area` | Explanation that one area must remain on | 5.242208:1 |
+| `11-settings--relationship` | Optional-status helper | 5.240743:1 |
+| `11-settings--privacy` | First phone-only paragraph | 9.061659:1 |
 
-## Run and independent comparison
+These elements were fully inside the viewport and exceeded the existing 4.5:1 floor. No control or other audit category was dismissed. The full run also passes the inherited Today, Ask and composer audits. Largest-text tests operate all three area switches, assert their labels and minimum 44-point targets, and tap near each target's top edge to prove that the expanded region responds. They retain the child-page bottom captures, relationship choices and clear action, and the existing reachable composer-action checks.
 
-The full `./scripts/harness check` run `20261015T131900.614113Z-check-1625bdf2` passed with 76 tests, zero failures and zero skips, after all 34 command-contract tests and the unchanged design-role guard passed. Doctor passed in `20261015T131021.455040Z-doctor-92234b57`. Both used this checkout's dedicated iPhone simulator on iOS 26.5. The run exported `design-comparison.html`, reference copies and all new Settings captures. Exported-image inspection and firstmate's independent comparison are pending.
+### Author image inspection and accepted differences
 
-The first comparison opened the run's `design-comparison.html` with `chrome-devtools-axi` and inspected the exported Settings child pages, normal and largest-text Settings, Today, Ask and composer, plus hidden-area variants. The only new layout defect found was the largest-text Relationship switch label splitting inside the word. The corrected layout places each native switch below a full-width area label, and tests now operate all three switches at the largest text size. The new build requires a fresh full check and final screenshot inspection.
+The final Settings reference pair, status editor, About, Privacy, last-area hint and save-error images were inspected, together with their largest-text top/bottom variants. The corrected area labels remain whole, switches sit below them without overlap, relationship choices and Clear are reachable, and the complete informational copy is available across the scrolling captures. Text crossing a viewport edge is normal scrolling, with the remainder shown in the bottom captures; no internal truncation was found.
 
-The failure in `20261015T174102.653786Z-check-9fb81632` was `testSettingsStatusInformationAndLargestTextEvidence`, at the Career switch (`visible-career`) after relaunching at the largest text size. The 44-point assertion remains unchanged; the test also taps near the top of the expanded hit area to prove it is interactive, not only a larger reported frame.
+The final Today, Ask and empty/filled composer reference pairs and hidden-area images were also inspected. The largest-text Today header retains the Settings target; Ask status actions and the composer's inline primary action remain reachable. Hidden-area variants show one full-width Career score/line or selector, with the remaining content retaining its existing hierarchy.
+
+These visible differences are accepted by the author and must be included with the independent findings in the pull request:
+
+| Difference | Reason |
+| --- | --- |
+| Settings omits Morning reminder and Export/Delete | #21 explicitly owns the reminder switch; #22 explicitly owns export/deletion. Manifest §11c omits their rows until functional. |
+| Relationship status initially says “Not set” instead of the reference's “In a relationship” | Status is optional, and the capture uses a fresh synthetic store. |
+| About and Privacy have chevrons | They open child pages, following the navigable-row rule in manifest §5. |
+| Native switches have a wider track and white pill-shaped thumb rather than the reference's round cream thumb; off and disabled states use native rendering | Manifest §11c requires the native switch's semantics with the ink tint. At largest text, the switch moves below its label, inside a full-width 44-point hit area, preserving whole words and a usable target. |
+| Settings has real system indicators, a heavier back symbol, slightly taller rows and different title/group spacing, text metrics and grain | Native safe areas and shared 44-point navigation are required by §4. The existing type/spacing/surface roles and side guides remain consistent; §12 permits small native-rendering differences. The reference is a long artboard, whereas captures show a real scrolling viewport. |
+| Today uses a gear instead of the reference's sliders-style settings glyph | A familiar SF Symbol supplies the requested Settings action, with the explicit label and 44-point target specified in §11c. |
+| Today retains the correct Sunday date for 11 October 2026, original card art/reading copy, literal “Sage”, darker area text and native spacing; area rows have no chevrons | The retained differences follow the snapshot content, contrast roles and non-navigable area rows documented in [Today verification](today-verification.md). The Ask entry uses the already accepted “Ask the cards” wording. |
+| Ask uses the saved card name/line, question-form suggestions and stacked status choices; no-history states have no recent-reading row | Manifest §11b requires actual saved context, optional status and these conditional states. The native selected tab uses an ink pill for contrast. |
+| Ask and Today have two tabs, and Ask has no named-person entry | History and named-person entry remain the separate #19 and #18 tickets, as specified in §11a. |
+| Composer has native header/field spacing and text wrapping, darker dashed preview slots, and a pinned standard-size or inline largest-text action | These retained differences follow safe areas, contrast roles and the explicit large-text layout. Detailed reasons for the unchanged empty/filled, keyboard and limit variants remain in [Ask/composer verification](ask-composer-verification.md). |
+| Hidden areas leave wider remaining scores/segments; largest text stacks the settings labels/value and selectors | These are the explicit visibility and accessibility behaviours in §§11–11c. The tests establish that card and scores are unchanged. |
+
+The comparison page matches all in-scope main references. Its missing `04-today-first-day`, `07-about-someone` and `10-history` main captures belong to #21, #18 and #19, outside this ticket.
+
+## Corrections during validation
+
+The initial check, `20261015T131900.614113Z-check-1625bdf2`, passed 76/76. Image inspection then found the largest-text Relationship label splitting inside the word. The corrected layout gave the label the full row width and placed the switch below it.
+
+The follow-up check, `20261015T174102.653786Z-check-9fb81632`, passed 75/76. Its sole failure was the new largest-text Career switch target assertion: the native switch exposed 28 points despite its surrounding frame. The correction surrounds the unchanged native artwork with the shared button hit-area pattern and keeps native Toggle accessibility representation. The 44-point assertion remains, and the test also taps near the top of the expanded target. The final full check recorded above passes both the geometry and interaction assertions; its images show the whole labels and unchanged switch artwork.
+
+## Independent comparison
+
+Pending firstmate's fresh-session image/manifest comparison. The final run's reference copies, screenshots, comparison page and manifest are copied into the task folder's `final-evidence/`, with a touched-state handoff. The independent verdict and each finding's disposition will be added here before the first completion handoff. No independent pass is claimed yet. Simulator evidence does not establish manual VoiceOver order or real-device behaviour.
