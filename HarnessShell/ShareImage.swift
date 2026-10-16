@@ -5,6 +5,13 @@ import UIKit
 enum ShareImageContent {
     case card(DailyDraw)
     case reading(QuestionReading)
+
+    var title: String {
+        switch self {
+        case .card(let draw): "\(draw.card.name), \(draw.orientation.label.lowercased())"
+        case .reading(let reading): "\(reading.area.label) reading"
+        }
+    }
 }
 
 struct ShareImageButton: View {
@@ -17,7 +24,7 @@ struct ShareImageButton: View {
         ShareAction(showsTitle: showsTitle, action: prepareImage)
             .accessibilityIdentifier("share-image")
             .sheet(item: $sharedImage) { item in
-                ImageShareSheet(image: item.image) { sharedImage = nil }
+                ImageShareSheet(item: item) { sharedImage = nil }
             }
             .alert("The image could not be prepared", isPresented: $failed) {
                 Button("Try again", action: prepareImage)
@@ -37,21 +44,27 @@ struct ShareImageButton: View {
             failed = true
             return
         }
-        sharedImage = SharedImage(image: image)
+        sharedImage = SharedImage(image: image, title: content.title)
     }
 }
 
 private struct SharedImage: Identifiable {
     let id = UUID()
     let image: UIImage
+    let title: String
 }
 
 private struct ImageShareSheet: UIViewControllerRepresentable {
-    let image: UIImage
+    let item: SharedImage
     let completed: () -> Void
 
     func makeUIViewController(context: Context) -> UIActivityViewController {
-        let controller = UIActivityViewController(activityItems: [image], applicationActivities: nil)
+        let provider = NSItemProvider(object: item.image)
+        provider.suggestedName = item.title
+        let configuration = UIActivityItemsConfiguration(itemProviders: [provider])
+        configuration.metadataProvider = { key in key == UIActivityItemsConfigurationMetadataKey.title ? item.title : nil }
+        configuration.previewProvider = { _, _, _ in provider }
+        let controller = UIActivityViewController(activityItemsConfiguration: configuration)
         // UIKit finishing an activity must also dismiss SwiftUI's presentation container.
         controller.completionWithItemsHandler = { _, _, _, _ in completed() }
         return controller
