@@ -78,19 +78,19 @@ final class HarnessShellUITests: XCTestCase {
         }
         let largerSizes = settings.switches["Larger Accessibility Sizes"]
         XCTAssertTrue(largerSizes.waitForExistence(timeout: 5))
-        let originalLargerSizes = try XCTUnwrap(largerSizes.value as? String)
         let slider = settings.sliders.firstMatch
         XCTAssertTrue(slider.waitForExistence(timeout: 5))
-        let originalPosition = try systemTextSliderPosition(slider)
-        // Restore the dedicated simulator even if a later assertion fails.
+        // The reference suite uses standard system text on its dedicated simulator.
+        // Reset that baseline even after an interrupted earlier evidence run.
         addTeardownBlock {
+            XCUIApplication().terminate()
             settings.activate()
-            self.setSystemTextSwitch(largerSizes, to: originalLargerSizes)
-            slider.adjust(toNormalizedSliderPosition: originalPosition)
-            XCTAssertEqual(try self.systemTextSliderPosition(slider), originalPosition, accuracy: 0.01)
+            XCTAssertTrue(settings.wait(for: .runningForeground, timeout: 5))
+            try self.restoreStandardSystemText(largerSizes, slider: slider)
             self.keepSystemScreenshot("system-text-size-restored")
             settings.terminate()
         }
+        try restoreStandardSystemText(largerSizes, slider: slider)
         setSystemTextSwitch(largerSizes, to: "1")
         slider.adjust(toNormalizedSliderPosition: 1)
         XCTAssertEqual(largerSizes.value as? String, "1")
@@ -126,6 +126,15 @@ final class HarnessShellUITests: XCTestCase {
         XCTAssertEqual(XCTWaiter.wait(for: [changed], timeout: 5), .completed)
     }
 
+    private func restoreStandardSystemText(_ control: XCUIElement, slider: XCUIElement) throws {
+        // Shrink first so the switch is back in its compact, trailing position.
+        slider.adjust(toNormalizedSliderPosition: 0)
+        waitForSettled([control, slider])
+        setSystemTextSwitch(control, to: "0")
+        slider.adjust(toNormalizedSliderPosition: 0.5)
+        XCTAssertEqual(try systemTextSliderPosition(slider), 0.5, accuracy: 0.01)
+    }
+
     private func systemTextSliderPosition(_ slider: XCUIElement) throws -> CGFloat {
         let value = try XCTUnwrap(slider.value as? String)
         let percentage = try XCTUnwrap(Double(value.replacingOccurrences(of: "%", with: "")
@@ -136,9 +145,10 @@ final class HarnessShellUITests: XCTestCase {
     private func captureLargestSystemShareSheet(_ app: XCUIApplication, title: String, name: String) {
         scrollTo(app.buttons["share-image"], in: app)
         app.buttons["share-image"].tap()
-        let heading = app.staticTexts[title]
+        let heading = app.otherElements["LP.CaptionBar.TopCaption"]
         let close = app.buttons["Close"]
         XCTAssertTrue(heading.waitForExistence(timeout: 5))
+        XCTAssertEqual(heading.label, title)
         XCTAssertTrue(close.isHittable)
         waitForSettled([heading, close])
         keepSystemScreenshot(name)
