@@ -66,8 +66,8 @@ struct SettingsScreen: View {
                     }
                 }
                 Text(session.visibleAreas.count == 1
-                     ? "Keep at least one area on so Today and Ask have an area to show."
-                     : "Hidden areas keep their past readings.")
+                     ? AppCopy.lastVisibleAreaHint
+                     : AppCopy.hiddenAreasHint)
                     .typeRole(Design.TypeRole.caption).foregroundStyle(Design.Palette.secondary)
                     .accessibilityIdentifier("area-visibility-hint")
             }

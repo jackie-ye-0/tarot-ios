@@ -2,6 +2,8 @@ import SwiftUI
 
 enum AppCopy {
     static let entertainmentDisclaimer = "A mirror, not a forecast. Readings are for entertainment and reflection, not prediction or professional advice."
+    static let lastVisibleAreaHint = "Keep at least one area on so Today and Ask have an area to show."
+    static let hiddenAreasHint = "Hidden areas keep their past readings."
 }
 
 struct ContentView: View {

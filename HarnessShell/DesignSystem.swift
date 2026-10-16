@@ -1632,7 +1632,7 @@ struct AreaVisibilityToggle: View {
             .tint(Design.Palette.ink)
             .disabled(locked)
             .accessibilityLabel(area.label)
-            .accessibilityHint(locked ? "Keep at least one area on so Today and Ask have an area to show" : "Hidden areas keep their past readings")
+            .accessibilityHint(locked ? AppCopy.lastVisibleAreaHint : AppCopy.hiddenAreasHint)
             .accessibilityIdentifier("visible-\(area.rawValue)")
     }
 }
