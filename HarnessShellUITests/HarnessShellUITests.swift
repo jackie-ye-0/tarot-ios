@@ -1495,14 +1495,30 @@ final class HarnessShellUITests: XCTestCase {
         XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
         scrollTo(field, in: app)
         waitForSettled([field, dismiss])
+        func noteViewport() -> CGRect {
+            let viewport = scrollViewport(in: app)
+            let bottom = min(viewport.maxY, dismiss.frame.minY - 8)
+            return CGRect(x: viewport.minX, y: viewport.minY, width: viewport.width,
+                          height: max(0, bottom - viewport.minY))
+        }
+        func recordGeometry(_ phase: String) {
+            let geometry = "\(phase): field=\(field.frame), save=\(save.frame), done=\(dismiss.frame), " +
+                "viewport=\(noteViewport()), gap=\(dismiss.frame.minY - save.frame.maxY)"
+            let attachment = XCTAttachment(string: geometry)
+            attachment.name = "note-keyboard-geometry-\(largest ? "largest" : "ordinary")-\(phase)"
+            attachment.lifetime = .keepAlways
+            add(attachment)
+            print("Note keyboard geometry \(geometry)")
+        }
         assertVisible(field, in: app)
         assertVisible(dismiss, in: app)
+        XCTAssertTrue(noteViewport().contains(field.frame))
         XCTAssertLessThanOrEqual(field.frame.maxY + 8, dismiss.frame.minY)
+        recordGeometry("before-scroll")
         if largest { capture(app, "09-reading--note-keyboard-largest-text") }
         if largest {
-            // The action is inline here. Scroll the outer view's gutter to its bottom;
-            // the generic footer shortcut can treat this partly clipped action as pinned.
-            let viewport = scrollViewport(in: app)
+            // Keep both ends in the unoccluded outer gutter, above Done and the keyboard.
+            let viewport = noteViewport()
             let origin = app.coordinate(withNormalizedOffset: .zero)
             let start = origin.withOffset(CGVector(dx: viewport.minX + 8, dy: viewport.maxY - 24))
             let end = origin.withOffset(CGVector(dx: viewport.minX + 8, dy: viewport.minY + 24))
@@ -1511,9 +1527,10 @@ final class HarnessShellUITests: XCTestCase {
             scrollTo(save, in: app)
         }
         waitForSettled([save, dismiss])
+        recordGeometry("after-scroll")
         capture(app, largest ? "09-reading--note-keyboard-largest-text-bottom" : "09-reading--note-keyboard")
         assertVisible(save, in: app)
-        if largest { XCTAssertTrue(scrollViewport(in: app).contains(save.frame)) }
+        if largest { XCTAssertTrue(noteViewport().contains(save.frame)) }
         XCTAssertLessThanOrEqual(save.frame.maxY + 8, dismiss.frame.minY)
     }
 
