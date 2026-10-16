@@ -1488,6 +1488,24 @@ final class HarnessShellUITests: XCTestCase {
         XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
     }
 
+    private func captureNoteKeyboard(_ app: XCUIApplication, largest: Bool = false) {
+        let field = app.textViews["note-field"]
+        let dismiss = app.buttons["note-keyboard-done"]
+        let save = app.buttons["note-save"]
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
+        scrollTo(field, in: app)
+        waitForSettled([field, dismiss])
+        assertVisible(field, in: app)
+        assertVisible(dismiss, in: app)
+        XCTAssertLessThanOrEqual(field.frame.maxY + 8, dismiss.frame.minY)
+        if largest { capture(app, "09-reading--note-keyboard-largest-text") }
+        scrollTo(save, in: app)
+        waitForSettled([save, dismiss])
+        assertVisible(save, in: app)
+        XCTAssertLessThanOrEqual(save.frame.maxY + 8, dismiss.frame.minY)
+        capture(app, largest ? "09-reading--note-keyboard-largest-text-bottom" : "09-reading--note-keyboard")
+    }
+
     private func makeQuestionReading(_ app: XCUIApplication, largest: Bool = false) {
         scrollTo(app.buttons["suggestion-0"], in: app)
         app.buttons["suggestion-0"].tap()
@@ -1529,9 +1547,10 @@ final class HarnessShellUITests: XCTestCase {
         app.buttons["reading-edit-note"].tap()
         try auditAndCapture(app, "09-reading--note-editor", expecting: app.staticTexts["note-title"], app.buttons["note-save"])
         let field = app.textViews["note-field"]
+        XCTAssertTrue((field.value as? String ?? "").isEmpty)
         field.tap()
         field.typeText("I can take a small step.\nThere is time.")
-        capture(app, "09-reading--note-keyboard")
+        captureNoteKeyboard(app)
         finishNoteEditing(app)
         app.buttons["note-save"].tap()
         scrollTo(app.staticTexts["reading-note"], in: app)
@@ -1620,6 +1639,10 @@ final class HarnessShellUITests: XCTestCase {
         app.buttons["tab-ask"].tap()
         XCTAssertFalse(app.buttons["latest-area-reading"].exists)
         capture(app, "05-ask--reading-deleted")
+        scrollTo(app.buttons["skip-relationship-status"], in: app)
+        assertVisible(app.buttons["skip-relationship-status"], in: app)
+        XCTAssertFalse(app.buttons["latest-area-reading"].exists)
+        capture(app, "05-ask--reading-deleted-bottom")
         app.terminate()
         app.launch()
         XCTAssertTrue(app.staticTexts["today-title"].waitForExistence(timeout: 5))
@@ -1632,40 +1655,46 @@ final class HarnessShellUITests: XCTestCase {
     }
 
     func testReadingChangesRecoverFromFailedSaveAndDelete() throws {
-        let app = app(extra: fixedSpread + ["--test-store-id", UUID().uuidString,
-                      "--test-reading-update-failure", "--test-reading-delete-failure"], memory: false)
-        reachAsk(app)
-        makeQuestionReading(app)
-        openReadingNote(app)
-        let field = app.textViews["note-field"]
-        field.tap()
-        field.typeText("Keep this thought.")
-        finishNoteEditing(app)
-        app.buttons["note-save"].tap()
-        XCTAssertTrue(app.alerts["Your change could not be saved"].waitForExistence(timeout: 5))
-        capture(app, "09-reading--note-save-failure")
-        app.alerts.buttons["OK"].tap()
-        XCTAssertEqual(field.value as? String, "Keep this thought.")
-        app.buttons["note-save"].tap()
-        app.buttons["reading-more"].tap()
-        app.buttons["reading-delete"].tap()
-        app.alerts.buttons["Delete"].tap()
-        XCTAssertTrue(app.alerts["Your change could not be saved"].waitForExistence(timeout: 5))
-        capture(app, "09-reading--delete-failure")
-        app.alerts.buttons["OK"].tap()
-        XCTAssertTrue(app.staticTexts["reading-saved"].exists)
-        app.terminate()
-        app.launchArguments.removeAll { $0 == "--test-reading-update-failure" || $0 == "--test-reading-delete-failure" }
-        app.launchArguments.append("--test-open-saved-reading")
-        app.launch()
-        XCTAssertTrue(app.staticTexts["reading-saved"].waitForExistence(timeout: 5))
-        scrollTo(app.staticTexts["reading-note"], in: app)
-        XCTAssertEqual(app.staticTexts["reading-note"].label, "Keep this thought.")
-        scrollTo(app.buttons["reading-more"], in: app)
-        app.buttons["reading-more"].tap()
-        app.buttons["reading-delete"].tap()
-        app.alerts.buttons["Delete"].tap()
-        XCTAssertTrue(app.staticTexts["today-title"].waitForExistence(timeout: 5))
+        for largest in [false, true] {
+            let app = app(extra: fixedSpread + ["--test-store-id", UUID().uuidString,
+                          "--test-reading-update-failure", "--test-reading-delete-failure"] + (largest ? ["--test-largest-text"] : []), memory: false)
+            reachAsk(app, largest: largest)
+            makeQuestionReading(app, largest: largest)
+            openReadingNote(app)
+            let field = app.textViews["note-field"]
+            scrollTo(field, in: app)
+            field.tap()
+            field.typeText("Keep this thought.")
+            finishNoteEditing(app)
+            scrollTo(app.buttons["note-save"], in: app)
+            app.buttons["note-save"].tap()
+            XCTAssertTrue(app.alerts["Your change could not be saved"].waitForExistence(timeout: 5))
+            capture(app, largest ? "09-reading--note-save-failure-largest-text" : "09-reading--note-save-failure")
+            app.alerts.buttons["OK"].tap()
+            XCTAssertEqual(field.value as? String, "Keep this thought.")
+            scrollTo(app.buttons["note-save"], in: app)
+            app.buttons["note-save"].tap()
+            app.buttons["reading-more"].tap()
+            app.buttons["reading-delete"].tap()
+            app.alerts.buttons["Delete"].tap()
+            XCTAssertTrue(app.alerts["Your change could not be saved"].waitForExistence(timeout: 5))
+            capture(app, largest ? "09-reading--delete-failure-largest-text" : "09-reading--delete-failure")
+            app.alerts.buttons["OK"].tap()
+            XCTAssertTrue(app.staticTexts["reading-saved"].exists)
+            app.terminate()
+            app.launchArguments.removeAll { $0 == "--test-reading-update-failure" || $0 == "--test-reading-delete-failure" }
+            app.launchArguments.append("--test-open-saved-reading")
+            app.launch()
+            XCTAssertTrue(app.staticTexts["reading-saved"].waitForExistence(timeout: 5))
+            scrollTo(app.staticTexts["reading-note"], in: app)
+            XCTAssertEqual(app.staticTexts["reading-note"].label, "Keep this thought.")
+            scrollTo(app.buttons["reading-more"], in: app)
+            app.buttons["reading-more"].tap()
+            app.buttons["reading-delete"].tap()
+            app.alerts.buttons["Delete"].tap()
+            XCTAssertTrue(app.staticTexts["today-title"].waitForExistence(timeout: 5))
+            app.terminate()
+        }
     }
 
     func testReadingNoteAndConfirmationAtLargestText() throws {
@@ -1678,10 +1707,11 @@ final class HarnessShellUITests: XCTestCase {
         openReadingNote(app)
         capture(app, "09-reading--note-editor-largest-text")
         let field = app.textViews["note-field"]
+        XCTAssertTrue((field.value as? String ?? "").isEmpty)
         scrollTo(field, in: app)
         field.tap()
         field.typeText("One step at a time.")
-        capture(app, "09-reading--note-keyboard-largest-text")
+        captureNoteKeyboard(app, largest: true)
         finishNoteEditing(app)
         scrollTo(app.buttons["note-save"], in: app)
         assertVisible(app.buttons["note-save"], in: app)
@@ -1698,6 +1728,20 @@ final class HarnessShellUITests: XCTestCase {
         XCTAssertTrue(app.alerts["Delete this reading?"].waitForExistence(timeout: 5))
         capture(app, "09-reading--delete-confirmation-largest-text")
         app.alerts.buttons["Cancel"].tap()
+        XCTAssertTrue(app.alerts.firstMatch.waitForNonExistence(timeout: 5))
+        capture(app, "09-reading--delete-cancelled-largest-text")
+        scrollTo(app.buttons["reading-more"], in: app)
+        app.buttons["reading-more"].tap()
+        app.buttons["reading-delete"].tap()
+        app.alerts.buttons["Delete"].tap()
+        XCTAssertTrue(app.staticTexts["today-title"].waitForExistence(timeout: 5))
+        app.buttons["tab-ask"].tap()
+        XCTAssertFalse(app.buttons["latest-area-reading"].exists)
+        capture(app, "05-ask--reading-deleted-largest-text")
+        scrollTo(app.buttons["skip-relationship-status"], in: app)
+        assertVisible(app.buttons["skip-relationship-status"], in: app)
+        XCTAssertFalse(app.buttons["latest-area-reading"].exists)
+        capture(app, "05-ask--reading-deleted-largest-text-bottom")
     }
 
     func testAskSuggestedQuestionOpensComposerAndSocialLens() {

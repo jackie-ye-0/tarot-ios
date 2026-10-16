@@ -1208,7 +1208,8 @@ struct QuestionChip: View {
 
 struct NoteField: View {
     @Binding var text: String
-    @FocusState private var focused: Bool
+    @FocusState.Binding var focused: Bool
+    var onFocus: () -> Void
 
     var body: some View {
         TextEditor(text: $text)
@@ -1217,19 +1218,48 @@ struct NoteField: View {
             .tint(Design.Palette.ink)
             .scrollContentBackground(.hidden)
             .focused($focused)
+            .onChange(of: focused) { _, isFocused in
+                if isFocused { onFocus() }
+            }
+            .overlay(alignment: .topLeading) {
+                if text.isEmpty {
+                    Text("Write a note").typeRole(.body)
+                        .foregroundStyle(Design.Palette.placeholder)
+                        .fixedSize(horizontal: false, vertical: true)
+                        // Match the native text editor's text-container insets.
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, Design.Space.small)
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
+                }
+            }
             .frame(minHeight: 220)
             .padding(Design.Space.related)
             .background(Design.Palette.surface, in: RoundedRectangle(cornerRadius: 20))
             .overlay { RoundedRectangle(cornerRadius: 20).strokeBorder(Design.Palette.ink, lineWidth: 1.5) }
             .accessibilityLabel("Your note")
             .accessibilityIdentifier("note-field")
-            .toolbar {
-                ToolbarItemGroup(placement: .keyboard) {
-                    Spacer()
-                    Button("Done") { focused = false }
-                        .accessibilityIdentifier("note-keyboard-done")
-                }
+    }
+}
+
+struct NoteKeyboardDismissal: View {
+    let dismiss: () -> Void
+
+    var body: some View {
+        HStack {
+            Spacer()
+            Button(action: dismiss) {
+                Text("Done").typeRole(.secondary)
+                    .frame(minWidth: Design.Space.target, minHeight: Design.Space.target)
             }
+            .buttonStyle(.bordered)
+            .buttonBorderShape(.capsule)
+            .tint(Design.Palette.ink)
+            .accessibilityIdentifier("note-keyboard-done")
+        }
+        .padding(.horizontal, Design.Space.page)
+        .padding(.vertical, Design.Space.small)
+        .background { ScreenGround() }
     }
 }
 

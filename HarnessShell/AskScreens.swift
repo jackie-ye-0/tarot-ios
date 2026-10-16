@@ -302,6 +302,7 @@ struct QuestionReadingScreen: View {
     @State private var noteDraft = ""
     @State private var confirmingDelete = false
     @State private var operationFailed = false
+    @FocusState private var noteFocused: Bool
 
     var body: some View {
         Group {
@@ -394,13 +395,18 @@ struct QuestionReadingScreen: View {
     }
 
     private var noteEditor: some View {
-        NavigationStack {
+        ScrollViewReader { scroll in
             ReadingScreenLayout {
                 VStack(alignment: .leading, spacing: Design.Space.section) {
-                    QuietAction(title: "Cancel", night: false) { editingNote = false }
-                        .accessibilityIdentifier("note-cancel")
+                    QuietAction(title: "Cancel", night: false) {
+                        noteFocused = false
+                        editingNote = false
+                    }.accessibilityIdentifier("note-cancel")
                     Text("Your note").typeRole(Design.TypeRole.title).accessibilityIdentifier("note-title")
-                    NoteField(text: $noteDraft)
+                    NoteField(text: $noteDraft, focused: $noteFocused) {
+                        scroll.scrollTo("note-field", anchor: .top)
+                    }
+                    .id("note-field")
                 }
                 .foregroundStyle(Design.Palette.ink)
                 .padding(.horizontal, Design.Space.page)
@@ -409,12 +415,16 @@ struct QuestionReadingScreen: View {
                 PrimaryAction(title: "Save note") {
                     do {
                         try session.saveReadingNote(noteDraft, id: reading.id)
+                        noteFocused = false
                         editingNote = false
                     } catch { operationFailed = true }
                 }
                 .accessibilityIdentifier("note-save")
             }
-            .toolbar(.hidden, for: .navigationBar)
+            .scrollDismissesKeyboard(.never)
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                if noteFocused { NoteKeyboardDismissal { noteFocused = false } }
+            }
         }
     }
 
