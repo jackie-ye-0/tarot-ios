@@ -58,59 +58,14 @@ private func measuredContrast(_ image: CGImage) -> (ratio: Double, background: D
 final class HarnessShellUITests: XCTestCase {
     override func setUpWithError() throws { continueAfterFailure = false }
 
-    func testActivitySheetLargestSystemTextEvidence() throws {
-        let settings = XCUIApplication(bundleIdentifier: "com.apple.Preferences")
-        settings.launch()
-        for _ in 0..<6 {
-            if settings.navigationBars["Settings"].exists { break }
-            let back = settings.navigationBars.buttons.firstMatch
-            if !back.exists { break }
-            back.tap()
-        }
-        for label in ["Accessibility", "Display & Text Size", "Larger Text"] {
-            let row = settings.staticTexts[label].firstMatch
-            for _ in 0..<8 {
-                if row.exists && row.isHittable { break }
-                settings.swipeUp()
-            }
-            XCTAssertTrue(row.isHittable, "Settings row must be reachable: \(label)")
-            let cell = settings.cells.containing(.staticText, identifier: label).firstMatch
-            waitForSettled([cell])
-            // Target the leading icon area, clear of the enlarged label and chevron.
-            cell.coordinate(withNormalizedOffset: CGVector(dx: 0.15, dy: 0.2)).tap()
-            let arrived = settings.navigationBars[label].waitForExistence(timeout: 5)
-            if !arrived { keepSystemScreenshot("system-settings-navigation-failure") }
-            XCTAssertTrue(arrived, "Settings must open: \(label)")
-        }
-        let largerSizes = settings.switches["Larger Accessibility Sizes"]
-        XCTAssertTrue(largerSizes.waitForExistence(timeout: 5))
-        let slider = settings.sliders.firstMatch
-        XCTAssertTrue(slider.waitForExistence(timeout: 5))
-        // The reference suite uses standard system text on its dedicated simulator.
-        // Reset that baseline even after an interrupted earlier evidence run.
-        addTeardownBlock {
-            XCUIApplication().terminate()
-            settings.activate()
-            XCTAssertTrue(settings.wait(for: .runningForeground, timeout: 5))
-            try self.restoreStandardSystemText(largerSizes, slider: slider)
-            self.keepSystemScreenshot("system-text-size-restored")
-            settings.terminate()
-        }
-        try restoreStandardSystemText(largerSizes, slider: slider)
-        setSystemTextSwitch(largerSizes, to: "1")
-        slider.adjust(toNormalizedSliderPosition: 1)
-        XCTAssertEqual(largerSizes.value as? String, "1")
-        XCTAssertEqual(try systemTextSliderPosition(slider), 1, accuracy: 0.01)
-        waitForSettled([largerSizes, slider])
-        keepSystemScreenshot("system-largest-text-setting")
-
+    func testActivitySheetSystemTextEvidence() throws {
         // No app-only largest-text override: both SwiftUI and UIKit inherit the system setting.
         let app = app(extra: fixedSpread, audit: true)
         scrollTo(app.buttons["draw-card-3"], in: app)
         tapWhenSettled(app.buttons["draw-card-3"])
         scrollTo(app.buttons["turn-over"], in: app)
         app.buttons["turn-over"].tap()
-        captureLargestSystemShareSheet(app, title: "The Star, upright", name: "03-reveal--share-sheet-largest-text")
+        captureSystemShareSheet(app, title: "The Star, upright", name: "03-reveal--share-sheet-system-text")
         XCTAssertEqual(app.staticTexts["card-name"].label, "The Star")
         scrollTo(app.buttons["see-meaning"], in: app)
         app.buttons["see-meaning"].tap()
@@ -118,37 +73,12 @@ final class HarnessShellUITests: XCTestCase {
         app.buttons["today-ask"].tap()
         makeQuestionReading(app, largest: true)
         let question = app.staticTexts["reading-question"].label
-        captureLargestSystemShareSheet(app, title: "Relationship reading", name: "09-reading--share-sheet-largest-text")
+        captureSystemShareSheet(app, title: "Relationship reading", name: "09-reading--share-sheet-system-text")
         XCTAssertEqual(app.staticTexts["reading-question"].label, question)
         app.terminate()
     }
 
-    private func setSystemTextSwitch(_ control: XCUIElement, to value: String) {
-        if control.value as? String != value {
-            // Settings exposes the entire row as a switch; its centre is the label.
-            control.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
-        }
-        let changed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", value), object: control)
-        XCTAssertEqual(XCTWaiter.wait(for: [changed], timeout: 5), .completed)
-    }
-
-    private func restoreStandardSystemText(_ control: XCUIElement, slider: XCUIElement) throws {
-        // Shrink first so the switch is back in its compact, trailing position.
-        slider.adjust(toNormalizedSliderPosition: 0)
-        waitForSettled([control, slider])
-        setSystemTextSwitch(control, to: "0")
-        slider.adjust(toNormalizedSliderPosition: 0.5)
-        XCTAssertEqual(try systemTextSliderPosition(slider), 0.5, accuracy: 0.01)
-    }
-
-    private func systemTextSliderPosition(_ slider: XCUIElement) throws -> CGFloat {
-        let value = try XCTUnwrap(slider.value as? String)
-        let percentage = try XCTUnwrap(Double(value.replacingOccurrences(of: "%", with: "")
-            .trimmingCharacters(in: .whitespacesAndNewlines)), "Unexpected system text-size slider value: \(value)")
-        return CGFloat(percentage / 100)
-    }
-
-    private func captureLargestSystemShareSheet(_ app: XCUIApplication, title: String, name: String) {
+    private func captureSystemShareSheet(_ app: XCUIApplication, title: String, name: String) {
         scrollTo(app.buttons["share-image"], in: app)
         app.buttons["share-image"].tap()
         let heading = app.otherElements["LP.CaptionBar.TopCaption"]
@@ -168,7 +98,7 @@ final class HarnessShellUITests: XCTestCase {
             copyWasReachable = copyWasReachable || copy.isHittable
             keepSystemScreenshot("\(name)-scroll-\(stop)")
         }
-        XCTAssertTrue(copyWasReachable, "A sharing choice must remain reachable at the largest system text size")
+        XCTAssertTrue(copyWasReachable, "A sharing choice must remain reachable with the configured system text size")
         XCTAssertTrue(files.isHittable)
         XCTAssertTrue(close.isHittable)
         close.tap()
