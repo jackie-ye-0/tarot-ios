@@ -1499,11 +1499,22 @@ final class HarnessShellUITests: XCTestCase {
         assertVisible(dismiss, in: app)
         XCTAssertLessThanOrEqual(field.frame.maxY + 8, dismiss.frame.minY)
         if largest { capture(app, "09-reading--note-keyboard-largest-text") }
-        scrollTo(save, in: app)
+        if largest {
+            // The action is inline here. Scroll the outer view's gutter to its bottom;
+            // the generic footer shortcut can treat this partly clipped action as pinned.
+            let viewport = scrollViewport(in: app)
+            let origin = app.coordinate(withNormalizedOffset: .zero)
+            let start = origin.withOffset(CGVector(dx: viewport.minX + 8, dy: viewport.maxY - 24))
+            let end = origin.withOffset(CGVector(dx: viewport.minX + 8, dy: viewport.minY + 24))
+            start.press(forDuration: 0.05, thenDragTo: end)
+        } else {
+            scrollTo(save, in: app)
+        }
         waitForSettled([save, dismiss])
-        assertVisible(save, in: app)
-        XCTAssertLessThanOrEqual(save.frame.maxY + 8, dismiss.frame.minY)
         capture(app, largest ? "09-reading--note-keyboard-largest-text-bottom" : "09-reading--note-keyboard")
+        assertVisible(save, in: app)
+        if largest { XCTAssertTrue(scrollViewport(in: app).contains(save.frame)) }
+        XCTAssertLessThanOrEqual(save.frame.maxY + 8, dismiss.frame.minY)
     }
 
     private func makeQuestionReading(_ app: XCUIApplication, largest: Bool = false) {
