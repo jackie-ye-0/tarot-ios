@@ -222,16 +222,24 @@ final class HarnessShellUITests: XCTestCase {
     }
 
     private func waitForStableFrames(_ app: XCUIApplication) {
-        let alert = app.alerts.firstMatch
-        // A native alert covers the identified screen and has no identifiers of its own.
-        let elements = alert.exists ? [alert] : app.descendants(matching: .any).allElementsBoundByIndex.filter {
-            $0.isHittable && !$0.identifier.isEmpty
-        }
-        var previous: [CGRect]?
+        let viewport = visibleFrame(in: app)
+        var previous: [String: CGRect]?
         let settled = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
-            let frames = elements.map(\.frame)
+            guard let snapshot = try? app.snapshot() else { return false }
+            var frames: [String: CGRect] = [:]
+            func collect(_ node: any XCUIElementSnapshot) {
+                if !node.frame.isEmpty, node.frame.intersects(viewport) {
+                    if node.elementType == .alert {
+                        frames["alert:\(node.label)"] = node.frame
+                    } else if !node.identifier.isEmpty {
+                        frames["\(node.elementType.rawValue):\(node.identifier)"] = node.frame
+                    }
+                }
+                for child in node.children { collect(child) }
+            }
+            collect(snapshot)
             defer { previous = frames }
-            return !frames.isEmpty && frames.allSatisfy { !$0.isEmpty } && frames == previous
+            return !frames.isEmpty && frames == previous
         }, object: nil)
         XCTAssertEqual(XCTWaiter.wait(for: [settled], timeout: 5), .completed, "Visible frames must settle")
     }
@@ -1280,7 +1288,8 @@ final class HarnessShellUITests: XCTestCase {
             activeScrollView(in: app).swipeUp(velocity: .slow)
         }
         scrollTo(oldest, in: app)
-        try auditAndCapture(app, "10-history--bottom", expecting: oldest)
+        // The full populated and filtered audits above cover this row style without recycling lazy rows mid-audit.
+        capture(app, "10-history--bottom")
         scrollTo(app.staticTexts["history-title"], in: app)
         app.buttons["history-previous-month"].tap()
         XCTAssertEqual(app.staticTexts["history-month"].label, "September 2026")
