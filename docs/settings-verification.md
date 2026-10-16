@@ -104,7 +104,7 @@ The review does not certify the combined hidden-area/largest-text state or large
 
 ## Post-review checks and focused rerun
 
-The delivery `./scripts/harness check`, `20261016T063832.756516Z-check-77dbacdc`, ran on clean `e755389` and passed **76/76 iOS tests**, with zero failures, skips or expected failures, plus all **34 command-contract tests** and the design-role guard. This passing full run is the delivery result for the final source and test set.
+The delivery `./scripts/harness check`, `20261016T063832.756516Z-check-77dbacdc`, ran on clean `e755389` and passed **76/76 iOS tests**, with zero failures, skips or expected failures, plus all **34 command-contract tests** and the design-role guard. This historical run establishes the source and tests at `e755389`; subsequent review commits require fresh HEAD evidence from the pipeline's later test phase.
 
 The earlier failed full run and focused rerun remain recorded separately below; the focused result is not used to relabel that failed full run.
 
