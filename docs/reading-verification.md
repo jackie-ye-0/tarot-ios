@@ -10,7 +10,9 @@ The independent-review corrections ran in full check `20261016T022338.951311Z-ch
 
 The subsequent full check `20261016T033336.795453Z-check-7e68d5fb` on clean `eac2a09` also passed 73/74, with the same gap failure and no skips or runtime warnings. Its attempted gutter drag started in the keyboard region because the generic viewport included Done's reserved area. Both failure image sets were inspected before a further bounded attempt was authorised.
 
-Focused run `20261016T053527.507919Z-focused-note-keyboard-31fdbbfb` passed the single `testReadingNoteAndConfirmationAtLargestText` test with no skips or warnings. This verifies the **test-only correction**: the note capture bounds its viewport above Done, starts its outer-gutter drag within that unoccluded region, and keeps the original eight-point gap assertion and all audits unchanged. Before scrolling, Save note's frame was `(20, 343, 350, 93.33)` with its bottom at 436.33; afterwards it was `(20, 316.33, 350, 93.33)` with its bottom at 409.67. Done's top stayed at 429.67, yielding a 20-point gap. Kept attachments record both frames and the viewport. The inspected bottom screenshot shows the entire action clear of Done; the field has its own overlapping scroll capture. The placeholder and post-deletion Ask bottom were also inspected at largest text. No additional app layout change was needed. A full check of the committed correction and final evidence refresh are **pending**.
+Focused run `20261016T053527.507919Z-focused-note-keyboard-31fdbbfb` passed the single `testReadingNoteAndConfirmationAtLargestText` test with no skips or warnings. This verifies the **test-only correction**: the note capture bounds its viewport above Done, starts its outer-gutter drag within that unoccluded region, and keeps the original eight-point gap assertion and all audits unchanged. Before scrolling, Save note's frame was `(20, 343, 350, 93.33)` with its bottom at 436.33; afterwards it was `(20, 316.33, 350, 93.33)` with its bottom at 409.67. Done's top stayed at 429.67, yielding a 20-point gap. Kept attachments record both frames and the viewport. The inspected bottom screenshot shows the entire action clear of Done; the field has its own overlapping scroll capture. The placeholder and post-deletion Ask bottom were also inspected at largest text. No additional app layout change was needed.
+
+The final full check passed all 74 logical iOS tests on clean commit `16dde28`, with no failures or skips. Its run identifier and any inspection of its refreshed captures were not supplied to this documentation phase.
 
 ## Acceptance coverage
 
@@ -23,7 +25,7 @@ Focused run `20261016T053527.507919Z-focused-note-keyboard-31fdbbfb` passed the 
 
 ## Independent design review
 
-A fresh image-only session reviewed the supplied manifest, two references, all 34 Reading images, all 20 Ask images, 76 Reading contrast crops and six Reduce Motion regression images on 16 October 2026: 138 source images. It did not inspect source, tests or logs and did not delegate. Its verdict was **“pass after the listed must-fix items”**, N1, N2 and A1. One independent round satisfies the assigned review requirement; the corrections still need the authorised full check and new-capture inspection.
+A fresh image-only session reviewed the supplied manifest, two references, all 34 Reading images, all 20 Ask images, 76 Reading contrast crops and six Reduce Motion regression images on 16 October 2026: 138 source images. It did not inspect source, tests or logs and did not delegate. Its verdict was **“pass after the listed must-fix items”**, N1, N2 and A1. One independent round satisfies the assigned review requirement; the corrections subsequently passed the full check recorded above.
 
 | Finding | Disposition and verification to perform |
 | --- | --- |
