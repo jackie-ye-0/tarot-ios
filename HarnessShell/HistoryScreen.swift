@@ -60,8 +60,7 @@ struct HistoryScreen: View {
                                     text: filter.map { "Your \($0.rawValue) question readings will appear here, ready to revisit." }
                                         ?? "Your daily cards and question readings will build up here, ready to revisit whenever you like.")
                         } else {
-                            // Retain row accessibility nodes while Dynamic Type reflows the calendar above them.
-                            VStack(spacing: 0) {
+                            LazyVStack(spacing: 0) {
                                 ForEach(visibleEntries) { entry in
                                     HistoryRow(entry: entry, dateLabel: entryDate(entry)) { opened = entry }
                                     if entry.id != visibleEntries.last?.id {
