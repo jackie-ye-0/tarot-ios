@@ -76,7 +76,8 @@ final class HarnessShellUITests: XCTestCase {
             XCTAssertTrue(row.isHittable, "Settings row must be reachable: \(label)")
             let cell = settings.cells.containing(.staticText, identifier: label).firstMatch
             waitForSettled([cell])
-            cell.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
+            // Target the leading icon area, clear of the enlarged label and chevron.
+            cell.coordinate(withNormalizedOffset: CGVector(dx: 0.15, dy: 0.2)).tap()
             let arrived = settings.navigationBars[label].waitForExistence(timeout: 5)
             if !arrived { keepSystemScreenshot("system-settings-navigation-failure") }
             XCTAssertTrue(arrived, "Settings must open: \(label)")
