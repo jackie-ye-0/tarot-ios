@@ -24,7 +24,7 @@ The native sheet's completion handler clears SwiftUI's presentation item after e
 
 An additional audit of the native share sheet initially found an unlabelled default preview (`20261016T173828.240205Z-check-7b51e2b6`). Supplying the local image and descriptive title fixed that preview. Both supported metadata approaches then exposed Apple's `LP.CaptionBar.TopCaption` title with a 207.7 × 18-point hit region: link metadata in `20261016T174359.301382Z-check-9f42d048` and UIKit's image-items configuration in `20261016T174835.563425Z-check-0b1c51b5`.
 
-Firstmate clarified on 16 October 2026 that the ticket's strict audit covers app-owned screens, not the OS-owned share sheet. Only the added native-sheet audit call was removed. No app-screen audit category or issue handling was changed, and no OS finding was filtered. The sheet is still captured and tested for appearance, both cancellations and both image payloads. At the actual largest system text size, UIKit truncates the visual preview caption with an ellipsis; the complete title remains its accessibility label. This OS-owned single-line caption is an accepted platform limitation, not a complete visible-title claim. The full exported image is unaffected, and the largest-text test checks the full accessibility label plus reachable sharing and dismissal controls. This platform finding must be listed in the PR.
+Firstmate clarified on 16 October 2026 that the ticket's strict audit covers app-owned screens, not the OS-owned share sheet. Only the added native-sheet audit call was removed. No app-screen audit category or issue handling was changed, and no OS finding was filtered. The sheet is still captured and tested for appearance, both cancellations and both image payloads. At the actual largest system text size, UIKit truncates the card preview caption with an ellipsis; its complete title remains the accessibility label. The reading title wraps fully over two lines. The card caption is an accepted OS-owned platform limitation, not a complete visible-title claim. The full exported image is unaffected, and the largest-text test checks the full accessibility label plus reachable sharing and dismissal controls. This platform finding must be listed in the PR.
 
 The complete pre-final run `20261016T174835.563425Z-check-0b1c51b5` exported 75 logical tests: 74 passed, one failed (the native preview hit region), and zero skipped. All app-owned regression and design tests passed. Xcode exited naturally after its simulator shutdown callback completed.
 
@@ -48,13 +48,37 @@ Author comparison of the original passing run:
 
 One fresh image-only review completed on 17 October 2026. Its verdict was **pass after CS1/RS1 evidence is supplied and inspected**, with no demonstrated blocking visual defect in the app screens or exports. [The retained review](share-design-review.md) contains every finding and the accepted-difference reasons to copy into the PR.
 
-- **CS1 / RS1:** the share-sheet UI test inherits the simulator’s actual system size without the app-only override. Host-side `simctl ui … content_size` selects the largest accessibility size for the focused capture run, then restores `large` before the full regression run. Settings-app navigation has been removed following Firstmate’s recovery instruction. Full-run verification and final image inspection are pending. Exact commands and run IDs are recorded below when complete.
+- **CS1 / RS1:** the share-sheet UI test inherits the simulator’s actual system size without the app-only override. Host-side `simctl ui … content_size` selects the largest accessibility size for the focused capture run, then restores `large` before the full regression run. Settings-app navigation has been removed following Firstmate’s recovery instruction. Both top and scrolled sheet images were inspected in focused run `20261016T214338.836435Z-test-ed7403bc`; Copy, Save to Files and Close remain reachable and both cancellations return to the original content. Full regression verification is pending. The exact host commands are recorded below.
 - **RD3:** restored the decorative area-accent dot before the saved-area metadata at standard text sizes, using the design system. Large-text metadata keeps its existing wrapping.
 - **RD8:** standard-size response choices now use equal available widths and centred labels; their accessibility-size vertical stack is unchanged.
 - **SR3:** the actual shared-image test now also retains `09-reading--shared-source`. Its existing functional assertions compare the full question and all original passages against the copied image, establishing source/export identity beyond the review's image-only evidence.
 - **Render-failure alert (unverified item): accepted evidence limitation.** The existing Debug test configuration has storage-failure fixtures but no way to force `ImageRenderer` or PNG encoding to return nil. The alert remains described in manifest §11c; its appearance/retry path is not claimed as verified. No memory-pressure manipulation or new failure-injection mechanism was added for this optional evidence request.
 
 All other rated differences were accepted for the reasons in the independent report. There is no second independent round; firstmate requested author inspection of the new captures and one complete harness check.
+
+## Largest system text evidence procedure
+
+Firstmate authorised Apple's supported host command after the Settings UI proved brittle. Commands target only this worktree's dedicated simulator, `4F740457-7972-45CB-8B81-949847B2652A`. Its previous run had released the harness lock. The simulator was shut down, so the initial size read returned `unknown` and setting it failed with `Unable to lookup in current state: Shutdown`; plain `./scripts/harness launch` booted it through the normal queue (`20261016T214245.784404Z-launch-98f526a6`, passed).
+
+```sh
+xcrun simctl ui 4F740457-7972-45CB-8B81-949847B2652A content_size large
+xcrun simctl ui 4F740457-7972-45CB-8B81-949847B2652A content_size
+# Read back: large
+xcrun simctl ui 4F740457-7972-45CB-8B81-949847B2652A content_size accessibility-extra-extra-extra-large
+xcrun simctl ui 4F740457-7972-45CB-8B81-949847B2652A content_size
+# Read back: accessibility-extra-extra-extra-large
+./scripts/harness test
+# Focused run: 20261016T214338.836435Z-test-ed7403bc
+xcrun simctl ui 4F740457-7972-45CB-8B81-949847B2652A content_size
+# Read back after the run: accessibility-extra-extra-extra-large
+xcrun simctl ui 4F740457-7972-45CB-8B81-949847B2652A content_size large
+xcrun simctl ui 4F740457-7972-45CB-8B81-949847B2652A content_size
+# Read back: large
+```
+
+For that focused run only, the Xcode scheme temporarily selected `HarnessShellUITests/testActivitySheetSystemTextEvidence()` and excluded the engine target. This used the unchanged harness queue and export path. Xcode passed **1/1 selected test**, with zero failures or skips, and exported four images. The harness correctly returned exit 1 because its complete-verification guard requires at least four tests; this run supplies visual evidence and is **not** a passing full check. The original scheme was restored byte-for-byte before the subsequent full `./scripts/harness check`. No test-selection change is committed.
+
+Inspected images: `03-reveal--share-sheet-system-text`, `03-reveal--share-sheet-system-text-scroll-0`, `09-reading--share-sheet-system-text` and `09-reading--share-sheet-system-text-scroll-0`. Both show the image preview and dismiss control; the first stop shows Copy and the second shows Save to Files. Accepted OS differences are the card-title ellipsis, enlarged/wrapped destination labels, horizontal carousel continuation and translucent header showing blurred scrolled content. These retain native system presentation; complete title labels, actions and cancellation are asserted, and full PNG content is verified separately. The full reading title is visible. The host command transcript is retained with the task evidence.
 
 ## Limits
 
