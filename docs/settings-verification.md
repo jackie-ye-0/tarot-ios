@@ -1,6 +1,6 @@
 # Settings verification (#20)
 
-Status: implementation and author inspection complete; independent design comparison pending. The final full `./scripts/harness check`, `20261015T215219.051931Z-check-815ecaaf`, built clean commit `d7b4123963b6cca2278fd046165f863203035daa` and passed **76/76 iOS tests**, with zero failures, skips or expected failures, plus **34 command-contract tests** and the unchanged design-role guard. Later changes to this report do not alter the tested app, tests or manifest.
+Status: the independent comparison requires two additional screenshot stops, now added to the existing tests and awaiting a full check. The previous full `./scripts/harness check`, `20261015T215219.051931Z-check-815ecaaf`, built clean commit `d7b4123963b6cca2278fd046165f863203035daa` and passed **76/76 iOS tests**, with zero failures, skips or expected failures, plus **34 command-contract tests** and the unchanged design-role guard. App code and the manifest are unchanged; that run does not verify the new capture assertions.
 
 The run used Xcode 27.0 (27A266a), iOS 26.5 and this checkout's dedicated iPhone 17e simulator. Doctor passed in `20261015T131021.455040Z-doctor-92234b57`. `./scripts/harness evidence --run .harness/runs/20261015T215219.051931Z-check-815ecaaf` was read, the final `design-comparison.html` was opened with `chrome-devtools-axi`, and the exported images described below were inspected.
 
@@ -67,4 +67,35 @@ The follow-up check, `20261015T174102.653786Z-check-9fb81632`, passed 75/76. Its
 
 ## Independent comparison
 
-Pending firstmate's fresh-session image/manifest comparison. The final run's reference copies, screenshots, comparison page and manifest are copied into the task folder's `final-evidence/`, with a touched-state handoff. The independent verdict and each finding's disposition will be added here before the first completion handoff. No independent pass is claimed yet. Simulator evidence does not establish manual VoiceOver order or real-device behaviour.
+A fresh agent completed the image-only comparison on 16 October 2026 using the manifest, five relevant references and all 270 exported images, without app source, tests or author conclusions. Its verdict was **“pass after the two must-fix evidence items, C5 and R2”**. Firstmate instructed one independent round, the two capture additions below, and recording C2 without changing the existing composer layout. The original report is retained in the task material as `independent-review.md`. The supplied `final-evidence/` remains the original review input until the new full run is complete.
+
+| Finding | Disposition |
+| --- | --- |
+| C5: hidden-area composer's final chip not fully captured | Added `06-composer--hidden-areas-bottom` after scrolling to the last suggestion. The test requires its whole frame to be visible and at least an 8-point gap above the pinned footer. Runtime verification and image inspection are pending. |
+| R2: largest-text relationship editor's current value not fully captured | Added `11-settings--relationship-largest-text-current-status` between the top and bottom captures. The test requires the complete “Current status: Not set” label and first choice to be visible together. Runtime verification and image inspection are pending. |
+| C2, also noted in E1: composer spacing | Retained unchanged per firstmate: the layout belongs to the already-merged Ask ticket and is a follow-up, not a Settings change. The reviewer calls this non-blocking and does not identify inaccessible content. The exact finding and recommendation are retained below for the pull request. |
+
+> The native upper stack is more spread out. At normalised 390-point width the field begins about 27 points lower than the reference; the last suggestion ends about 38 points lower, while the pinned footer starts higher. The breathing space between the last chip and the preview is therefore much tighter, roughly 20–25 points instead of roughly 75.
+>
+> **Should fix, non-blocking.** Tighten the ordinary-size gaps above the field/suggestions towards the reference so the chip stack has more breathing room above the fixed footer. Preserve the 56-point primary action and safe-area clearance; do not shrink text or the field to force a fit. This is a visible spacing mismatch, not evidence of inaccessible content.
+
+The reviewer accepted every remaining finding for these manifest-based reasons:
+
+| Findings | Accepted difference and reason |
+| --- | --- |
+| T1–T2 | Gear is explicitly required by §11c; the correct weekday is fixture content. |
+| T3–T5 | Native card/details positioning and art retain the 5:8 Star grammar; reflective copy, literal colour name and wrapping area lines preserve the content roles. Darker area text and omitted non-functional chevrons follow the manifest. |
+| T6–T7 | Two tabs, placeholder icons and the selected ink pill follow the existing navigation rules; History is #19. The shorter “Ask the cards” entry is specified in §11a, the omitted introductory heading is redundant and the composer explains the three-card step. Midnight copy remains. |
+| T8–T9 | Hidden areas leave a full-width remaining score/line; largest text stacks content and preserves the gear artwork size, as required. |
+| A1–A3 | Actual saved card/line replaces sample context; darker labels, modest native selector/arrow differences and question-form suggestions follow the roles and wording rules. |
+| A4–A7 | Named-person entry is #18; full-width status choices and Skip, conditional saved-reading section with actual card faces/question/date, and the two-tab treatment follow §§11a–11b. |
+| A8 | Filtering and large-text reflow keep the remaining area and complete entry/recent-reading content together. |
+| C1, C3–C4 | Native header/text wrapping, preview dashes/helper wrapping and safe-area footer placement retain hierarchy and wording; filtering and largest-text inline action follow the manifest. C2 separately records the spacing concern. |
+| E1–E4 | Shared native rendering differences follow C1/C3, with C2 retained; the enabled action wraps at largest text, keyboard states use the specified focus/Done flow and the limit state shows textual error feedback. |
+| S1–S3 | Native spacing/alignment and row heights preserve the three-group hierarchy; native thumb/off/disabled appearances are specified. Unset status and its large-text stacked value are valid. |
+| S4–S5 | Reminder/export/delete remain #21/#22; About and Privacy chevrons identify navigation and Settings has no tab bar. |
+| S6–S8 | Exact last-area explanation, native recoverable-save alert, whole largest-text area words and normal-size switch artwork follow §11c. |
+| R1, R3 | The explicit current-value line reinforces the saved choice; multiline options and Clear retain the selected checkmark and readable layout. R2 separately adds the missing value evidence. |
+| B1–B2, P1–P2 | Quiet scrolling pages contain the required full disclaimer and phone-only paragraphs; their paired largest-text captures cover the complete copy. |
+
+The review does not certify the combined hidden-area/largest-text state or largest-text last-area/save-error variants; those combinations were not captured. It found no other obvious broken settled layout in the retained regression images. Still screenshots cannot establish behaviour, persistence, native semantics, exact fonts, measured contrast or motion timing. The test evidence supplies applicable runtime checks; manual VoiceOver order and real-device behaviour remain unverified.
