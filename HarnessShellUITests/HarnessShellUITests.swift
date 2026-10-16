@@ -74,7 +74,12 @@ final class HarnessShellUITests: XCTestCase {
                 settings.swipeUp()
             }
             XCTAssertTrue(row.isHittable, "Settings row must be reachable: \(label)")
-            row.tap()
+            let cell = settings.cells.containing(.staticText, identifier: label).firstMatch
+            waitForSettled([cell])
+            cell.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
+            let arrived = settings.navigationBars[label].waitForExistence(timeout: 5)
+            if !arrived { keepSystemScreenshot("system-settings-navigation-failure") }
+            XCTAssertTrue(arrived, "Settings must open: \(label)")
         }
         let largerSizes = settings.switches["Larger Accessibility Sizes"]
         XCTAssertTrue(largerSizes.waitForExistence(timeout: 5))
