@@ -23,8 +23,7 @@ struct SettingsScreen: View {
                 case .settings: overview
                 case .relationship: relationship
                 case .about:
-                    Text("A mirror, not a forecast.").typeRole(Design.TypeRole.body)
-                    Text("Readings are for entertainment and reflection, not prediction or professional advice.")
+                    Text(AppCopy.entertainmentDisclaimer)
                         .typeRole(Design.TypeRole.body)
                         .lineSpacing(Design.Space.readingLeading)
                         .accessibilityIdentifier("settings-disclaimer")

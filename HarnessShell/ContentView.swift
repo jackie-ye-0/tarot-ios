@@ -1,5 +1,9 @@
 import SwiftUI
 
+enum AppCopy {
+    static let entertainmentDisclaimer = "A mirror, not a forecast. Readings are for entertainment and reflection, not prediction or professional advice."
+}
+
 struct ContentView: View {
     @Bindable var session: AppSession
     var animationsEnabled = true
@@ -124,7 +128,7 @@ struct WelcomeScreen: View {
             VStack(spacing: Design.Space.related) {
                 PrimaryAction(title: "Draw my first card", night: true, action: continueAction)
                     .accessibilityIdentifier("welcome-draw")
-                Text("A mirror, not a forecast. Readings are for entertainment and reflection, not prediction or professional advice.")
+                Text(AppCopy.entertainmentDisclaimer)
                     .typeRole(Design.TypeRole.caption)
                     .foregroundStyle(Design.Palette.nightSecondary)
                     .multilineTextAlignment(.center)
