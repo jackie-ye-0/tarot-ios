@@ -85,13 +85,13 @@ final class HarnessShellUITests: XCTestCase {
         // Restore the dedicated simulator even if a later assertion fails.
         addTeardownBlock {
             settings.activate()
-            if largerSizes.value as? String != originalLargerSizes { largerSizes.tap() }
+            self.setSystemTextSwitch(largerSizes, to: originalLargerSizes)
             slider.adjust(toNormalizedSliderPosition: originalPosition)
             XCTAssertEqual(try self.systemTextSliderPosition(slider), originalPosition, accuracy: 0.01)
             self.keepSystemScreenshot("system-text-size-restored")
             settings.terminate()
         }
-        if originalLargerSizes != "1" { largerSizes.tap() }
+        setSystemTextSwitch(largerSizes, to: "1")
         slider.adjust(toNormalizedSliderPosition: 1)
         XCTAssertEqual(largerSizes.value as? String, "1")
         XCTAssertEqual(try systemTextSliderPosition(slider), 1, accuracy: 0.01)
@@ -115,6 +115,15 @@ final class HarnessShellUITests: XCTestCase {
         captureLargestSystemShareSheet(app, title: "Relationship reading", name: "09-reading--share-sheet-largest-text")
         XCTAssertEqual(app.staticTexts["reading-question"].label, question)
         app.terminate()
+    }
+
+    private func setSystemTextSwitch(_ control: XCUIElement, to value: String) {
+        if control.value as? String != value {
+            // Settings exposes the entire row as a switch; its centre is the label.
+            control.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
+        }
+        let changed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", value), object: control)
+        XCTAssertEqual(XCTWaiter.wait(for: [changed], timeout: 5), .completed)
     }
 
     private func systemTextSliderPosition(_ slider: XCUIElement) throws -> CGFloat {
