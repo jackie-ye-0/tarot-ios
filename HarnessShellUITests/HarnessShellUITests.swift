@@ -509,6 +509,13 @@ final class HarnessShellUITests: XCTestCase {
         XCTAssertFalse(app.buttons["area-relationship"].exists)
         XCTAssertFalse(app.buttons["area-social"].exists)
         try auditAndCapture(app, "06-composer--hidden-areas", expecting: app.buttons["area-career"])
+        let finalSuggestion = app.buttons["suggestion-2"]
+        scrollTo(finalSuggestion, in: app, abovePinnedFooter: true)
+        waitForSettled([finalSuggestion])
+        assertVisible(finalSuggestion, in: app, abovePinnedFooter: true)
+        XCTAssertGreaterThanOrEqual(scrollViewport(in: app).maxY - finalSuggestion.frame.maxY, 8,
+                                    "The complete final chip needs a clear gap above the pinned footer")
+        capture(app, "06-composer--hidden-areas-bottom")
         showNavigationTop(app)
         app.buttons["go-back"].tap()
         app.terminate()
@@ -585,6 +592,15 @@ final class HarnessShellUITests: XCTestCase {
         XCTAssertTrue(app.buttons["settings-relationship"].label.contains("Not set"))
         app.buttons["settings-relationship"].tap()
         capture(app, "11-settings--relationship-largest-text")
+        let currentStatus = app.staticTexts["settings-current-status"]
+        let firstStatus = app.buttons["settings-status-single"]
+        scrollTo(currentStatus, in: app)
+        scrollTo(firstStatus, in: app)
+        waitForSettled([currentStatus, firstStatus])
+        XCTAssertEqual(currentStatus.label, "Current status: Not set")
+        assertVisible(currentStatus, in: app)
+        assertVisible(firstStatus, in: app)
+        capture(app, "11-settings--relationship-largest-text-current-status")
         scrollTo(app.buttons["settings-clear-status"], in: app)
         capture(app, "11-settings--relationship-largest-text-bottom")
         showNavigationTop(app)
