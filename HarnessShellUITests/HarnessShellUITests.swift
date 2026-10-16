@@ -5,9 +5,13 @@ import Vision
 private final class ClipboardImageResult: @unchecked Sendable {
     private let lock = NSLock()
     private var image: UIImage?
+    private var types: [String] = []
 
-    func store(_ image: UIImage?) { lock.withLock { self.image = image } }
+    func store(_ image: UIImage?, types: [String]) {
+        lock.withLock { self.image = image; self.types = types }
+    }
     func value() -> UIImage? { lock.withLock { image } }
+    func typeDescription() -> String { lock.withLock { types.joined(separator: ", ") } }
 }
 
 // Dominant luminance band estimates the ground despite fine grain. A 1% tail
@@ -134,13 +138,13 @@ final class HarnessShellUITests: XCTestCase {
         let loaded = expectation(description: "Read the image copied by the native sheet")
         // A cross-app read can wait for permission; keep the test thread free to answer it.
         DispatchQueue.global(qos: .userInitiated).async {
-            result.store(UIPasteboard.general.image)
+            result.store(UIPasteboard.general.image, types: UIPasteboard.general.types)
             loaded.fulfill()
         }
         let allowPaste = XCUIApplication(bundleIdentifier: "com.apple.springboard").buttons["Allow Paste"]
         if allowPaste.waitForExistence(timeout: 5) { allowPaste.tap() }
         wait(for: [loaded], timeout: 5)
-        let image = try XCTUnwrap(result.value(), "The system share sheet must receive an image")
+        let image = try XCTUnwrap(result.value(), "The system share sheet must receive an image; copied types: \(result.typeDescription())")
         let attachment = XCTAttachment(image: image)
         attachment.name = name
         attachment.lifetime = .keepAlways

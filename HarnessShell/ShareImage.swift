@@ -61,7 +61,8 @@ private struct ImageShareSheet: UIViewControllerRepresentable {
     func makeUIViewController(context: Context) -> UIActivityViewController {
         let provider = NSItemProvider(object: item.image)
         provider.suggestedName = item.title
-        let configuration = UIActivityItemsConfiguration(itemProviders: [provider])
+        // The rendered image is available now; native activities can consume it directly.
+        let configuration = UIActivityItemsConfiguration(objects: [item.image])
         configuration.metadataProvider = { key in key == UIActivityItemsConfigurationMetadataKey.title ? item.title : nil }
         configuration.previewProvider = { _, _, _ in provider }
         let controller = UIActivityViewController(activityItemsConfiguration: configuration)
