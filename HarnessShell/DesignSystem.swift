@@ -1263,6 +1263,31 @@ struct NoteKeyboardDismissal: View {
     }
 }
 
+struct ShareAction: View {
+    let showsTitle: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: Design.Space.small) {
+                Image(systemName: "square.and.arrow.up").typeRole(.section)
+                    .dynamicTypeSize(.large)
+                if showsTitle { Text("Share").typeRole(.button) }
+            }
+            .foregroundStyle(Design.Palette.ink)
+            .padding(.horizontal, showsTitle ? Design.Space.related : 0)
+            .padding(.vertical, showsTitle ? Design.Space.small : 0)
+            .frame(minWidth: Design.Space.target, minHeight: Design.Space.target)
+            .background {
+                if showsTitle { Capsule().fill(Design.Palette.surface) }
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(ActionPressStyle())
+        .accessibilityLabel("Share")
+    }
+}
+
 struct ReadingMoreMenu: View {
     let hasNote: Bool
     let editNote: () -> Void

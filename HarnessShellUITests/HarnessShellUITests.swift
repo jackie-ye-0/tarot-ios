@@ -1,5 +1,14 @@
 import XCTest
 import UIKit
+import Vision
+
+private final class ClipboardImageResult: @unchecked Sendable {
+    private let lock = NSLock()
+    private var image: UIImage?
+
+    func store(_ image: UIImage?) { lock.withLock { self.image = image } }
+    func value() -> UIImage? { lock.withLock { image } }
+}
 
 // Dominant luminance band estimates the ground despite fine grain. A 1% tail
 // avoids isolated extreme pixels and selects the text side in either appearance.
@@ -44,6 +53,129 @@ private func measuredContrast(_ image: CGImage) -> (ratio: Double, background: D
 }
 final class HarnessShellUITests: XCTestCase {
     override func setUpWithError() throws { continueAfterFailure = false }
+
+    func testActivitySheetSharesCardAndReadingImagesAndCancels() throws {
+        let app = app(extra: fixedSpread, audit: true)
+        reveal(app)
+        let cardName = app.staticTexts["card-name"].label
+        app.buttons["share-image"].tap()
+        XCTAssertTrue(app.cells["Copy"].waitForExistence(timeout: 5))
+        captureShareSheet(app, named: "03-reveal--share-sheet")
+        app.buttons["Close"].tap()
+        waitForShareReturn(app)
+        XCTAssertEqual(app.staticTexts["card-name"].label, cardName)
+        XCTAssertFalse(app.staticTexts["today-title"].exists)
+        let cardImage = try copySharedImage(app, named: "share-card-image")
+        let cardText = try recognisedText(in: cardImage)
+        for text in [cardName, "Upright", "For entertainment and reflection"] {
+            XCTAssertTrue(cardText.contains(normalised(text)), "Missing image text: \(text)")
+        }
+
+        app.buttons["see-meaning"].tap()
+        app.buttons["tab-ask"].tap()
+        scrollTo(app.buttons["ask-question-entry"], in: app)
+        app.buttons["ask-question-entry"].tap()
+        let field = app.descendants(matching: .any)["question-field"].firstMatch
+        field.tap()
+        let question = "How can I make room for a thoughtful conversation while respecting my own needs and giving the other person time to explain what matters to them?"
+        field.typeText(question)
+        app.keyboards.buttons["Done"].tap()
+        app.buttons["submit-question"].tap()
+        chooseSpread(app)
+        app.buttons["read-spread"].tap()
+        XCTAssertTrue(app.staticTexts["reading-question"].waitForExistence(timeout: 5))
+        var passages: [String] = []
+        for identifier in ["reading-situation", "reading-action", "reading-outcome", "reading-lens", "reflection-question"] {
+            scrollTo(app.staticTexts[identifier], in: app)
+            passages.append(app.staticTexts[identifier].label)
+        }
+        scrollTo(app.buttons["share-image"], in: app)
+        app.buttons["share-image"].tap()
+        XCTAssertTrue(app.cells["Copy"].waitForExistence(timeout: 5))
+        captureShareSheet(app, named: "09-reading--share-sheet")
+        app.buttons["Close"].tap()
+        waitForShareReturn(app)
+        XCTAssertEqual(app.staticTexts["reading-question"].label, "“\(question)”")
+        let readingImage = try copySharedImage(app, named: "share-reading-image")
+        XCTAssertGreaterThan(readingImage.size.height, cardImage.size.height * 2,
+                             "The reading image must grow beyond one screen rather than crop its text")
+        let readingText = try recognisedText(in: readingImage)
+        for text in [question, "The Star", "The Sun", "The Fool", "Reversed", "Read together",
+                     "For entertainment and reflection, not a prediction"] + passages {
+            XCTAssertTrue(readingText.contains(normalised(text)), "Missing image text: \(text)\nOCR: \(readingText)")
+        }
+        XCTAssertTrue(app.buttons["reading-done"].exists)
+        XCTAssertEqual(app.staticTexts["reading-question"].label, "“\(question)”")
+    }
+
+    private func waitForShareReturn(_ app: XCUIApplication) {
+        let returned = XCTNSPredicateExpectation(predicate: NSPredicate(format: "hittable == true"),
+                                                object: app.buttons["share-image"])
+        XCTAssertEqual(XCTWaiter.wait(for: [returned], timeout: 5), .completed,
+                       "Closing or completing the native sheet must restore the same usable screen")
+    }
+
+    private func captureShareSheet(_ app: XCUIApplication, named name: String) {
+        // The remote sheet rebuilds its descendants; settle its visible controls by label.
+        waitForSettled([app.cells["Copy"], app.buttons["Close"]])
+        let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
+    }
+
+    private func copySharedImage(_ app: XCUIApplication, named name: String) throws -> UIImage {
+        UIPasteboard.general.items = []
+        app.buttons["share-image"].tap()
+        XCTAssertTrue(app.cells["Copy"].waitForExistence(timeout: 5))
+        app.cells["Copy"].tap()
+        waitForShareReturn(app)
+        let result = ClipboardImageResult()
+        let loaded = expectation(description: "Read the image copied by the native sheet")
+        // A cross-app read can wait for permission; keep the test thread free to answer it.
+        DispatchQueue.global(qos: .userInitiated).async {
+            result.store(UIPasteboard.general.image)
+            loaded.fulfill()
+        }
+        let allowPaste = XCUIApplication(bundleIdentifier: "com.apple.springboard").buttons["Allow Paste"]
+        if allowPaste.waitForExistence(timeout: 5) { allowPaste.tap() }
+        wait(for: [loaded], timeout: 5)
+        let image = try XCTUnwrap(result.value(), "The system share sheet must receive an image")
+        let attachment = XCTAttachment(image: image)
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
+        return image
+    }
+
+    private func normalised(_ text: String) -> String {
+        text.lowercased().filter { $0.isLetter || $0.isNumber }
+    }
+
+    private func recognisedText(in image: UIImage) throws -> String {
+        let pixels = try XCTUnwrap(image.cgImage)
+        // Overlapping strips keep Vision from downsampling a long image until its type is unreadable.
+        var lines: [(y: CGFloat, text: String)] = []
+        for top in stride(from: 0, to: pixels.height, by: 1000) {
+            let cropTop = max(0, top - 100)
+            let height = min(pixels.height, top + 1100) - cropTop
+            let strip = try XCTUnwrap(pixels.cropping(to: CGRect(x: 0, y: cropTop, width: pixels.width, height: height)))
+            let request = VNRecognizeTextRequest()
+            request.recognitionLevel = .accurate
+            request.recognitionLanguages = ["en-GB"]
+            try VNImageRequestHandler(cgImage: strip).perform([request])
+            for observation in request.results ?? [] {
+                if let text = observation.topCandidates(1).first?.string {
+                    let y = CGFloat(cropTop) + (1 - observation.boundingBox.midY) * CGFloat(height)
+                    // Keep each line once, fully inside a strip's overlapping margins.
+                    if y >= CGFloat(top), y < CGFloat(top + 1000) {
+                        lines.append((y, text))
+                    }
+                }
+            }
+        }
+        return normalised(lines.sorted { $0.y < $1.y }.map(\.text).joined(separator: " "))
+    }
 
     private func app(extra: [String] = [], memory: Bool = true, seed: String = "reference-1", date: String = "2026-10-11T00:00:00Z", animations: Bool = false, audit: Bool = false, welcome: Bool = false) -> XCUIApplication {
         let app = XCUIApplication()
@@ -1080,6 +1212,9 @@ final class HarnessShellUITests: XCTestCase {
         scrollTo(app.buttons["turn-over"], in: app)
         capture(app, "02-draw-card-chosen--largest-text-bottom")
         app.buttons["turn-over"].tap()
+        scrollTo(app.buttons["share-image"], in: app)
+        assertVisible(app.buttons["share-image"], in: app)
+        capture(app, "03-reveal--largest-text-share")
         scrollTo(app.staticTexts["draw-position"], in: app)
         capture(app, "03-reveal--largest-text")
         for identifier in ["card-name", "card-details", "card-keywords"] {
@@ -1872,6 +2007,9 @@ final class HarnessShellUITests: XCTestCase {
         }
         scrollTo(app.buttons["read-spread"], in: app)
         app.buttons["read-spread"].tap()
+        scrollTo(app.buttons["share-image"], in: app)
+        assertVisible(app.buttons["share-image"], in: app)
+        capture(app, "09-reading--largest-text-share")
         scrollTo(app.staticTexts["reading-question"], in: app)
         capture(app, "09-reading--largest-text")
         // Paragraphs can exceed the viewport; overlapping captures expose every line.

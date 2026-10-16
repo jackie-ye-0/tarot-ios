@@ -331,6 +331,7 @@ struct QuestionReadingScreen: View {
                 HStack {
                     NavigationAction(close: true, action: session.goToToday)
                     Spacer()
+                    ShareImageButton(content: .reading(reading))
                     ReadingMoreMenu(hasNote: reading.note != nil) {
                         noteDraft = reading.note ?? ""
                         editingNote = true
