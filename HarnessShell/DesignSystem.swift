@@ -1182,6 +1182,7 @@ struct AreaSelector: View {
 struct QuestionChip: View {
     let title: String
     var fillsWidth = false
+    var centresTitle = false
     var selected = false
     let action: () -> Void
     @Environment(\.dynamicTypeSize) private var textSize
@@ -1191,8 +1192,8 @@ struct QuestionChip: View {
         Button(action: action) {
             Text(title).typeRole(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
-                .multilineTextAlignment(.leading)
-                .frame(maxWidth: fillsWidth ? .infinity : nil, alignment: .leading)
+                .multilineTextAlignment(centresTitle ? .center : .leading)
+                .frame(maxWidth: fillsWidth ? .infinity : nil, alignment: centresTitle ? .center : .leading)
                 .padding(.horizontal, Design.Space.group)
                 .padding(.vertical, Design.Space.related)
                 .frame(minHeight: Design.Space.target)
@@ -1260,6 +1261,24 @@ struct NoteKeyboardDismissal: View {
         .padding(.horizontal, Design.Space.page)
         .padding(.vertical, Design.Space.small)
         .background { ScreenGround() }
+    }
+}
+
+struct ReadingSavedMetadata: View {
+    let area: ReadingArea
+    @Environment(\.dynamicTypeSize) private var textSize
+
+    var body: some View {
+        HStack(spacing: Design.Space.small) {
+            if !textSize.isAccessibilitySize {
+                Circle().fill(Design.Palette.accent(for: area))
+                    .frame(width: Design.Space.small, height: Design.Space.small)
+                    .accessibilityHidden(true)
+            }
+            Text("\(area.label) · Saved on this phone")
+                .typeRole(.secondary).foregroundStyle(Design.Palette.secondary)
+                .accessibilityIdentifier("reading-saved")
+        }
     }
 }
 
