@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import UniformTypeIdentifiers
 
 /// Only saved reading content is shared; annotations stay on this phone.
 enum ShareImageContent {
@@ -40,17 +41,17 @@ struct ShareImageButton: View {
             .environment(\.colorScheme, .light))
         renderer.scale = 2
         renderer.isOpaque = true
-        guard let image = renderer.uiImage else {
+        guard let image = renderer.uiImage, let pngData = image.pngData() else {
             failed = true
             return
         }
-        sharedImage = SharedImage(image: image, title: content.title)
+        sharedImage = SharedImage(pngData: pngData, title: content.title)
     }
 }
 
 private struct SharedImage: Identifiable {
     let id = UUID()
-    let image: UIImage
+    let pngData: Data
     let title: String
 }
 
@@ -59,10 +60,15 @@ private struct ImageShareSheet: UIViewControllerRepresentable {
     let completed: () -> Void
 
     func makeUIViewController(context: Context) -> UIActivityViewController {
-        let provider = NSItemProvider(object: item.image)
+        let provider = NSItemProvider()
+        let pngData = item.pngData
+        // Offer one portable image format instead of UIKit's automatic HEIC conversion.
+        provider.registerDataRepresentation(forTypeIdentifier: UTType.png.identifier, visibility: .all) { completion in
+            completion(pngData, nil)
+            return nil
+        }
         provider.suggestedName = item.title
-        // The rendered image is available now; native activities can consume it directly.
-        let configuration = UIActivityItemsConfiguration(objects: [item.image])
+        let configuration = UIActivityItemsConfiguration(itemProviders: [provider])
         configuration.metadataProvider = { key in key == UIActivityItemsConfigurationMetadataKey.title ? item.title : nil }
         configuration.previewProvider = { _, _, _ in provider }
         let controller = UIActivityViewController(activityItemsConfiguration: configuration)
