@@ -27,22 +27,20 @@ enum HistoryEntry: Identifiable, Equatable {
 }
 
 extension ReadingEngine {
-    static func history(draws: [DailyDraw], readings: [QuestionReading], area: ReadingArea? = nil,
-                        timeZone: TimeZone) -> [HistoryEntry] {
+    static func history(draws: [DailyDraw], readings: [QuestionReading], timeZone: TimeZone) -> [HistoryEntry] {
         let entries = draws.map(HistoryEntry.daily) + readings.map(HistoryEntry.reading)
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = timeZone
-        return entries.filter { $0.matches(area: area) }
-            .map { entry -> (entry: HistoryEntry, date: Date) in
-                switch entry {
-                case .reading(let reading): return (entry, reading.createdAt)
-                case .daily(let draw):
-                    // Older snapshots have no time. Use the start of their saved day without rewriting them.
-                    let parts = draw.dateKey.split(separator: "-").compactMap { Int($0) }
-                    let start = calendar.date(from: DateComponents(year: parts[0], month: parts[1], day: parts[2]))!
-                    return (entry, draw.createdAt ?? start)
-                }
+        return entries.map { entry -> (entry: HistoryEntry, date: Date) in
+            switch entry {
+            case .reading(let reading): return (entry, reading.createdAt)
+            case .daily(let draw):
+                // Older snapshots have no time. Use the start of their saved day without rewriting them.
+                let parts = draw.dateKey.split(separator: "-").compactMap { Int($0) }
+                let start = calendar.date(from: DateComponents(year: parts[0], month: parts[1], day: parts[2]))!
+                return (entry, draw.createdAt ?? start)
             }
+        }
             .sorted {
                 if $0.date != $1.date { return $0.date > $1.date }
                 switch ($0.entry, $1.entry) {

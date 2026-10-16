@@ -159,8 +159,7 @@ final class ReadingEngineTests: XCTestCase {
         XCTAssertEqual(all, [.daily(draws[2]), .reading(readings[2]), .reading(readings[1]),
                              .reading(readings[0]), .daily(draws[1]), .daily(draws[0])])
         for reading in readings {
-            XCTAssertEqual(ReadingEngine.history(draws: draws, readings: readings, area: reading.area, timeZone: zone),
-                           [.reading(reading)])
+            XCTAssertEqual(all.filter { $0.matches(area: reading.area) }, [.reading(reading)])
         }
         XCTAssertEqual(ReadingEngine.history(draws: [], readings: [], timeZone: zone), [])
         let travelled = ReadingEngine.history(draws: draws, readings: readings, timeZone: TimeZone(secondsFromGMT: 0)!)
