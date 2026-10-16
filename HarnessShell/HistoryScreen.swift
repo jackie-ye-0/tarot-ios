@@ -60,12 +60,22 @@ struct HistoryScreen: View {
                                     text: filter.map { "Your \($0.rawValue) question readings will appear here, ready to revisit." }
                                         ?? "Your daily cards and question readings will build up here, ready to revisit whenever you like.")
                         } else {
-                            LazyVStack(spacing: 0) {
-                                ForEach(visibleEntries) { entry in
+                            VStack(spacing: 0) {
+                                // Retain the above-fold rows during Dynamic Type reflow; the year-sized tail stays lazy.
+                                ForEach(visibleEntries.prefix(2)) { entry in
                                     HistoryRow(entry: entry, dateLabel: entryDate(entry)) { opened = entry }
                                     if entry.id != visibleEntries.last?.id {
                                         Divider().overlay(Design.Palette.surfaceHairline)
                                             .padding(.horizontal, Design.Space.group)
+                                    }
+                                }
+                                LazyVStack(spacing: 0) {
+                                    ForEach(visibleEntries.dropFirst(2)) { entry in
+                                        HistoryRow(entry: entry, dateLabel: entryDate(entry)) { opened = entry }
+                                        if entry.id != visibleEntries.last?.id {
+                                            Divider().overlay(Design.Palette.surfaceHairline)
+                                                .padding(.horizontal, Design.Space.group)
+                                        }
                                     }
                                 }
                             }
