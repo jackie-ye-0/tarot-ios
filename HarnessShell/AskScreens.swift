@@ -436,3 +436,51 @@ struct QuestionReadingScreen: View {
         }
     }
 }
+
+struct SupportScreen: View {
+    let session: AppSession
+
+    var body: some View {
+        let content = session.crisisContent
+        ReadingScreenLayout {
+            VStack(alignment: .leading, spacing: Design.Space.section) {
+                Text(content.title).typeRole(Design.TypeRole.title)
+                    .accessibilityIdentifier("support-title")
+                Text(content.introduction).typeRole(Design.TypeRole.body)
+                    .accessibilityIdentifier("support-introduction")
+                Text(content.region).typeRole(.metadata)
+                    .accessibilityIdentifier("support-region")
+                ForEach(content.resources) { resource in
+                    VStack(alignment: .leading, spacing: Design.Space.related) {
+                        Divider().overlay(Design.Palette.hairline)
+                        Text(resource.title).typeRole(.section)
+                            .accessibilityIdentifier("support-\(resource.id)-title")
+                        Text(resource.contact).typeRole(.metadata)
+                            .accessibilityIdentifier("support-\(resource.id)-contact")
+                        Text(resource.detail).typeRole(Design.TypeRole.body)
+                            .foregroundStyle(Design.Palette.secondary)
+                            .accessibilityIdentifier("support-\(resource.id)-detail")
+                    }
+                }
+                Text(content.outsideRegion).typeRole(Design.TypeRole.body)
+                    .foregroundStyle(Design.Palette.secondary)
+                    .accessibilityIdentifier("support-outside-region")
+                if session.crisisRemovalFailed {
+                    VStack(alignment: .leading, spacing: Design.Space.related) {
+                        Text(content.removalFailure).typeRole(Design.TypeRole.body)
+                            .accessibilityIdentifier("support-removal-failure")
+                        QuietAction(title: content.retryTitle, night: false, action: session.removeCrisisDrafts)
+                            .accessibilityIdentifier("support-retry-removal")
+                    }
+                }
+            }
+            .foregroundStyle(Design.Palette.ink)
+            .padding(.horizontal, Design.Space.page)
+            .padding(.vertical, Design.Space.page)
+        } footer: {
+            PrimaryAction(title: content.returnTitle, action: session.leaveSupport)
+                .disabled(session.crisisRemovalFailed)
+                .accessibilityIdentifier("support-today")
+        }
+    }
+}

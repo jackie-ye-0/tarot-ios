@@ -26,6 +26,7 @@ struct LaunchConfiguration {
     var spreadSaveFailure = false
     var readingUpdateFailure = false
     var readingDeleteFailure = false
+    var crisisDiscardFailure = false
 
     static func current() -> LaunchConfiguration {
         var result = LaunchConfiguration()
@@ -59,6 +60,7 @@ struct LaunchConfiguration {
         result.spreadSaveFailure = arguments.contains("--test-spread-save-failure")
         result.readingUpdateFailure = arguments.contains("--test-reading-update-failure")
         result.readingDeleteFailure = arguments.contains("--test-reading-delete-failure")
+        result.crisisDiscardFailure = arguments.contains("--test-crisis-discard-failure")
         #endif
         return result
     }
@@ -93,7 +95,7 @@ final class SessionClock {
 @MainActor @Observable
 final class AppSession {
     enum Screen {
-        case welcome, draw, reveal(DailyDraw), today(DailyDraw), ask, composer, pick, reading(QuestionReading)
+        case welcome, draw, reveal(DailyDraw), today(DailyDraw), ask, composer, pick, reading(QuestionReading), support
     }
 
     private enum DraftSaveOperation {
@@ -107,6 +109,7 @@ final class AppSession {
     var welcomeSaveFailed = false
     var draftSaveFailed = false
     var relationshipSaveFailed = false
+    private(set) var crisisRemovalFailed = false
     var area: ReadingArea = .relationship { didSet { persistDraft(); persistSpreadDraft() } }
     var question = "" { didSet { persistDraft(); persistSpreadDraft() } }
     private(set) var hasDraft = false
@@ -148,6 +151,8 @@ final class AppSession {
             hasSpreadDraft = true
         }
         screen = try launchScreen()
+        // An interrupted removal must never restore a matching draft into the pick.
+        if ReadingEngine.requiresSupport(question: question, content: library.crisis) { showSupport() }
     }
 
     /// Welcome until it is completed, then Today once today's card is drawn, otherwise Draw.
@@ -238,7 +243,7 @@ final class AppSession {
         today = saved
         // The disclaimer must remain in place until the welcome action is taken.
         switch screen {
-        case .welcome: break
+        case .welcome, .support: break
         default: screen = saved.map(Screen.today) ?? .draw
         }
         dateKey = key
@@ -248,6 +253,7 @@ final class AppSession {
         return true
     }
 
+    var crisisContent: CrisisContent { library.crisis }
     var suggestions: [String] { library.questions.content(for: area).suggestions }
     var canSubmit: Bool { ReadingEngine.canSubmit(question: question) }
     var todayAreaReading: AreaReading? { today?.meaning.daily?.reading(for: area) }
@@ -338,6 +344,10 @@ final class AppSession {
 
     func submitQuestion() {
         guard canSubmit else { return }
+        if ReadingEngine.requiresSupport(question: question, content: library.crisis) {
+            showSupport()
+            return
+        }
         question = question.trimmingCharacters(in: .whitespacesAndNewlines)
         if !hasSpreadDraft { picks = [] }
         pendingReading = nil
@@ -346,6 +356,31 @@ final class AppSession {
         draftIsPicking = true
         persistSpreadDraft()
         screen = .pick
+    }
+
+    private func showSupport() {
+        // Stop autosaving before clearing memory; never echo or log the question.
+        hasDraft = false
+        hasSpreadDraft = false
+        question = ""
+        picks = []
+        pendingReading = nil
+        draftSaveFailed = false
+        failedDraftSaveOperation = nil
+        screen = .support
+        removeCrisisDrafts()
+    }
+
+    func removeCrisisDrafts() {
+        do {
+            try store.discardDrafts()
+            crisisRemovalFailed = false
+        } catch { crisisRemovalFailed = true }
+    }
+
+    func leaveSupport() {
+        guard !crisisRemovalFailed else { return }
+        goToToday()
     }
 
     func pickCard() {
@@ -437,7 +472,7 @@ enum AppLaunch {
                 return TarotCard(id: $0.id, name: "Revised \($0.name)", arcana: $0.arcana, suit: $0.suit, rank: $0.rank,
                                  upright: upright, reversed: reversed)
             }, questions: QuestionContent(career: library.questions.career, relationship: library.questions.relationship,
-                                           social: library.questions.social, reflections: ["A revised reflection?"]))
+                                           social: library.questions.social, reflections: ["A revised reflection?"]), crisis: library.crisis)
         }
         #endif
         let store = try DrawStore(configuration: modelConfiguration)
@@ -463,6 +498,7 @@ enum AppLaunch {
         store.failsNextSpreadSave = configuration.spreadSaveFailure
         store.failsNextReadingUpdate = configuration.readingUpdateFailure
         store.failsNextReadingDelete = configuration.readingDeleteFailure
+        store.failsNextDraftDiscard = configuration.crisisDiscardFailure
         if configuration.earlierSnapshot {
             let draw = ReadingEngine.dailyDraw(seed: seed, dateKey: ReadingEngine.dateKey(for: clock.now, timeZone: clock.timeZone),
                                               position: 3, library: library)

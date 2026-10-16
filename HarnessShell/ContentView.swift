@@ -32,6 +32,8 @@ struct ContentView: View {
             case .pick:
                 ThreeCardPickScreen(session: session, animationsEnabled: animationsEnabled,
                                     holdShuffle: holdShuffle, testMode: testMode).id("pick")
+            case .support:
+                SupportScreen(session: session).id("support")
             case .reading(let reading):
                 QuestionReadingScreen(reading: reading, session: session).id("reading-\(reading.id)")
             }

@@ -201,7 +201,7 @@ final class ReadingEngineTests: XCTestCase {
         return CardLibrary(version: 1, editorialStatus: "synthetic-test", cards: (0..<78).map {
             TarotCard(id: "card-\($0)", name: "Synthetic card \($0)", arcana: template.arcana,
                       suit: nil, rank: $0, upright: template.upright, reversed: template.reversed)
-        }, questions: source.questions)
+        }, questions: source.questions, crisis: source.crisis)
     }
 
     private func past(_ card: Int, on date: String, in library: CardLibrary) -> DailyDraw {
@@ -683,5 +683,57 @@ struct AskComposerRulesTests {
         let neutral = try ReadingEngine.compose(id: UUID(), createdAt: Date(), area: .relationship,
             question: "What matters?", picks: picks, library: library)
         #expect(neutral.connectingPassage == content.lens)
+    }
+}
+
+struct CrisisRulesTests {
+    @Test(arguments: [
+        "I want to kill myself", "I want to end my life", "I do not want to live",
+        "I DON’T WANT TO LIVE", "I'm thinking about self-harm", "I feel suicidal",
+        "I might hurt myself", "I cannot keep myself safe", "I can't cope anymore",
+        "My partner is hitting me", "Someone is abusing me", "I'm afraid of my partner",
+        "I am not safe", "I'm in danger", "I want to END,   MY\nLIFE.",
+        "My partner is threatening to kill me"
+    ])
+    func syntheticDistressStopsReading(question: String) throws {
+        let library = try CardLibrary.load()
+        #expect(ReadingEngine.requiresSupport(question: question, content: library.crisis))
+        let picks = zip(QuestionPosition.allCases, library.cards.prefix(3)).map {
+            SpreadPick(position: $0, card: $1, orientation: .upright)
+        }
+        #expect(throws: (any Error).self) {
+            try ReadingEngine.compose(id: UUID(), createdAt: Date(timeIntervalSince1970: 0), area: .social,
+                                      question: question, picks: picks, library: library)
+        }
+    }
+
+    @Test(arguments: [
+        "What should I focus on at work?", "How can I connect with my partner?",
+        "I am anxious about a presentation", "How can I support a friend?",
+        "How can I end my lifelong habit of rushing?", "What skill myself and my team could practise?",
+        "How do I cope with a difficult week?", "What should I notice about this relationship?",
+        "Where is this going?", "How can I ask for a promotion?", "", "   "
+    ])
+    func ordinaryQuestionsPass(question: String) throws {
+        #expect(!ReadingEngine.requiresSupport(question: question, content: try CardLibrary.load().crisis))
+    }
+
+    @Test func suggestionsPassAndIncompleteSafetyContentIsRejected() throws {
+        let library = try CardLibrary.load()
+        #expect(library.crisis.editorialStatus.contains("PLACEHOLDER"))
+        #expect(library.crisis.editorialStatus.contains("Jackie's sign-off"))
+        for area in ReadingArea.allCases {
+            for question in library.questions.content(for: area).suggestions {
+                #expect(!ReadingEngine.requiresSupport(question: question, content: library.crisis))
+            }
+        }
+        var json = try #require(JSONSerialization.jsonObject(with: JSONEncoder().encode(library)) as? [String: Any])
+        var crisis = try #require(json["crisis"] as? [String: Any])
+        for patterns in [[], ["---"]] as [[String]] {
+            crisis["patterns"] = patterns
+            json["crisis"] = crisis
+            let invalid = try JSONSerialization.data(withJSONObject: json)
+            #expect(throws: (any Error).self) { try CardLibrary.decode(invalid) }
+        }
     }
 }

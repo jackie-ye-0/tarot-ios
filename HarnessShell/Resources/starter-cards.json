@@ -1,5 +1,5 @@
 {
-  "version": 3,
+  "version": 4,
   "editorialStatus": "Original first-draft content. Requires Jackie's editorial review before release to real users.",
   "cards": [
     {
@@ -457,5 +457,65 @@
       "What are you noticing that you had not made room for before?",
       "What would a kinder next step look like?"
     ]
+  },
+  "crisis": {
+    "editorialStatus": "PLACEHOLDER: patterns, support wording and provisional Australian service region require Jackie's sign-off before release to real users. This bounded phrase list is not a clinical assessment and may miss distress or match benign contexts. Official contact details checked 16 October 2026: https://www.lifeline.org.au/get-help/national-services/lifeline-crisis-support and https://1800respect.org.au/ .",
+    "region": "Support in Australia",
+    "patterns": [
+      "kill myself",
+      "end my life",
+      "take my own life",
+      "want to die",
+      "don't want to live",
+      "do not want to live",
+      "hurt myself",
+      "harm myself",
+      "self harm",
+      "suicidal",
+      "can't keep myself safe",
+      "cannot keep myself safe",
+      "can't go on",
+      "cannot go on",
+      "can't cope anymore",
+      "cannot cope anymore",
+      "being abused",
+      "abusing me",
+      "hurting me",
+      "hitting me",
+      "threatened to kill me",
+      "threatening to kill me",
+      "afraid of my partner",
+      "scared of my partner",
+      "I'm not safe",
+      "I am not safe",
+      "I'm in danger",
+      "I am in danger"
+    ],
+    "title": "You deserve support",
+    "introduction": "A card reading cannot help with this. You can reach out to someone who can support you now.",
+    "resources": [
+      {
+        "id": "emergency",
+        "title": "Immediate danger",
+        "contact": "Call 000",
+        "detail": "If you or someone else is in immediate danger, contact emergency services."
+      },
+      {
+        "id": "lifeline",
+        "title": "Lifeline",
+        "contact": "Call 13 11 14",
+        "detail": "Crisis support, any time of day or night."
+      },
+      {
+        "id": "respect",
+        "title": "1800RESPECT",
+        "contact": "Call 1800 737 732",
+        "detail": "Support for domestic, family or sexual violence, any time of day or night."
+      }
+    ],
+    "outsideRegion": "Outside Australia, contact your local emergency number or crisis support service.",
+    "returnTitle": "Back to Today",
+    "removalFailure": "Your saved draft could not be removed. Check the free space on your phone, then try again.",
+    "retryTitle": "Try removing again"
   }
 }

@@ -37,6 +37,47 @@ struct QuestionEdit: Equatable {
     }
 }
 
+/// Bundled editorial placeholders, including the provisional resource region.
+struct CrisisContent: Codable {
+    struct Resource: Codable, Identifiable {
+        let id: String
+        let title: String
+        let contact: String
+        let detail: String
+    }
+
+    let editorialStatus: String
+    let region: String
+    let patterns: [String]
+    let title: String
+    let introduction: String
+    let resources: [Resource]
+    let outsideRegion: String
+    let returnTitle: String
+    let removalFailure: String
+    let retryTitle: String
+
+    var isComplete: Bool {
+        [editorialStatus, region, title, introduction, outsideRegion, returnTitle, removalFailure, retryTitle]
+            .allSatisfy { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+            && !patterns.isEmpty && patterns.allSatisfy { !Self.normalised($0).isEmpty }
+            && !resources.isEmpty && Set(resources.map(\.id)).count == resources.count
+            && resources.allSatisfy { resource in
+                [resource.id, resource.title, resource.contact, resource.detail]
+                    .allSatisfy { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+            }
+    }
+
+    // Apostrophes are ignored; punctuation and whitespace separate whole words.
+    static func normalised(_ text: String) -> String {
+        let folded = text.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: Locale(identifier: "en_US_POSIX"))
+        let words = folded.unicodeScalars.filter { $0 != "'" && $0 != "’" }.map {
+            CharacterSet.alphanumerics.contains($0) ? String($0) : " "
+        }.joined()
+        return words.split(whereSeparator: \.isWhitespace).joined(separator: " ")
+    }
+}
+
 enum RelationshipStatus: String, Codable, CaseIterable, Identifiable {
     case single, inRelationship, complicated, preferNotToSay
     var id: String { rawValue }
@@ -206,6 +247,15 @@ struct QuestionReading: Codable, Equatable, Identifiable {
 }
 
 extension ReadingEngine {
+    /// A bounded phrase check, not a clinical assessment. Editorial review owns coverage.
+    static func requiresSupport(question: String, content: CrisisContent) -> Bool {
+        let questionWords = " " + CrisisContent.normalised(question) + " "
+        return content.patterns.contains { pattern in
+            let words = CrisisContent.normalised(pattern)
+            return !words.isEmpty && questionWords.contains(" " + words + " ")
+        }
+    }
+
     static func canSubmit(question: String) -> Bool {
         question.count <= QuestionEdit.limit && !question.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
@@ -226,7 +276,7 @@ extension ReadingEngine {
     static func compose(id: UUID, createdAt: Date, area: ReadingArea, question: String,
                         picks: [SpreadPick], library: CardLibrary,
                         relationshipStatus: RelationshipStatus? = nil) throws -> QuestionReading {
-        guard canSubmit(question: question), picks.map(\.position) == QuestionPosition.allCases,
+        guard canSubmit(question: question), !requiresSupport(question: question, content: library.crisis), picks.map(\.position) == QuestionPosition.allCases,
               Set(picks.map { $0.card.id }).count == 3,
               !library.questions.reflections.isEmpty else { throw CocoaError(.coderInvalidValue) }
         let sections = try picks.map { pick in

@@ -2239,4 +2239,131 @@ final class HarnessShellUITests: XCTestCase {
         app.buttons["read-spread"].tap()
         XCTAssertTrue(app.staticTexts["reading-saved"].waitForExistence(timeout: 5))
     }
+
+    private func enterCrisisQuestion(_ app: XCUIApplication) {
+        showQuestionField(app)
+        let field = app.descendants(matching: .any)["question-field"].firstMatch
+        field.tap()
+        // The cursor can be before existing words; keep the synthetic phrase bounded.
+        field.typeText(" I cannot keep myself safe. ")
+        XCTAssertTrue((field.value as? String)?.contains("I cannot keep myself safe.") == true)
+        app.keyboards.buttons["Done"].tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
+        scrollTo(app.buttons["submit-question"], in: app)
+        app.buttons["submit-question"].tap()
+        XCTAssertTrue(app.staticTexts["support-title"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["draw-card-3"].exists)
+        XCTAssertFalse(app.staticTexts["spread-question"].exists)
+        XCTAssertFalse(app.staticTexts["reading-saved"].exists)
+        XCTAssertFalse(app.buttons["tab-ask"].exists)
+    }
+
+    func testCrisisSupportClearsDraftWithoutDrawingOrSavingAndSurvivesRelaunch() throws {
+        let app = app(extra: ["--test-random-indices", "0,0,1,1,2,1,3,1", "--test-store-id", UUID().uuidString], memory: false, audit: true)
+        reachAsk(app)
+        app.buttons["area-career"].tap()
+        app.buttons["ask-question-entry"].tap()
+        enterCrisisQuestion(app)
+        try auditAndCapture(app, "12-support", expecting: app.staticTexts["support-title"], app.buttons["support-today"])
+        for (identifier, expected) in [
+            ("support-region", "Support in Australia"),
+            ("support-emergency-contact", "Call 000"),
+            ("support-lifeline-contact", "Call 13 11 14"),
+            ("support-respect-contact", "Call 1800 737 732")
+        ] {
+            let element = app.staticTexts[identifier]
+            scrollTo(element, in: app)
+            assertVisible(element, in: app, abovePinnedFooter: true)
+            XCTAssertEqual(element.label, expected)
+        }
+        scrollTo(app.staticTexts["support-outside-region"], in: app)
+        try auditAndCapture(app, "12-support--bottom", expecting: app.staticTexts["support-outside-region"])
+        app.buttons["support-today"].tap()
+        XCTAssertTrue(app.staticTexts["today-title"].waitForExistence(timeout: 5))
+        app.buttons["tab-ask"].tap()
+        XCTAssertFalse(app.buttons["latest-area-reading"].exists)
+        app.buttons["ask-question-entry"].tap()
+        XCTAssertEqual(app.staticTexts["question-count"].label, "0 of 300 characters")
+        app.buttons["suggestion-0"].tap()
+        app.buttons["submit-question"].tap()
+        XCTAssertEqual(app.staticTexts["spread-progress"].label, "Card 1 of 3")
+        app.buttons["draw-card-3"].tap()
+        // The same process still uses the first random pair: the crisis path drew nothing.
+        XCTAssertEqual(app.descendants(matching: .any)["spread-slot-situation"].firstMatch.label, "Situation, The Star, Upright")
+        app.buttons["go-back"].tap()
+        enterCrisisQuestion(app)
+        // Relaunch directly from support before another composer can overwrite a stale draft.
+        app.terminate()
+        app.launchArguments.append("--test-open-saved-reading")
+        app.launch()
+        XCTAssertTrue(app.staticTexts["today-title"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.staticTexts["reading-saved"].exists)
+        app.buttons["tab-ask"].tap()
+        for area in ["career", "social", "relationship"] {
+            app.buttons["area-\(area)"].tap()
+            XCTAssertFalse(app.buttons["latest-area-reading"].exists)
+        }
+        app.buttons["ask-question-entry"].tap()
+        XCTAssertEqual(app.staticTexts["question-count"].label, "0 of 300 characters")
+    }
+
+    func testCrisisAfterEditingPickedSpreadKeepsSupportDuringRemovalFailureAndRetriesOnRelaunch() throws {
+        let app = app(extra: fixedSpread + ["--test-store-id", UUID().uuidString, "--test-crisis-discard-failure"], memory: false, audit: true)
+        reachAsk(app)
+        app.buttons["suggestion-0"].tap()
+        app.buttons["submit-question"].tap()
+        chooseSpread(app)
+        app.buttons["go-back"].tap()
+        enterCrisisQuestion(app)
+        XCTAssertFalse(app.buttons["support-today"].isEnabled)
+        scrollTo(app.buttons["support-retry-removal"], in: app)
+        try auditAndCapture(app, "12-support--removal-failure", expecting: app.staticTexts["support-removal-failure"], app.buttons["support-retry-removal"])
+        app.terminate()
+        app.launchArguments.removeAll { $0 == "--test-crisis-discard-failure" }
+        app.launch()
+        XCTAssertTrue(app.staticTexts["support-title"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.staticTexts["support-removal-failure"].exists)
+        app.buttons["support-today"].tap()
+        app.terminate()
+        app.launchArguments.append("--test-open-saved-reading")
+        app.launch()
+        XCTAssertTrue(app.staticTexts["today-title"].waitForExistence(timeout: 5))
+        app.buttons["tab-ask"].tap()
+        XCTAssertTrue(app.staticTexts["ask-title"].exists)
+        XCTAssertFalse(app.buttons["latest-area-reading"].exists)
+        app.buttons["ask-question-entry"].tap()
+        XCTAssertEqual(app.staticTexts["question-count"].label, "0 of 300 characters")
+        app.buttons["suggestion-0"].tap()
+        app.buttons["submit-question"].tap()
+        XCTAssertEqual(app.staticTexts["spread-progress"].label, "Card 1 of 3")
+    }
+
+    func testCrisisSupportLargestTextAndRemovalRetry() {
+        let app = app(extra: ["--test-largest-text", "--test-crisis-discard-failure"], audit: true)
+        reachAsk(app, largest: true)
+        scrollTo(app.buttons["ask-question-entry"], in: app)
+        app.buttons["ask-question-entry"].tap()
+        enterCrisisQuestion(app)
+        capture(app, "12-support--largest-text")
+        for identifier in ["introduction", "region", "emergency-title", "emergency-contact", "emergency-detail",
+                           "lifeline-title", "lifeline-contact", "lifeline-detail", "respect-title", "respect-contact",
+                           "respect-detail", "outside-region", "removal-failure"] {
+            let element = app.staticTexts["support-\(identifier)"]
+            scrollTo(element, in: app)
+            assertVisible(element, in: app)
+            capture(app, "12-support--largest-text-\(identifier)")
+        }
+        scrollTo(app.buttons["support-retry-removal"], in: app)
+        assertVisible(app.buttons["support-retry-removal"], in: app)
+        capture(app, "12-support--largest-text-removal-retry")
+        app.buttons["support-retry-removal"].tap()
+        XCTAssertFalse(app.staticTexts["support-removal-failure"].exists)
+        scrollTo(app.buttons["support-today"], in: app)
+        assertVisible(app.buttons["support-today"], in: app)
+        XCTAssertTrue(app.buttons["support-today"].isEnabled)
+        capture(app, "12-support--largest-text-bottom")
+        app.buttons["support-today"].tap()
+        XCTAssertTrue(app.staticTexts["today-title"].waitForExistence(timeout: 5))
+    }
+
 }
