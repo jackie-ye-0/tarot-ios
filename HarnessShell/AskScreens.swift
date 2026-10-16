@@ -296,12 +296,46 @@ private struct SpreadPickFan: View {
 
 struct QuestionReadingScreen: View {
     let reading: QuestionReading
-    let done: () -> Void
+    let session: AppSession
+    @Environment(\.dynamicTypeSize) private var textSize
+    @State private var editingNote = false
+    @State private var noteDraft = ""
+    @State private var confirmingDelete = false
+    @State private var operationFailed = false
+    @FocusState private var noteFocused: Bool
 
     var body: some View {
+        Group {
+            if editingNote { noteEditor }
+            else { readingContent }
+        }
+        .alert("Delete this reading?", isPresented: $confirmingDelete) {
+            Button("Cancel", role: .cancel) { }
+            Button("Delete", role: .destructive) {
+                do { try session.deleteReading(id: reading.id) }
+                catch { operationFailed = true }
+            }
+        } message: {
+            Text("This reading and its note will be removed from this phone. This cannot be undone.")
+        }
+        .alert("Your change could not be saved", isPresented: $operationFailed) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("Your saved reading is unchanged. Free some space on your phone if needed, then try the action again.")
+        }
+    }
+
+    private var readingContent: some View {
         ReadingScreenLayout {
             VStack(alignment: .leading, spacing: Design.Space.section) {
-                NavigationAction(close: true, action: done)
+                HStack {
+                    NavigationAction(close: true, action: session.goToToday)
+                    Spacer()
+                    ReadingMoreMenu(hasNote: reading.note != nil) {
+                        noteDraft = reading.note ?? ""
+                        editingNote = true
+                    } delete: { confirmingDelete = true }
+                }
                 VStack(alignment: .leading, spacing: Design.Space.small) {
                     Text("“\(reading.question)”").typeRole(Design.TypeRole.title).accessibilityIdentifier("reading-question")
                     Text("\(reading.area.label) · Saved on this phone")
@@ -317,6 +351,15 @@ struct QuestionReadingScreen: View {
                 }
                 passage(title: "Read together", text: reading.connectingPassage, identifier: "reading-lens")
                 ReflectionPanel(question: reading.reflectionQuestion)
+                responseChoices
+                if let note = reading.note {
+                    VStack(alignment: .leading, spacing: Design.Space.small) {
+                        Text("Your note").typeRole(.metadata)
+                        Text(note).typeRole(Design.TypeRole.body)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .accessibilityIdentifier("reading-note")
+                    }
+                }
             }
             .foregroundStyle(Design.Palette.ink)
             .padding(.horizontal, Design.Space.page)
@@ -324,11 +367,63 @@ struct QuestionReadingScreen: View {
             .padding(.bottom, Design.Space.section)
         } footer: {
             VStack(spacing: Design.Space.small) {
-                PrimaryAction(title: "Done", action: done).accessibilityIdentifier("reading-done")
+                PrimaryAction(title: "Done", action: session.goToToday).accessibilityIdentifier("reading-done")
                 Text("For entertainment and reflection, not a prediction")
                     .typeRole(Design.TypeRole.caption).foregroundStyle(Design.Palette.secondary)
                     .multilineTextAlignment(.center)
                     .accessibilityIdentifier("reading-disclaimer")
+            }
+        }
+    }
+
+    private var responseChoices: some View {
+        VStack(alignment: .leading, spacing: Design.Space.small) {
+            Text("Did this land?").typeRole(.metadata).accessibilityIdentifier("reading-response-prompt")
+            let layout = textSize.isAccessibilitySize
+                ? AnyLayout(VStackLayout(alignment: .leading, spacing: Design.Space.small))
+                : AnyLayout(HStackLayout(spacing: Design.Space.small))
+            layout {
+                ForEach(ReadingResponse.allCases) { response in
+                    QuestionChip(title: response.label, selected: reading.response == response) {
+                        do { try session.setReadingResponse(reading.response == response ? nil : response, id: reading.id) }
+                        catch { operationFailed = true }
+                    }
+                    .accessibilityIdentifier("reading-response-\(response.rawValue)")
+                }
+            }
+        }
+    }
+
+    private var noteEditor: some View {
+        ScrollViewReader { scroll in
+            ReadingScreenLayout {
+                VStack(alignment: .leading, spacing: Design.Space.section) {
+                    QuietAction(title: "Cancel", night: false) {
+                        noteFocused = false
+                        editingNote = false
+                    }.accessibilityIdentifier("note-cancel")
+                    Text("Your note").typeRole(Design.TypeRole.title).accessibilityIdentifier("note-title")
+                    NoteField(text: $noteDraft, focused: $noteFocused) {
+                        scroll.scrollTo("note-field", anchor: .top)
+                    }
+                    .id("note-field")
+                }
+                .foregroundStyle(Design.Palette.ink)
+                .padding(.horizontal, Design.Space.page)
+                .padding(.vertical, Design.Space.related)
+            } footer: {
+                PrimaryAction(title: "Save note") {
+                    do {
+                        try session.saveReadingNote(noteDraft, id: reading.id)
+                        noteFocused = false
+                        editingNote = false
+                    } catch { operationFailed = true }
+                }
+                .accessibilityIdentifier("note-save")
+            }
+            .scrollDismissesKeyboard(.never)
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                if noteFocused { NoteKeyboardDismissal { noteFocused = false } }
             }
         }
     }

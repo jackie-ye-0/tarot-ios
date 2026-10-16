@@ -39,6 +39,8 @@ final class DrawStore {
     var failsNextWelcomeSave = false
     var failsNextSpreadSave = false
     var failsNextDraftSave = false
+    var failsNextReadingUpdate = false
+    var failsNextReadingDelete = false
     #endif
 
     init(configuration: ModelConfiguration) throws {
@@ -162,10 +164,51 @@ final class DrawStore {
         return try context.fetch(request).first.map { try JSONDecoder().decode(QuestionReading.self, from: $0.snapshot) }
     }
 
-    func latestReadingsByArea() throws -> [ReadingArea: QuestionReading] {
+    func updateReading(id: UUID, edit: (inout QuestionReading) -> Void) throws -> QuestionReading {
+        do {
+            let request = FetchDescriptor<StoredQuestionReading>(predicate: #Predicate { $0.id == id })
+            guard let stored = try context.fetch(request).first else { throw CocoaError(.fileNoSuchFile) }
+            var reading = try JSONDecoder().decode(QuestionReading.self, from: stored.snapshot)
+            edit(&reading)
+            stored.snapshot = try JSONEncoder().encode(reading)
+            #if DEBUG
+            if failsNextReadingUpdate {
+                failsNextReadingUpdate = false
+                throw CocoaError(.fileWriteOutOfSpace)
+            }
+            #endif
+            try context.save()
+            return reading
+        } catch {
+            context.rollback()
+            throw error
+        }
+    }
+
+    func deleteReading(id: UUID) throws -> [ReadingArea: QuestionReading] {
+        do {
+            let remaining = try latestReadingsByArea(excluding: id)
+            let request = FetchDescriptor<StoredQuestionReading>(predicate: #Predicate { $0.id == id })
+            for stored in try context.fetch(request) { context.delete(stored) }
+            #if DEBUG
+            if failsNextReadingDelete {
+                failsNextReadingDelete = false
+                throw CocoaError(.fileWriteOutOfSpace)
+            }
+            #endif
+            try context.save()
+            return remaining
+        } catch {
+            context.rollback()
+            throw error
+        }
+    }
+
+    func latestReadingsByArea(excluding id: UUID? = nil) throws -> [ReadingArea: QuestionReading] {
         let request = FetchDescriptor<StoredQuestionReading>(sortBy: [SortDescriptor(\.createdAt, order: .reverse)])
         var latest: [ReadingArea: QuestionReading] = [:]
         for stored in try context.fetch(request) {
+            if stored.id == id { continue }
             let reading = try JSONDecoder().decode(QuestionReading.self, from: stored.snapshot)
             if latest[reading.area] == nil { latest[reading.area] = reading }
             if latest.count == ReadingArea.allCases.count { break }

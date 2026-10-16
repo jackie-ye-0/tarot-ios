@@ -565,6 +565,31 @@ final class ReadingEngineTests: XCTestCase {
         }
     }
 
+    func testReadingAnnotationsRoundTripWithoutChangingOriginalContent() throws {
+        let library = try CardLibrary.load()
+        let picks = zip(QuestionPosition.allCases, library.cards.prefix(3)).map {
+            SpreadPick(position: $0, card: $1, orientation: .upright)
+        }
+        let original = try ReadingEngine.compose(id: UUID(), createdAt: Date(timeIntervalSince1970: 1234),
+                                                area: .social, question: "Where can I belong?", picks: picks, library: library)
+        XCTAssertNil(original.response)
+        XCTAssertNil(original.note)
+        for response in ReadingResponse.allCases {
+            var annotated = original
+            annotated.response = response
+            annotated.note = "A thought today.\nAnother thought tomorrow."
+            let reopened = try JSONDecoder().decode(QuestionReading.self, from: JSONEncoder().encode(annotated))
+            XCTAssertEqual(reopened, annotated)
+            annotated.response = nil
+            annotated.note = nil
+            XCTAssertEqual(annotated, original)
+        }
+        var legacy = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(original)) as? [String: Any])
+        legacy.removeValue(forKey: "response")
+        legacy.removeValue(forKey: "note")
+        XCTAssertEqual(try JSONDecoder().decode(QuestionReading.self, from: JSONSerialization.data(withJSONObject: legacy)), original)
+    }
+
     func testDailySnapshotFromBeforeQuestionContentStillDecodes() throws {
         let draw = ReadingEngine.dailyDraw(seed: "old", dateKey: "2026-10-11", position: 1, library: try CardLibrary.load())
         var json = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(draw)) as? [String: Any])

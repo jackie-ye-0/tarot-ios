@@ -1182,6 +1182,7 @@ struct AreaSelector: View {
 struct QuestionChip: View {
     let title: String
     var fillsWidth = false
+    var selected = false
     let action: () -> Void
     @Environment(\.dynamicTypeSize) private var textSize
 
@@ -1195,12 +1196,93 @@ struct QuestionChip: View {
                 .padding(.horizontal, Design.Space.group)
                 .padding(.vertical, Design.Space.related)
                 .frame(minHeight: Design.Space.target)
-                .foregroundStyle(Design.Palette.ink)
-                .background(Design.Palette.surface, in: shape)
+                .foregroundStyle(selected ? Design.Palette.surface : Design.Palette.ink)
+                .background(selected ? Design.Palette.ink : Design.Palette.surface, in: shape)
                 .overlay { shape.strokeBorder(Design.Palette.controlBorder, lineWidth: 1) }
                 .contentShape(shape)
         }
         .buttonStyle(ActionPressStyle())
+        .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+}
+
+struct NoteField: View {
+    @Binding var text: String
+    @FocusState.Binding var focused: Bool
+    var onFocus: () -> Void
+
+    var body: some View {
+        TextEditor(text: $text)
+            .typeRole(.body)
+            .foregroundStyle(Design.Palette.ink)
+            .tint(Design.Palette.ink)
+            .scrollContentBackground(.hidden)
+            .focused($focused)
+            .onChange(of: focused) { _, isFocused in
+                if isFocused { onFocus() }
+            }
+            .overlay(alignment: .topLeading) {
+                if text.isEmpty {
+                    Text("Write a note").typeRole(.body)
+                        .foregroundStyle(Design.Palette.placeholder)
+                        .fixedSize(horizontal: false, vertical: true)
+                        // Match the native text editor's text-container insets.
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, Design.Space.small)
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
+                }
+            }
+            .frame(minHeight: 220)
+            .padding(Design.Space.related)
+            .background(Design.Palette.surface, in: RoundedRectangle(cornerRadius: 20))
+            .overlay { RoundedRectangle(cornerRadius: 20).strokeBorder(Design.Palette.ink, lineWidth: 1.5) }
+            .accessibilityLabel("Your note")
+            .accessibilityIdentifier("note-field")
+    }
+}
+
+struct NoteKeyboardDismissal: View {
+    let dismiss: () -> Void
+
+    var body: some View {
+        HStack {
+            Spacer()
+            Button(action: dismiss) {
+                Text("Done").typeRole(.secondary)
+                    .frame(minWidth: Design.Space.target, minHeight: Design.Space.target)
+            }
+            .buttonStyle(.bordered)
+            .buttonBorderShape(.capsule)
+            .tint(Design.Palette.ink)
+            .accessibilityIdentifier("note-keyboard-done")
+        }
+        .padding(.horizontal, Design.Space.page)
+        .padding(.vertical, Design.Space.small)
+        .background { ScreenGround() }
+    }
+}
+
+struct ReadingMoreMenu: View {
+    let hasNote: Bool
+    let editNote: () -> Void
+    let delete: () -> Void
+
+    var body: some View {
+        Menu {
+            Button(hasNote ? "Edit note" : "Add a note", systemImage: "square.and.pencil", action: editNote)
+                .accessibilityIdentifier("reading-edit-note")
+            Button("Delete", systemImage: "trash", role: .destructive, action: delete)
+                .accessibilityIdentifier("reading-delete")
+        } label: {
+            Image(systemName: "ellipsis").typeRole(.section)
+                .dynamicTypeSize(.large)
+                .foregroundStyle(Design.Palette.ink)
+                .frame(minWidth: Design.Space.target, minHeight: Design.Space.target)
+                .contentShape(Rectangle())
+        }
+        .accessibilityLabel("More")
+        .accessibilityIdentifier("reading-more")
     }
 }
 

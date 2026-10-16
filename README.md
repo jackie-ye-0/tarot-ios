@@ -68,7 +68,7 @@ This option also works with `test` and fails if any screen reference is missing 
 - [Learning notes](LEARNING.md): concepts introduced here.
 - [Verification](docs/verification.md): observed checks and pending gates.
 
-No app icon, AI/provider integration, hosted CI, device signing or App Store delivery is implemented. Completed readings, the current question or spread draft, its picks and the optional relationship preference are saved on this phone. Return through Ask to resume a spread; Back returns to the composer with the picks locked, and backing out to Ask discards the draft. Export and deletion arrive with their assigned later tickets. This development slice is not ready for valuable personal data. Real-device behaviour and VoiceOver reading order still need a manual pass.
+No app icon, AI/provider integration, hosted CI, device signing or App Store delivery is implemented. Completed readings, the current question or spread draft, its picks and the optional relationship preference are saved on this phone. Return through Ask to resume a spread; Back returns to the composer with the picks locked, and backing out to Ask discards the draft. A reading can keep an optional “Did this land?” response and an editable note. More contains note editing and confirmed deletion; these never rewrite the original reading text. History navigation, export and deletion of all data arrive with their assigned later tickets. This development slice is not ready for valuable personal data. Real-device behaviour and VoiceOver reading order still need a manual pass.
 
 ## Debug test configuration
 
@@ -79,6 +79,7 @@ Only Debug builds, with `--test-mode`, read these launch arguments. This mode al
 - `--test-memory-store` starts with an empty temporary SwiftData store on each launch.
 - `--test-welcome-completed` preloads a completed Welcome for tests of later screens. Omit it to test first open; completion otherwise persists through the real welcome action in an isolated disk store.
 - `--test-spread-save-failure` fails the first draft save, then lets the retry succeed.
+- `--test-reading-update-failure` and `--test-reading-delete-failure` fail the first annotation save or reading deletion after the in-memory mutation, exercising rollback and retry through the UI.
 - `--test-welcome-save-failure` fails the first attempt to save Welcome completion, then lets the retry succeed.
 - `--test-store-id <UUID>` uses an isolated on-device test store that survives process relaunch. UI tests use a new UUID per test; synthetic stores remain in the simulator app container until it is removed.
 - `--test-largest-text` sets the largest SwiftUI Dynamic Type size. `--test-reduce-motion` removes all animations and shows the final ritual states on first paint, without changing simulator settings. The app also honours the real system Reduce Motion setting.

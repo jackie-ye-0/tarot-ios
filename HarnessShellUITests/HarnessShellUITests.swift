@@ -1437,6 +1437,8 @@ final class HarnessShellUITests: XCTestCase {
         assertVisible(app.staticTexts["reflection-question"], in: app, abovePinnedFooter: true)
         XCTAssertTrue(app.staticTexts["reflection-question"].label.hasSuffix("?"))
         try auditAndCapture(app, "09-reading--bottom", expecting: app.staticTexts["reflection-question"], reflectionCaption, app.buttons["reading-done"])
+        scrollTo(app.buttons["reading-response-notReally"], in: app)
+        try auditAndCapture(app, "09-reading--response", expecting: app.staticTexts["reading-response-prompt"], app.buttons["reading-response-yes"])
         app.buttons["reading-done"].tap()
         XCTAssertTrue(app.staticTexts["today-title"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["tab-today"].exists)
@@ -1466,12 +1468,308 @@ final class HarnessShellUITests: XCTestCase {
         app.terminate()
         let random = app.launchArguments.firstIndex(of: "--test-random-indices")!
         app.launchArguments[random + 1] = "5,1,4,0,3,1"
-        app.launchArguments.append("--test-open-saved-reading")
+        app.launchArguments += ["--test-open-saved-reading", "--test-revised-content"]
         app.launch()
         XCTAssertTrue(app.staticTexts["reading-saved"].waitForExistence(timeout: 5))
         XCTAssertEqual(identifiers.map { app.staticTexts[$0].label }, original)
         app.buttons["close-reading"].tap()
         XCTAssertTrue(app.staticTexts["today-title"].waitForExistence(timeout: 5))
+    }
+
+    private func openReadingNote(_ app: XCUIApplication) {
+        scrollTo(app.buttons["reading-more"], in: app)
+        app.buttons["reading-more"].tap()
+        app.buttons["reading-edit-note"].tap()
+        XCTAssertTrue(app.staticTexts["note-title"].waitForExistence(timeout: 5))
+    }
+
+    private func finishNoteEditing(_ app: XCUIApplication) {
+        app.buttons["note-keyboard-done"].tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
+    }
+
+    private func captureNoteKeyboard(_ app: XCUIApplication, largest: Bool = false) {
+        let field = app.textViews["note-field"]
+        let dismiss = app.buttons["note-keyboard-done"]
+        let save = app.buttons["note-save"]
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
+        scrollTo(field, in: app)
+        waitForSettled([field, dismiss])
+        func noteViewport() -> CGRect {
+            let viewport = scrollViewport(in: app)
+            let bottom = min(viewport.maxY, dismiss.frame.minY - 8)
+            return CGRect(x: viewport.minX, y: viewport.minY, width: viewport.width,
+                          height: max(0, bottom - viewport.minY))
+        }
+        func recordGeometry(_ phase: String) {
+            let geometry = "\(phase): field=\(field.frame), save=\(save.frame), done=\(dismiss.frame), " +
+                "viewport=\(noteViewport()), gap=\(dismiss.frame.minY - save.frame.maxY)"
+            let attachment = XCTAttachment(string: geometry)
+            attachment.name = "note-keyboard-geometry-\(largest ? "largest" : "ordinary")-\(phase)"
+            attachment.lifetime = .keepAlways
+            add(attachment)
+            print("Note keyboard geometry \(geometry)")
+        }
+        assertVisible(field, in: app)
+        assertVisible(dismiss, in: app)
+        XCTAssertTrue(noteViewport().contains(field.frame))
+        XCTAssertLessThanOrEqual(field.frame.maxY + 8, dismiss.frame.minY)
+        recordGeometry("before-scroll")
+        if largest { capture(app, "09-reading--note-keyboard-largest-text") }
+        if largest {
+            // Keep both ends in the unoccluded outer gutter, above Done and the keyboard.
+            let viewport = noteViewport()
+            let origin = app.coordinate(withNormalizedOffset: .zero)
+            let start = origin.withOffset(CGVector(dx: viewport.minX + 8, dy: viewport.maxY - 24))
+            let end = origin.withOffset(CGVector(dx: viewport.minX + 8, dy: viewport.minY + 24))
+            start.press(forDuration: 0.05, thenDragTo: end)
+        } else {
+            scrollTo(save, in: app)
+        }
+        waitForSettled([save, dismiss])
+        recordGeometry("after-scroll")
+        capture(app, largest ? "09-reading--note-keyboard-largest-text-bottom" : "09-reading--note-keyboard")
+        assertVisible(save, in: app)
+        if largest { XCTAssertTrue(noteViewport().contains(save.frame)) }
+        XCTAssertLessThanOrEqual(save.frame.maxY + 8, dismiss.frame.minY)
+    }
+
+    private func makeQuestionReading(_ app: XCUIApplication, largest: Bool = false) {
+        scrollTo(app.buttons["suggestion-0"], in: app)
+        app.buttons["suggestion-0"].tap()
+        scrollTo(app.buttons["submit-question"], in: app)
+        app.buttons["submit-question"].tap()
+        chooseSpread(app, largest: largest)
+        app.buttons["read-spread"].tap()
+        XCTAssertTrue(app.staticTexts["reading-saved"].waitForExistence(timeout: 5))
+    }
+
+    func testReadingResponseNoteAndConfirmedDeletionPersist() throws {
+        let app = app(extra: fixedSpread + ["--test-store-id", UUID().uuidString], memory: false, audit: true)
+        reachAsk(app)
+        makeQuestionReading(app)
+        let originalQuestion = app.staticTexts["reading-question"].label
+        let textIDs = ["reading-question", "reading-situation", "reading-action", "reading-outcome", "reading-lens", "reflection-question"]
+        let originalText = textIDs.map { app.staticTexts[$0].label }
+        XCTAssertFalse(app.buttons["reading-delete"].exists)
+        for response in ["yes", "notReally", "notReally", "somewhat"] {
+            let button = app.buttons["reading-response-" + response]
+            scrollTo(button, in: app)
+            button.tap()
+        }
+        XCTAssertTrue(app.buttons["reading-response-somewhat"].isSelected)
+        XCTAssertFalse(app.buttons["reading-response-yes"].isSelected)
+        try auditAndCapture(app, "09-reading--response-selected", expecting: app.buttons["reading-response-somewhat"])
+        scrollTo(app.buttons["reading-more"], in: app)
+        app.buttons["reading-more"].tap()
+        waitForSettled([app.buttons["reading-edit-note"], app.buttons["reading-delete"]])
+        XCTAssertTrue(app.buttons["reading-edit-note"].exists && app.buttons["reading-edit-note"].isHittable)
+        XCTAssertTrue(app.buttons["reading-delete"].exists && app.buttons["reading-delete"].isHittable)
+        capture(app, "09-reading--more")
+        // Native menus cover the app's scroll view; audit the reading after dismissal.
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0.5)).tap()
+        XCTAssertTrue(app.buttons["reading-delete"].waitForNonExistence(timeout: 5))
+        try auditAndCapture(app, "09-reading--menu-dismissed", expecting: app.buttons["reading-more"], app.staticTexts["reading-question"])
+        scrollTo(app.buttons["reading-more"], in: app)
+        app.buttons["reading-more"].tap()
+        app.buttons["reading-edit-note"].tap()
+        try auditAndCapture(app, "09-reading--note-editor", expecting: app.staticTexts["note-title"], app.buttons["note-save"])
+        let field = app.textViews["note-field"]
+        XCTAssertTrue((field.value as? String ?? "").isEmpty)
+        field.tap()
+        field.typeText("I can take a small step.\nThere is time.")
+        captureNoteKeyboard(app)
+        finishNoteEditing(app)
+        app.buttons["note-save"].tap()
+        scrollTo(app.staticTexts["reading-note"], in: app)
+        XCTAssertEqual(app.staticTexts["reading-note"].label, "I can take a small step.\nThere is time.")
+        try auditAndCapture(app, "09-reading--note-saved", expecting: app.staticTexts["reading-note"])
+        openReadingNote(app)
+        // Tap below this short note to append; TextView.tap() targets its first character.
+        field.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
+        field.typeText(" Today.")
+        finishNoteEditing(app)
+        app.buttons["note-save"].tap()
+        openReadingNote(app)
+        field.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
+        field.typeText(" Unsaved.")
+        finishNoteEditing(app)
+        app.buttons["note-cancel"].tap()
+        app.buttons["reading-done"].tap()
+        app.buttons["tab-ask"].tap()
+        scrollTo(app.buttons["latest-area-reading"], in: app)
+        app.buttons["latest-area-reading"].tap()
+        XCTAssertEqual(textIDs.map { app.staticTexts[$0].label }, originalText)
+        scrollTo(app.staticTexts["reading-note"], in: app)
+        XCTAssertEqual(app.staticTexts["reading-note"].label, "I can take a small step.\nThere is time. Today.")
+        XCTAssertTrue(app.buttons["reading-response-somewhat"].isSelected)
+        app.terminate()
+        app.launchArguments += ["--test-open-saved-reading", "--test-revised-content"]
+        app.launch()
+        XCTAssertTrue(app.staticTexts["reading-saved"].waitForExistence(timeout: 5))
+        XCTAssertEqual(textIDs.map { app.staticTexts[$0].label }, originalText)
+        scrollTo(app.staticTexts["reading-note"], in: app)
+        XCTAssertEqual(app.staticTexts["reading-note"].label, "I can take a small step.\nThere is time. Today.")
+        XCTAssertTrue(app.buttons["reading-response-somewhat"].isSelected)
+        // Keep a second reading to prove deletion removes only the selected one.
+        app.buttons["reading-done"].tap()
+        app.buttons["tab-ask"].tap()
+        app.buttons["area-career"].tap()
+        makeQuestionReading(app)
+        XCTAssertNotEqual(app.staticTexts["reading-question"].label, originalQuestion)
+        app.buttons["reading-more"].tap()
+        app.buttons["reading-delete"].tap()
+        let confirmation = app.alerts["Delete this reading?"]
+        XCTAssertTrue(confirmation.waitForExistence(timeout: 5))
+        waitForSettled([confirmation.buttons["Cancel"], confirmation.buttons["Delete"]])
+        XCTAssertTrue(confirmation.buttons["Cancel"].exists && confirmation.buttons["Cancel"].isHittable)
+        XCTAssertTrue(confirmation.buttons["Delete"].exists && confirmation.buttons["Delete"].isHittable)
+        capture(app, "09-reading--delete-confirmation")
+        // Audit the app after the native alert stops covering its scroll view.
+        confirmation.buttons["Cancel"].tap()
+        XCTAssertTrue(confirmation.waitForNonExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["reading-saved"].exists)
+        try auditAndCapture(app, "09-reading--delete-cancelled", expecting: app.staticTexts["reading-question"], app.buttons["reading-more"])
+        scrollTo(app.buttons["reading-more"], in: app)
+        app.buttons["reading-more"].tap()
+        app.buttons["reading-delete"].tap()
+        confirmation.buttons["Delete"].tap()
+        XCTAssertTrue(app.staticTexts["today-title"].waitForExistence(timeout: 5))
+        app.buttons["tab-ask"].tap()
+        XCTAssertTrue(app.buttons["area-career"].isSelected)
+        XCTAssertFalse(app.buttons["latest-area-reading"].exists)
+        app.buttons["area-relationship"].tap()
+        scrollTo(app.buttons["latest-area-reading"], in: app)
+        XCTAssertTrue(app.buttons["latest-area-reading"].exists)
+        app.terminate()
+        app.launch()
+        XCTAssertTrue(app.staticTexts["reading-saved"].waitForExistence(timeout: 5))
+        XCTAssertEqual(app.staticTexts["reading-question"].label, originalQuestion)
+        openReadingNote(app)
+        field.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
+        let note = field.value as! String
+        field.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: note.count))
+        finishNoteEditing(app)
+        app.buttons["note-save"].tap()
+        XCTAssertFalse(app.staticTexts["reading-note"].exists)
+        scrollTo(app.buttons["reading-response-somewhat"], in: app)
+        app.buttons["reading-response-somewhat"].tap()
+        XCTAssertFalse(app.buttons["reading-response-somewhat"].isSelected)
+        app.terminate()
+        app.launch()
+        XCTAssertTrue(app.staticTexts["reading-saved"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.staticTexts["reading-note"].exists)
+        XCTAssertFalse(app.buttons["reading-response-somewhat"].isSelected)
+        app.buttons["reading-more"].tap()
+        app.buttons["reading-delete"].tap()
+        confirmation.buttons["Delete"].tap()
+        XCTAssertTrue(app.staticTexts["today-title"].waitForExistence(timeout: 5))
+        app.buttons["tab-ask"].tap()
+        XCTAssertFalse(app.buttons["latest-area-reading"].exists)
+        capture(app, "05-ask--reading-deleted")
+        scrollTo(app.buttons["skip-relationship-status"], in: app)
+        assertVisible(app.buttons["skip-relationship-status"], in: app)
+        XCTAssertFalse(app.buttons["latest-area-reading"].exists)
+        capture(app, "05-ask--reading-deleted-bottom")
+        app.terminate()
+        app.launch()
+        XCTAssertTrue(app.staticTexts["today-title"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.staticTexts["reading-saved"].exists)
+        app.buttons["tab-ask"].tap()
+        XCTAssertTrue(app.staticTexts["ask-title"].exists)
+        XCTAssertFalse(app.buttons["latest-area-reading"].exists)
+        app.buttons["area-career"].tap()
+        XCTAssertFalse(app.buttons["latest-area-reading"].exists)
+    }
+
+    func testReadingChangesRecoverFromFailedSaveAndDelete() throws {
+        for largest in [false, true] {
+            let app = app(extra: fixedSpread + ["--test-store-id", UUID().uuidString,
+                          "--test-reading-update-failure", "--test-reading-delete-failure"] + (largest ? ["--test-largest-text"] : []), memory: false)
+            reachAsk(app, largest: largest)
+            makeQuestionReading(app, largest: largest)
+            openReadingNote(app)
+            let field = app.textViews["note-field"]
+            scrollTo(field, in: app)
+            field.tap()
+            field.typeText("Keep this thought.")
+            finishNoteEditing(app)
+            scrollTo(app.buttons["note-save"], in: app)
+            app.buttons["note-save"].tap()
+            XCTAssertTrue(app.alerts["Your change could not be saved"].waitForExistence(timeout: 5))
+            capture(app, largest ? "09-reading--note-save-failure-largest-text" : "09-reading--note-save-failure")
+            app.alerts.buttons["OK"].tap()
+            XCTAssertEqual(field.value as? String, "Keep this thought.")
+            scrollTo(app.buttons["note-save"], in: app)
+            app.buttons["note-save"].tap()
+            app.buttons["reading-more"].tap()
+            app.buttons["reading-delete"].tap()
+            app.alerts.buttons["Delete"].tap()
+            XCTAssertTrue(app.alerts["Your change could not be saved"].waitForExistence(timeout: 5))
+            capture(app, largest ? "09-reading--delete-failure-largest-text" : "09-reading--delete-failure")
+            app.alerts.buttons["OK"].tap()
+            XCTAssertTrue(app.staticTexts["reading-saved"].exists)
+            app.terminate()
+            app.launchArguments.removeAll { $0 == "--test-reading-update-failure" || $0 == "--test-reading-delete-failure" }
+            app.launchArguments.append("--test-open-saved-reading")
+            app.launch()
+            XCTAssertTrue(app.staticTexts["reading-saved"].waitForExistence(timeout: 5))
+            scrollTo(app.staticTexts["reading-note"], in: app)
+            XCTAssertEqual(app.staticTexts["reading-note"].label, "Keep this thought.")
+            scrollTo(app.buttons["reading-more"], in: app)
+            app.buttons["reading-more"].tap()
+            app.buttons["reading-delete"].tap()
+            app.alerts.buttons["Delete"].tap()
+            XCTAssertTrue(app.staticTexts["today-title"].waitForExistence(timeout: 5))
+            app.terminate()
+        }
+    }
+
+    func testReadingNoteAndConfirmationAtLargestText() throws {
+        let app = app(extra: fixedSpread + ["--test-largest-text"], audit: true)
+        reachAsk(app, largest: true)
+        makeQuestionReading(app, largest: true)
+        scrollTo(app.buttons["reading-response-somewhat"], in: app)
+        app.buttons["reading-response-somewhat"].tap()
+        capture(app, "09-reading--response-largest-text")
+        openReadingNote(app)
+        capture(app, "09-reading--note-editor-largest-text")
+        let field = app.textViews["note-field"]
+        XCTAssertTrue((field.value as? String ?? "").isEmpty)
+        scrollTo(field, in: app)
+        field.tap()
+        field.typeText("One step at a time.")
+        captureNoteKeyboard(app, largest: true)
+        finishNoteEditing(app)
+        scrollTo(app.buttons["note-save"], in: app)
+        assertVisible(app.buttons["note-save"], in: app)
+        capture(app, "09-reading--note-editor-largest-text-bottom")
+        app.buttons["note-save"].tap()
+        scrollTo(app.staticTexts["reading-note"], in: app)
+        capture(app, "09-reading--note-saved-largest-text")
+        scrollTo(app.buttons["reading-done"], in: app)
+        assertVisible(app.buttons["reading-done"], in: app)
+        scrollTo(app.buttons["reading-more"], in: app)
+        app.buttons["reading-more"].tap()
+        capture(app, "09-reading--more-largest-text")
+        app.buttons["reading-delete"].tap()
+        XCTAssertTrue(app.alerts["Delete this reading?"].waitForExistence(timeout: 5))
+        capture(app, "09-reading--delete-confirmation-largest-text")
+        app.alerts.buttons["Cancel"].tap()
+        XCTAssertTrue(app.alerts.firstMatch.waitForNonExistence(timeout: 5))
+        capture(app, "09-reading--delete-cancelled-largest-text")
+        scrollTo(app.buttons["reading-more"], in: app)
+        app.buttons["reading-more"].tap()
+        app.buttons["reading-delete"].tap()
+        app.alerts.buttons["Delete"].tap()
+        XCTAssertTrue(app.staticTexts["today-title"].waitForExistence(timeout: 5))
+        app.buttons["tab-ask"].tap()
+        XCTAssertFalse(app.buttons["latest-area-reading"].exists)
+        capture(app, "05-ask--reading-deleted-largest-text")
+        scrollTo(app.buttons["skip-relationship-status"], in: app)
+        assertVisible(app.buttons["skip-relationship-status"], in: app)
+        XCTAssertFalse(app.buttons["latest-area-reading"].exists)
+        capture(app, "05-ask--reading-deleted-largest-text-bottom")
     }
 
     func testAskSuggestedQuestionOpensComposerAndSocialLens() {
