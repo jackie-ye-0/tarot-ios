@@ -25,7 +25,7 @@ History (#19) is not in this branch's base, so its conditional Settings entry an
 
 Touched screens: Today, Ask, composer, Settings, relationship-status editor, About these readings and Privacy. The existing standard and largest-text Today/Ask/composer tests remain in the full run. New captures use `11-settings` plus named variants for the three child pages, largest text, last-area hint and save error; hidden-area variants cover Today, Ask and composer. Draw, Reveal and the pick are unchanged; their existing Reduce Motion evidence remains in the full suite.
 
-The Settings child pages, hidden-area variants, last-area hint and save alert have no separate reference. Their layout, wording, selection and error behaviour are specified in design manifest §11c in the same change. The design-role guard is unchanged, and the existing bundled-font test passed for both fonts. All native accessibility audit categories remain enabled in the existing settled-screen helper; this ticket changes neither that helper nor its contrast measurement rules.
+The Settings child pages, hidden-area variants, last-area hint and save alert have no separate reference. Their layout, wording, selection and error behaviour are specified in design manifest §11e in the same change. The design-role guard is unchanged, and the existing bundled-font test passed for both fonts. All native accessibility audit categories remain enabled in the existing settled-screen helper; this ticket changes neither that helper nor its contrast measurement rules.
 
 The final run's Settings overview/bottom and About audits reported no issues. Three new-screen plain-static-text contrast flags were resolved by the existing measured-image rule, with their element crops, frames, viewport and luminance values retained in the run's audit attachments:
 
@@ -47,17 +47,17 @@ These visible differences are accepted by the author and must be included with t
 
 | Difference | Reason |
 | --- | --- |
-| Settings omits Morning reminder and Export/Delete | #21 explicitly owns the reminder switch; #22 explicitly owns export/deletion. Manifest §11c omits their rows until functional. |
+| Settings omits Morning reminder and Export/Delete | #21 explicitly owns the reminder switch; #22 explicitly owns export/deletion. Manifest §11e omits their rows until functional. |
 | Relationship status initially says “Not set” instead of the reference's “In a relationship” | Status is optional, and the capture uses a fresh synthetic store. |
 | About and Privacy have chevrons | They open child pages, following the navigable-row rule in manifest §5. |
-| Native switches have a wider track and white pill-shaped thumb rather than the reference's round cream thumb; off and disabled states use native rendering | Manifest §11c requires the native switch's semantics with the ink tint. At largest text, the switch moves below its label, inside a full-width 44-point hit area, preserving whole words and a usable target. |
+| Native switches have a wider track and white pill-shaped thumb rather than the reference's round cream thumb; off and disabled states use native rendering | Manifest §11e requires the native switch's semantics with the ink tint. At largest text, the switch moves below its label, inside a full-width 44-point hit area, preserving whole words and a usable target. |
 | Settings has real system indicators, a heavier back symbol, slightly taller rows and different title/group spacing, text metrics and grain | Native safe areas and shared 44-point navigation are required by §4. The existing type/spacing/surface roles and side guides remain consistent; §12 permits small native-rendering differences. The reference is a long artboard, whereas captures show a real scrolling viewport. |
-| Today uses a gear instead of the reference's sliders-style settings glyph | A familiar SF Symbol supplies the requested Settings action, with the explicit label and 44-point target specified in §11c. |
+| Today uses a gear instead of the reference's sliders-style settings glyph | A familiar SF Symbol supplies the requested Settings action, with the explicit label and 44-point target specified in §11e. |
 | Today retains the correct Sunday date for 11 October 2026, original card art/reading copy, literal “Sage”, darker area text and native spacing; area rows have no chevrons | The retained differences follow the snapshot content, contrast roles and non-navigable area rows documented in [Today verification](today-verification.md). The Ask entry uses the already accepted “Ask the cards” wording. |
 | Ask uses the saved card name/line, question-form suggestions and stacked status choices; no-history states have no recent-reading row | Manifest §11b requires actual saved context, optional status and these conditional states. The native selected tab uses an ink pill for contrast. |
 | Ask and Today have two tabs, and Ask has no named-person entry | History and named-person entry remain the separate #19 and #18 tickets, as specified in §11a. |
 | Composer has native header/field spacing and text wrapping, darker dashed preview slots, and a pinned standard-size or inline largest-text action | These retained differences follow safe areas, contrast roles and the explicit large-text layout. Detailed reasons for the unchanged empty/filled, keyboard and limit variants remain in [Ask/composer verification](ask-composer-verification.md). |
-| Hidden areas leave wider remaining scores/segments; largest text stacks the settings labels/value and selectors | These are the explicit visibility and accessibility behaviours in §§11–11c. The tests establish that card and scores are unchanged. |
+| Hidden areas leave wider remaining scores/segments; largest text stacks the settings labels/value and selectors | These are the explicit visibility and accessibility behaviours in §§11–11e. The tests establish that card and scores are unchanged. |
 
 The comparison page matches all in-scope main references. Its missing `04-today-first-day`, `07-about-someone` and `10-history` main captures belong to #21, #18 and #19, outside this ticket.
 
@@ -85,7 +85,7 @@ The reviewer accepted every remaining finding for these manifest-based reasons:
 
 | Findings | Accepted difference and reason |
 | --- | --- |
-| T1–T2 | Gear is explicitly required by §11c; the correct weekday is fixture content. |
+| T1–T2 | Gear is explicitly required by §11e; the correct weekday is fixture content. |
 | T3–T5 | Native card/details positioning and art retain the 5:8 Star grammar; reflective copy, literal colour name and wrapping area lines preserve the content roles. Darker area text and omitted non-functional chevrons follow the manifest. |
 | T6–T7 | Two tabs, placeholder icons and the selected ink pill follow the existing navigation rules; History is #19. The shorter “Ask the cards” entry is specified in §11a, the omitted introductory heading is redundant and the composer explains the three-card step. Midnight copy remains. |
 | T8–T9 | Hidden areas leave a full-width remaining score/line; largest text stacks content and preserves the gear artwork size, as required. |
@@ -96,7 +96,7 @@ The reviewer accepted every remaining finding for these manifest-based reasons:
 | E1–E4 | Shared native rendering differences follow C1/C3, with C2 retained; the enabled action wraps at largest text, keyboard states use the specified focus/Done flow and the limit state shows textual error feedback. |
 | S1–S3 | Native spacing/alignment and row heights preserve the three-group hierarchy; native thumb/off/disabled appearances are specified. Unset status and its large-text stacked value are valid. |
 | S4–S5 | Reminder/export/delete remain #21/#22; About and Privacy chevrons identify navigation and Settings has no tab bar. |
-| S6–S8 | Exact last-area explanation, native recoverable-save alert, whole largest-text area words and normal-size switch artwork follow §11c. |
+| S6–S8 | Exact last-area explanation, native recoverable-save alert, whole largest-text area words and normal-size switch artwork follow §11e. |
 | R1, R3 | The explicit current-value line reinforces the saved choice; multiline options and Clear retain the selected checkmark and readable layout. R2 separately adds the missing value evidence. |
 | B1–B2, P1–P2 | Quiet scrolling pages contained the required full disclaimer and then-current phone-only privacy copy; their paired largest-text captures covered that complete copy. The replacement backup-aware copy requires fresh pipeline evidence. |
 

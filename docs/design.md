@@ -171,7 +171,7 @@ The reference screens also change the flow, not only the look. Jackie adopted th
 
 | Change | PRD position |
 |---|---|
-| No birth-data or about-you forms before the first card. Birth details are not collected in the first build; relationship status is asked on Ask and edited in Settings (§11c) | Onboarding screens 2 and 3 come before the first card |
+| No birth-data or about-you forms before the first card. Birth details are not collected in the first build; relationship status is asked on Ask and edited in Settings (§11e) | Onboarding screens 2 and 3 come before the first card |
 | The area detail screen is replaced by the Ask tab | Each area opens its own detail screen from the daily summary |
 | A three-tab bar with Ask as its own tab | Ask is reached from an area row on the daily summary |
 | The morning reminder is an inline card on Today, on day one only | A full-screen reminder ask follows the reveal |
