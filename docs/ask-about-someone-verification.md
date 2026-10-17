@@ -1,6 +1,6 @@
 # Ask about someone (#18)
 
-Status: implemented; initial engine tests passed. Full local UI verification and the independent image comparison are pending.
+Status: full check `20261017T144832.549176Z-check-ea841f82` passed 89/89 tests on clean `5da5b56`, with zero failures or skips. The branch has since been rebased onto the Settings changes at `25c012b`; the final combined check and independent image comparison are pending.
 
 The Relationship-only Ask entry opens the reference's name/relation/context form. Name and one of Partner, Crush, Ex, Family, Friend or Colleague are required, and relation starts unselected. The disabled action explains what is missing; the enabled action names the person. No birth details are collected.
 
@@ -10,6 +10,7 @@ The existing draft, pick and saved-reading path now carries optional person deta
 
 - Engine tests cover all six relations, whitespace-only names, missing-field labels, named-person positions, selection without replacement, dedicated meanings in both orientations, deterministic composition, name inclusion, Relationship tagging, immutable encoding, invalid inputs, older snapshots and crisis matches in either input.
 - `testNamedPersonFormDraftPickAndSavedReadingEvidence` exercises the actual app: area-specific entry, initial form, required values, saved context, background/relaunch, locked picks, completed reading, reopening after a library change and the latest Relationship reading.
+- `testNamedPersonDraftKeepsRelationshipWhenAreaIsHidden` preserves a partially picked named-person draft through hiding Relationship and relaunch, saves it with the correct Relationship tag, and finds it again after the area is shown.
 - `testNamedPersonCrisisNoteClearsDraftAndBackDiscardsDetails` exercises note-triggered support before a pick, failed draft removal followed by relaunch/retry, no saved reading, and clearing person details on Back to Ask.
 - `testNamedPersonLargestTextAndKeyboardEvidence` captures the form, keyboard, each relation, named-person pick, completed pick and full reading at the largest text size, with actions reachable. Pick captures disable motion using the existing Debug Reduce Motion option.
 - The standard-size screen test runs the existing strict accessibility audit on the form, Ask entry, both pick states and reading scroll stops. The existing suite continues to verify fonts, source design roles and unchanged question-reading screens.
@@ -18,7 +19,7 @@ A separate macOS command-line smoke run exercised 72 named-person compositions a
 
 ## Visual evidence
 
-The form is governed by `07-about-someone`; Ask, pick and reading retain their existing references. Manifest §11e documents the named-person variants, large-text reflow, keyboard behaviour and draft states. Final run paths, inspected captures, accepted differences and independent-review dispositions will be recorded after verification.
+The form is governed by `07-about-someone`; Ask, pick and reading retain their existing references. Manifest §11f documents the named-person variants, large-text reflow, keyboard behaviour and draft states. Final run paths, inspected captures, accepted differences and independent-review dispositions will be recorded after verification.
 
 ## Limits
 

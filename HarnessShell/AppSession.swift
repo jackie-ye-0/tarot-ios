@@ -316,6 +316,8 @@ final class AppSession {
     var readingType: ReadingType { person == nil ? .question : .namedPerson }
     var spreadTitle: String { person.map { "You and \($0.displayName)" } ?? question }
     private var composerScreen: Screen { person == nil ? .composer : .aboutSomeone }
+    // Visibility changes the Ask selection, never the type or area of a named-person draft.
+    private var draftArea: ReadingArea { person == nil ? area : .relationship }
     var todayAreaReading: AreaReading? { today?.meaning.daily?.reading(for: area) }
     var todayCardName: String? { today?.card.name }
     var latestReading: QuestionReading? { latestReadings[area] }
@@ -442,7 +444,7 @@ final class AppSession {
     func persistDraft() {
         guard hasDraft else { return }
         do {
-            try store.saveDraft(QuestionDraft(area: area, question: question, person: person))
+            try store.saveDraft(QuestionDraft(area: draftArea, question: question, person: person))
             draftSaveFailed = false
             failedDraftSaveOperation = nil
         } catch {
@@ -527,7 +529,7 @@ final class AppSession {
         guard hasSpreadDraft else { return }
         pendingReading = nil
         do {
-            try store.saveSpreadDraft(SpreadDraft(area: area, question: question, picks: picks, isPicking: draftIsPicking, person: person))
+            try store.saveSpreadDraft(SpreadDraft(area: draftArea, question: question, picks: picks, isPicking: draftIsPicking, person: person))
             draftSaveFailed = false
             failedDraftSaveOperation = nil
         } catch {
@@ -590,7 +592,7 @@ final class AppSession {
         guard case .pick = screen, picks.count == 3 else { return }
         do {
             if pendingReading == nil {
-                pendingReading = try ReadingEngine.compose(id: UUID(), createdAt: clock.now, area: area,
+                pendingReading = try ReadingEngine.compose(id: UUID(), createdAt: clock.now, area: draftArea,
                                                           question: question, picks: picks, library: library,
                                                           relationshipStatus: relationshipStatus, person: person)
             }
