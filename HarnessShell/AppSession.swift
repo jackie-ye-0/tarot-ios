@@ -469,12 +469,6 @@ final class AppSession {
     #if DEBUG
     var failHistoryRead = false
 
-    func deleteLatestReadingForTest() {
-        do {
-            if let reading = try store.latestReading() { try store.deleteReading(id: reading.id) }
-        } catch { readingSaveFailed = true }
-    }
-
     func openSavedReadingForTest() throws {
         if let reading = try store.latestReading() { screen = .reading(reading) }
     }

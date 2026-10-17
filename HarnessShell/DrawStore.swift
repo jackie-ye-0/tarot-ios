@@ -172,15 +172,6 @@ final class DrawStore {
         } catch { throw StoreError.read(error) }
     }
 
-    func deleteReading(id: UUID) throws {
-        do {
-            let request = FetchDescriptor<StoredQuestionReading>(predicate: #Predicate { $0.id == id })
-            for stored in try context.fetch(request) { context.delete(stored) }
-            try context.save()
-            historyRevision += 1
-        } catch { context.rollback(); throw StoreError.save(error) }
-    }
-
     func latestReading() throws -> QuestionReading? {
         var request = FetchDescriptor<StoredQuestionReading>(sortBy: [SortDescriptor(\.createdAt, order: .reverse)])
         request.fetchLimit = 1
@@ -201,6 +192,7 @@ final class DrawStore {
             }
             #endif
             try context.save()
+            historyRevision += 1
             return reading
         } catch {
             context.rollback()
@@ -220,6 +212,7 @@ final class DrawStore {
             }
             #endif
             try context.save()
+            historyRevision += 1
             return remaining
         } catch {
             context.rollback()

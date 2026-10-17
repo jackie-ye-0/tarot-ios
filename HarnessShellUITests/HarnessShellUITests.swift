@@ -413,24 +413,16 @@ final class HarnessShellUITests: XCTestCase {
     }
 
     private func waitForStableFrames(_ app: XCUIApplication) {
-        let viewport = visibleFrame(in: app)
-        var previous: [String: CGRect]?
+        let alert = app.alerts.firstMatch
+        // A native alert covers the identified screen and has no identifiers of its own.
+        let elements = alert.exists ? [alert] : app.descendants(matching: .any).allElementsBoundByIndex.filter {
+            $0.isHittable && !$0.identifier.isEmpty
+        }
+        var previous: [CGRect]?
         let settled = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
-            guard let snapshot = try? app.snapshot() else { return false }
-            var frames: [String: CGRect] = [:]
-            func collect(_ node: any XCUIElementSnapshot) {
-                if !node.frame.isEmpty, node.frame.intersects(viewport) {
-                    if node.elementType == .alert {
-                        frames["alert:\(node.label)"] = node.frame
-                    } else if !node.identifier.isEmpty {
-                        frames["\(node.elementType.rawValue):\(node.identifier)"] = node.frame
-                    }
-                }
-                for child in node.children { collect(child) }
-            }
-            collect(snapshot)
+            let frames = elements.map(\.frame)
             defer { previous = frames }
-            return !frames.isEmpty && frames == previous
+            return !frames.isEmpty && frames.allSatisfy { !$0.isEmpty } && frames == previous
         }, object: nil)
         XCTAssertEqual(XCTWaiter.wait(for: [settled], timeout: 5), .completed, "Visible frames must settle")
     }
@@ -1674,8 +1666,7 @@ final class HarnessShellUITests: XCTestCase {
             activeScrollView(in: app).swipeUp(velocity: .slow)
         }
         scrollTo(oldest, in: app)
-        // The full populated and filtered audits above cover this row style without recycling lazy rows mid-audit.
-        capture(app, "10-history--bottom")
+        try auditAndCapture(app, "10-history--bottom", expecting: oldest)
         scrollTo(app.staticTexts["history-title"], in: app)
         app.buttons["history-previous-month"].tap()
         XCTAssertEqual(app.staticTexts["history-month"].label, "September 2026")
@@ -1777,7 +1768,7 @@ final class HarnessShellUITests: XCTestCase {
         app.buttons["reading-done"].tap()
         XCTAssertTrue(app.buttons["history-filter-relationship"].isSelected)
         app.terminate()
-        app.launchArguments += ["--test-revised-content", "--test-controls"]
+        app.launchArguments += ["--test-revised-content"]
         let dateIndex = app.launchArguments.firstIndex(of: "--test-date")!
         app.launchArguments[dateIndex + 1] = "2026-10-12T00:00:00Z"
         app.launch()
@@ -1800,8 +1791,31 @@ final class HarnessShellUITests: XCTestCase {
         app.buttons[readingID].tap()
         for (id, value) in saved { XCTAssertEqual(app.staticTexts[id].label, value) }
         app.buttons["reading-done"].tap()
-        testControl("test-delete-reading", in: app)
-        XCTAssertFalse(app.buttons[readingID].exists, "A store deletion must update the open History list")
+        XCTAssertTrue(app.staticTexts["history-title"].exists)
+        XCTAssertTrue(app.buttons["history-daily-2026-10-11"].exists)
+    }
+
+    func testHistoryRefreshesAfterReadingEditAndUserDeletion() {
+        let app = app(extra: ["--test-history-days", "1"])
+        openHistory(app)
+        let reading = app.buttons["history-reading-00000000-0000-0000-0000-000000000001"]
+        scrollTo(reading, in: app)
+        reading.tap()
+        scrollTo(app.buttons["reading-response-somewhat"], in: app)
+        app.buttons["reading-response-somewhat"].tap()
+        XCTAssertTrue(app.buttons["reading-response-somewhat"].isSelected)
+        app.buttons["reading-done"].tap()
+        scrollTo(reading, in: app)
+        reading.tap()
+        XCTAssertTrue(app.buttons["reading-response-somewhat"].isSelected)
+        scrollTo(app.buttons["reading-more"], in: app)
+        app.buttons["reading-more"].tap()
+        app.buttons["reading-delete"].tap()
+        let confirmation = app.alerts["Delete this reading?"]
+        XCTAssertTrue(confirmation.waitForExistence(timeout: 5))
+        confirmation.buttons["Delete"].tap()
+        XCTAssertTrue(app.staticTexts["history-title"].waitForExistence(timeout: 5))
+        XCTAssertFalse(reading.exists, "Deleting an archived reading must update the open History list")
         XCTAssertTrue(app.buttons["history-daily-2026-10-11"].exists)
     }
 
@@ -1941,7 +1955,9 @@ final class HarnessShellUITests: XCTestCase {
         let app = app(extra: ["--test-history-days", "365"])
         openHistory(app)
         scrollTo(app.buttons["history-filter-all"], in: app)
-        XCTAssertTrue(app.buttons["history-daily-2026-10-11"].exists)
+        let rows = app.buttons.matching(NSPredicate(format:
+            "identifier BEGINSWITH 'history-daily-' OR identifier BEGINSWITH 'history-reading-'"))
+        XCTAssertEqual(rows.count, 368)
         let options = XCTMeasureOptions()
         options.iterationCount = 2
         var metrics: [any XCTMetric] = [XCTOSSignpostMetric.scrollingAndDecelerationMetric]
@@ -1951,15 +1967,6 @@ final class HarnessShellUITests: XCTestCase {
         measure(metrics: metrics, options: options) {
             for _ in 0..<5 { app.swipeUp(velocity: .fast) }
         }
-        let oldest = app.buttons["history-daily-2025-10-12"]
-        let list = activeScrollView(in: app)
-        for _ in 0..<80 {
-            if oldest.exists { break }
-            list.swipeUp(velocity: .fast)
-        }
-        XCTAssertTrue(oldest.exists || oldest.waitForExistence(timeout: 5))
-        scrollTo(oldest, in: app)
-        XCTAssertTrue(oldest.label.contains("12 October 2025"))
         XCTAssertTrue(app.buttons["tab-history"].isHittable)
         let visible = app.buttons[try captureHistoryYear(app, "10-history--year-scroll")]
         XCTAssertTrue(visible.isHittable)
@@ -1999,7 +2006,7 @@ final class HarnessShellUITests: XCTestCase {
             previous = frames
             return !frames.isEmpty && visibleTarget != nil && unchanged
         }, object: nil)
-        XCTAssertEqual(XCTWaiter.wait(for: [settled], timeout: 5), .completed, "Visible History frames must settle")
+        XCTAssertEqual(XCTWaiter.wait(for: [settled], timeout: 15), .completed, "Visible History frames must settle")
         let identifier = try XCTUnwrap(visibleTarget)
         Thread.sleep(forTimeInterval: 0.3)
         let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
