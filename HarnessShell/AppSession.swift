@@ -108,7 +108,7 @@ final class SessionClock {
 @MainActor @Observable
 final class AppSession {
     enum Screen {
-        case welcome, draw, reveal(DailyDraw), today(DailyDraw), ask, composer, pick, reading(QuestionReading), support, history
+        case welcome, draw, reveal(DailyDraw), today(DailyDraw), ask, composer, aboutSomeone, pick, reading(QuestionReading), support, history
     }
 
     private enum DraftSaveOperation {
@@ -139,6 +139,7 @@ final class AppSession {
     private(set) var hiddenAreas: Set<ReadingArea> = []
     var area: ReadingArea = .relationship { didSet { persistDraft(); persistSpreadDraft() } }
     var question = "" { didSet { persistDraft(); persistSpreadDraft() } }
+    var person: NamedPerson? { didSet { persistDraft(); persistSpreadDraft() } }
     private(set) var hasDraft = false
     private(set) var relationshipStatus: RelationshipStatus?
     private(set) var relationshipStatusAsked = false
@@ -178,6 +179,7 @@ final class AppSession {
         if let draft = try store.spreadDraft() {
             area = draft.area
             question = draft.question
+            person = draft.person
             picks = draft.picks
             draftIsPicking = draft.isPicking
             hasSpreadDraft = true
@@ -186,7 +188,7 @@ final class AppSession {
         hiddenAreas = try store.hiddenAreas()
         if hiddenAreas.contains(area), let first = visibleAreas.first { area = first }
         // An interrupted removal must never restore a matching draft into the pick.
-        if ReadingEngine.requiresSupport(question: question, content: library.crisis) { showSupport() }
+        if ReadingEngine.requiresSupport(question: question, note: person?.note ?? "", content: library.crisis) { showSupport() }
     }
 
     /// Welcome until it is completed, then Today once today's card is drawn, otherwise Draw.
@@ -201,6 +203,7 @@ final class AppSession {
         if !hasSpreadDraft, let draft = try store.questionDraft() {
             area = draft.area
             question = draft.question
+            person = draft.person
             hasDraft = true
         }
         return today.map(Screen.today) ?? .draw
@@ -309,7 +312,10 @@ final class AppSession {
 
     var crisisContent: CrisisContent { library.crisis }
     var suggestions: [String] { library.questions.content(for: area).suggestions }
-    var canSubmit: Bool { ReadingEngine.canSubmit(question: question) }
+    var canSubmit: Bool { person.map(\.isComplete) ?? ReadingEngine.canSubmit(question: question) }
+    var readingType: ReadingType { person == nil ? .question : .namedPerson }
+    var spreadTitle: String { person.map { "You and \($0.displayName)" } ?? question }
+    private var composerScreen: Screen { person == nil ? .composer : .aboutSomeone }
     var todayAreaReading: AreaReading? { today?.meaning.daily?.reading(for: area) }
     var todayCardName: String? { today?.card.name }
     var latestReading: QuestionReading? { latestReadings[area] }
@@ -436,7 +442,7 @@ final class AppSession {
     func persistDraft() {
         guard hasDraft else { return }
         do {
-            try store.saveDraft(QuestionDraft(area: area, question: question))
+            try store.saveDraft(QuestionDraft(area: area, question: question, person: person))
             draftSaveFailed = false
             failedDraftSaveOperation = nil
         } catch {
@@ -453,6 +459,7 @@ final class AppSession {
             draftSaveFailed = false
             failedDraftSaveOperation = nil
             question = ""
+            person = nil
             picks = []
             pendingReading = nil
             screen = .ask
@@ -487,6 +494,7 @@ final class AppSession {
     }
 
     func openComposer(question: String? = nil) {
+        if person != nil { self.question = ""; person = nil }
         hasDraft = true
         if let question { self.question = question }
         else { persistDraft() }
@@ -495,21 +503,31 @@ final class AppSession {
         screen = .composer
     }
 
+    func openAboutSomeone() {
+        guard area == .relationship else { return }
+        if person == nil { question = ""; person = NamedPerson() }
+        hasDraft = true
+        picks = []
+        pendingReading = nil
+        persistDraft()
+        screen = .aboutSomeone
+    }
+
     func openAsk() {
-        screen = hasSpreadDraft ? (draftIsPicking ? .pick : .composer) : .ask
+        screen = hasSpreadDraft ? (draftIsPicking ? .pick : composerScreen) : .ask
     }
 
     func backToComposer() {
         draftIsPicking = false
         persistSpreadDraft()
-        screen = .composer
+        screen = composerScreen
     }
 
     private func persistSpreadDraft() {
         guard hasSpreadDraft else { return }
         pendingReading = nil
         do {
-            try store.saveSpreadDraft(SpreadDraft(area: area, question: question, picks: picks, isPicking: draftIsPicking))
+            try store.saveSpreadDraft(SpreadDraft(area: area, question: question, picks: picks, isPicking: draftIsPicking, person: person))
             draftSaveFailed = false
             failedDraftSaveOperation = nil
         } catch {
@@ -520,11 +538,12 @@ final class AppSession {
 
     func submitQuestion() {
         guard canSubmit else { return }
-        if ReadingEngine.requiresSupport(question: question, content: library.crisis) {
+        if ReadingEngine.requiresSupport(question: spreadTitle, note: person?.note ?? "", content: library.crisis) {
             showSupport()
             return
         }
-        question = question.trimmingCharacters(in: .whitespacesAndNewlines)
+        question = spreadTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let name = person?.displayName { person?.name = name }
         if !hasSpreadDraft { picks = [] }
         pendingReading = nil
         hasSpreadDraft = true
@@ -539,6 +558,7 @@ final class AppSession {
         hasDraft = false
         hasSpreadDraft = false
         question = ""
+        person = nil
         picks = []
         pendingReading = nil
         draftSaveFailed = false
@@ -561,7 +581,7 @@ final class AppSession {
 
     func pickCard() {
         guard case .pick = screen, !draftSaveFailed,
-              let pick = ReadingEngine.nextPick(after: picks, library: library, randomIndex: randomIndex) else { return }
+              let pick = ReadingEngine.nextPick(after: picks, library: library, type: readingType, randomIndex: randomIndex) else { return }
         picks.append(pick)
         persistSpreadDraft()
     }
@@ -572,7 +592,7 @@ final class AppSession {
             if pendingReading == nil {
                 pendingReading = try ReadingEngine.compose(id: UUID(), createdAt: clock.now, area: area,
                                                           question: question, picks: picks, library: library,
-                                                          relationshipStatus: relationshipStatus)
+                                                          relationshipStatus: relationshipStatus, person: person)
             }
             guard let pendingReading else { return }
             let saved = try store.save(pendingReading)
@@ -581,6 +601,7 @@ final class AppSession {
             hasSpreadDraft = false
             draftSaveFailed = false
             question = ""
+            person = nil
             screen = .reading(saved)
         } catch { readingSaveFailed = true }
     }
@@ -644,8 +665,10 @@ enum AppLaunch {
                                   cards: library.cards.map {
                 var upright = meaning
                 upright.questionPositions = QuestionPositionMeanings(situation: "Revised situation.", action: "Revised action.", outcome: "Revised outcome.")
+                upright.namedPersonPositions = NamedPersonPositionMeanings(you: "Revised you.", them: "Revised them.", connection: "Revised connection.")
                 var reversed = meaning
                 reversed.questionPositions = upright.questionPositions
+                reversed.namedPersonPositions = upright.namedPersonPositions
                 return TarotCard(id: $0.id, name: "Revised \($0.name)", arcana: $0.arcana, suit: $0.suit, rank: $0.rank,
                                  upright: upright, reversed: reversed)
             }, questions: QuestionContent(career: library.questions.career, relationship: library.questions.relationship,

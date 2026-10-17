@@ -94,6 +94,34 @@ enum RelationshipStatus: String, Codable, CaseIterable, Identifiable {
 struct QuestionDraft: Codable {
     let area: ReadingArea
     let question: String
+    var person: NamedPerson? = nil
+}
+
+enum PersonRelation: String, Codable, CaseIterable, Identifiable {
+    case partner, crush, ex, family, friend, colleague
+    var id: String { rawValue }
+    var label: String { rawValue.capitalized }
+}
+
+struct NamedPerson: Codable, Equatable {
+    var name = ""
+    var relation: PersonRelation? = nil
+    var note = ""
+
+    var displayName: String { name.trimmingCharacters(in: .whitespacesAndNewlines) }
+    var isComplete: Bool { !displayName.isEmpty && relation != nil }
+    var actionTitle: String {
+        if displayName.isEmpty { return relation == nil ? "Add a name and who they are" : "Add a name or nickname" }
+        if relation == nil { return "Choose who they are to you" }
+        return "Draw for you and \(displayName)"
+    }
+}
+
+enum ReadingType: String, Codable {
+    case question, namedPerson
+    var positions: [QuestionPosition] {
+        self == .question ? [.situation, .action, .outcome] : [.you, .them, .connection]
+    }
 }
 
 enum ReadingArea: String, Codable, CaseIterable, Identifiable {
@@ -121,9 +149,17 @@ extension ReadingEngine {
 }
 
 enum QuestionPosition: String, Codable, CaseIterable, Identifiable {
-    case situation, action, outcome
+    case situation, action, outcome, you, them, connection
     var id: String { rawValue }
-    var label: String { rawValue.capitalized }
+    var label: String { self == .connection ? "The Connection" : rawValue.capitalized }
+    var pickPrompt: String {
+        switch self {
+        case .you: "Choose your You card"
+        case .them: "Choose your Them card"
+        case .connection: "Choose your Connection card"
+        default: "Choose your \(rawValue) card"
+        }
+    }
 }
 
 struct QuestionPositionMeanings: Codable, Equatable {
@@ -136,11 +172,31 @@ struct QuestionPositionMeanings: Codable, Equatable {
         case .situation: situation
         case .action: action
         case .outcome: outcome
+        case .you, .them, .connection: ""
         }
     }
 
     var isComplete: Bool {
-        QuestionPosition.allCases.allSatisfy { !text(for: $0).trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        ReadingType.question.positions.allSatisfy { !text(for: $0).trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+    }
+}
+
+struct NamedPersonPositionMeanings: Codable, Equatable {
+    let you: String
+    let them: String
+    let connection: String
+
+    func text(for position: QuestionPosition) -> String {
+        switch position {
+        case .you: you
+        case .them: them
+        case .connection: connection
+        case .situation, .action, .outcome: ""
+        }
+    }
+
+    var isComplete: Bool {
+        ReadingType.namedPerson.positions.allSatisfy { !text(for: $0).trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
     }
 }
 
@@ -215,11 +271,14 @@ struct SpreadDraft: Codable, Equatable {
     var question: String
     var picks: [SpreadPick]
     var isPicking: Bool
+    var person: NamedPerson? = nil
+    var type: ReadingType { person == nil ? .question : .namedPerson }
 
     func validate() throws {
-        guard picks.count <= QuestionPosition.allCases.count,
-              !isPicking || ReadingEngine.canSubmit(question: question),
-              picks.map(\.position) == Array(QuestionPosition.allCases.prefix(picks.count)),
+        guard picks.count <= type.positions.count,
+              person == nil || area == .relationship,
+              !isPicking || (person.map(\.isComplete) ?? ReadingEngine.canSubmit(question: question)),
+              picks.map(\.position) == Array(type.positions.prefix(picks.count)),
               Set(picks.map { $0.card.id }).count == picks.count else {
             throw CocoaError(.coderInvalidValue)
         }
@@ -253,13 +312,16 @@ struct QuestionReading: Codable, Equatable, Identifiable {
     let connectingPassage: String
     let reflectionQuestion: String
     let contentVersion: Int
+    var person: NamedPerson? = nil
+    var type: ReadingType { person == nil ? .question : .namedPerson }
     var response: ReadingResponse? = nil
     var note: String? = nil
 }
 
 extension ReadingEngine {
     /// A bounded phrase check, not a clinical assessment. Editorial review owns coverage.
-    static func requiresSupport(question: String, content: CrisisContent) -> Bool {
+    static func requiresSupport(question: String, note: String = "", content: CrisisContent) -> Bool {
+        if !note.isEmpty && requiresSupport(question: note, content: content) { return true }
         let questionWords = " " + CrisisContent.normalised(question) + " "
         return content.patterns.contains { pattern in
             let words = CrisisContent.normalised(pattern)
@@ -273,24 +335,37 @@ extension ReadingEngine {
 
     /// The source returns an index in 0..<upperBound; invoked only when a card is picked.
     static func nextPick(after picks: [SpreadPick], library: CardLibrary,
+                         type: ReadingType = .question,
                          randomIndex: (Int) -> Int) -> SpreadPick? {
-        guard picks.count < QuestionPosition.allCases.count else { return nil }
+        guard picks.count < type.positions.count,
+              picks.map(\.position) == Array(type.positions.prefix(picks.count)) else { return nil }
         let remaining = library.cards.filter { card in !picks.contains { $0.card.id == card.id } }
         guard !remaining.isEmpty else { return nil }
         let index = randomIndex(remaining.count)
         let orientation = randomIndex(2)
         precondition(remaining.indices.contains(index) && (0..<2).contains(orientation))
-        return SpreadPick(position: QuestionPosition.allCases[picks.count], card: remaining[index],
+        return SpreadPick(position: type.positions[picks.count], card: remaining[index],
                           orientation: orientation == 0 ? .upright : .reversed)
     }
 
     static func compose(id: UUID, createdAt: Date, area: ReadingArea, question: String,
                         picks: [SpreadPick], library: CardLibrary,
-                        relationshipStatus: RelationshipStatus? = nil) throws -> QuestionReading {
-        guard canSubmit(question: question), !requiresSupport(question: question, content: library.crisis), picks.map(\.position) == QuestionPosition.allCases,
+                        relationshipStatus: RelationshipStatus? = nil,
+                        person: NamedPerson? = nil) throws -> QuestionReading {
+        let type: ReadingType = person == nil ? .question : .namedPerson
+        guard person.map(\.isComplete) ?? canSubmit(question: question),
+              person == nil || area == .relationship,
+              !requiresSupport(question: question, note: person?.note ?? "", content: library.crisis),
+              picks.map(\.position) == type.positions,
               Set(picks.map { $0.card.id }).count == 3,
               !library.questions.reflections.isEmpty else { throw CocoaError(.coderInvalidValue) }
         let sections = try picks.map { pick in
+            if person != nil {
+                guard let meanings = pick.card.meaning(pick.orientation).namedPersonPositions, meanings.isComplete else {
+                    throw CocoaError(.coderInvalidValue)
+                }
+                return ReadingSection(position: pick.position, text: meanings.text(for: pick.position))
+            }
             guard let meanings = pick.card.meaning(pick.orientation).questionPositions, meanings.isComplete else {
                 throw CocoaError(.coderInvalidValue)
             }
@@ -305,7 +380,8 @@ extension ReadingEngine {
             ? library.questions.relationship.relationshipLenses.text(for: relationshipStatus, neutral: content.lens)
             : content.lens
         return QuestionReading(id: id, createdAt: createdAt, area: area, question: question, picks: picks,
-                               sections: sections, connectingPassage: lens,
-                               reflectionQuestion: reflection, contentVersion: library.version)
+                               sections: sections,
+                               connectingPassage: person.map { "As you reflect on your connection with \($0.displayName), notice what you each bring and what you can ask about openly. " + lens } ?? lens,
+                               reflectionQuestion: reflection, contentVersion: library.version, person: person)
     }
 }

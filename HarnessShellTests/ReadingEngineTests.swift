@@ -5,6 +5,92 @@ import UIKit
 @testable import HarnessShell
 
 final class ReadingEngineTests: XCTestCase {
+    func testNamedPersonValidationAndMissingFieldLabels() {
+        XCTAssertFalse(NamedPerson().isComplete)
+        XCTAssertEqual(NamedPerson().actionTitle, "Add a name and who they are")
+        XCTAssertEqual(NamedPerson(name: " \n", relation: .friend).actionTitle, "Add a name or nickname")
+        XCTAssertEqual(NamedPerson(name: "Sam").actionTitle, "Choose who they are to you")
+        XCTAssertEqual(PersonRelation.allCases.map(\.rawValue), ["partner", "crush", "ex", "family", "friend", "colleague"])
+        for relation in PersonRelation.allCases {
+            let person = NamedPerson(name: "  Sam  ", relation: relation)
+            XCTAssertTrue(person.isComplete)
+            XCTAssertEqual(person.actionTitle, "Draw for you and Sam")
+        }
+    }
+
+    func testNamedPersonPicksAndCompositionUseDedicatedMeaningsAndPreserveDetails() throws {
+        let library = try CardLibrary.load()
+        for card in library.cards {
+            for meaning in [card.upright, card.reversed] {
+                let positions = try XCTUnwrap(meaning.namedPersonPositions)
+                XCTAssertTrue(positions.isComplete)
+                XCTAssertEqual(Set(ReadingType.namedPerson.positions.map { positions.text(for: $0) }).count, 3)
+            }
+        }
+        var picks: [SpreadPick] = []
+        for _ in 0..<3 {
+            picks.append(try XCTUnwrap(ReadingEngine.nextPick(after: picks, library: library, type: .namedPerson, randomIndex: { _ in 1 })))
+        }
+        XCTAssertEqual(picks.map(\.position), [.you, .them, .connection])
+        XCTAssertEqual(Set(picks.map { $0.card.id }).count, 3)
+        XCTAssertNil(ReadingEngine.nextPick(after: picks, library: library, type: .namedPerson, randomIndex: { _ in XCTFail(); return 0 }))
+        let person = NamedPerson(name: "Sam", relation: .colleague, note: "How can we communicate more clearly?")
+        let id = UUID()
+        let date = Date(timeIntervalSince1970: 123)
+        let reading = try ReadingEngine.compose(id: id, createdAt: date, area: .relationship, question: "You and Sam",
+                                                picks: picks, library: library, person: person)
+        XCTAssertEqual(reading.type, .namedPerson)
+        XCTAssertEqual(reading.area, .relationship)
+        XCTAssertEqual(reading.person, person)
+        XCTAssertTrue(reading.connectingPassage.contains("Sam"))
+        XCTAssertEqual(reading.sections.map(\.text), picks.map { $0.card.meaning($0.orientation).namedPersonPositions!.text(for: $0.position) })
+        XCTAssertEqual(reading, try ReadingEngine.compose(id: id, createdAt: date, area: .relationship, question: "You and Sam",
+                                                         picks: picks, library: library, person: person))
+        XCTAssertEqual(reading, try JSONDecoder().decode(QuestionReading.self, from: JSONEncoder().encode(reading)))
+        let draft = SpreadDraft(area: .relationship, question: "You and Sam", picks: Array(picks.prefix(1)), isPicking: true, person: person)
+        XCTAssertNoThrow(try draft.validate())
+        XCTAssertEqual(draft, try JSONDecoder().decode(SpreadDraft.self, from: JSONEncoder().encode(draft)))
+        for invalid in [NamedPerson(name: "Sam"), NamedPerson(name: " \t", relation: .friend)] {
+            XCTAssertThrowsError(try ReadingEngine.compose(id: id, createdAt: date, area: .relationship, question: "You and Sam",
+                                                          picks: picks, library: library, person: invalid))
+        }
+        XCTAssertThrowsError(try ReadingEngine.compose(id: id, createdAt: date, area: .career, question: "You and Sam",
+                                                      picks: picks, library: library, person: person))
+        XCTAssertThrowsError(try ReadingEngine.compose(id: id, createdAt: date, area: .relationship, question: "You and Sam",
+                                                      picks: picks, library: library))
+    }
+
+    func testNamedPersonCrisisNoteAndQuestionBothBlockComposition() throws {
+        let library = try CardLibrary.load()
+        let picks = zip(ReadingType.namedPerson.positions, library.cards.prefix(3)).map {
+            SpreadPick(position: $0, card: $1, orientation: .upright)
+        }
+        for (question, note) in [("You and Sam", "I want to kill myself"), ("I want to kill myself", "An ordinary note")] {
+            XCTAssertTrue(ReadingEngine.requiresSupport(question: question, note: note, content: library.crisis))
+            XCTAssertThrowsError(try ReadingEngine.compose(id: UUID(), createdAt: Date(), area: .relationship, question: question,
+                                                          picks: picks, library: library,
+                                                          person: NamedPerson(name: "Sam", relation: .friend, note: note)))
+        }
+        XCTAssertFalse(ReadingEngine.requiresSupport(question: "You and Sam", note: "We disagreed about a film.", content: library.crisis))
+    }
+
+    func testNamedPersonLibraryRequiresEveryMeaningAndOlderSnapshotsStillDecode() throws {
+        let library = try CardLibrary.load()
+        var json = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(library)) as? [String: Any])
+        var cards = try XCTUnwrap(json["cards"] as? [[String: Any]])
+        var upright = try XCTUnwrap(cards[0]["upright"] as? [String: Any])
+        upright.removeValue(forKey: "namedPersonPositions")
+        cards[0]["upright"] = upright
+        json["cards"] = cards
+        XCTAssertThrowsError(try CardLibrary.decode(JSONSerialization.data(withJSONObject: json)))
+        let oldCard = try JSONDecoder().decode(TarotCard.self, from: JSONSerialization.data(withJSONObject: cards[0]))
+        XCTAssertNil(oldCard.upright.namedPersonPositions)
+        let legacyDraft = Data(#"{"area":"career","question":"What next?","picks":[],"isPicking":true}"#.utf8)
+        let restored = try JSONDecoder().decode(SpreadDraft.self, from: legacyDraft)
+        XCTAssertEqual(restored.type, .question)
+        XCTAssertNoThrow(try restored.validate())
+    }
+
     @MainActor
     func testLegacyInstallWithoutWelcomeFieldSkipsWelcome() throws {
         let directory = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString,
@@ -598,7 +684,7 @@ final class ReadingEngineTests: XCTestCase {
             for meaning in [card.upright, card.reversed] {
                 let positions = try XCTUnwrap(meaning.questionPositions)
                 XCTAssertTrue(positions.isComplete)
-                XCTAssertEqual(Set(QuestionPosition.allCases.map { positions.text(for: $0) }).count, 3)
+                XCTAssertEqual(Set(ReadingType.question.positions.map { positions.text(for: $0) }).count, 3)
             }
         }
         let suggestions = ReadingArea.allCases.flatMap { library.questions.content(for: $0).suggestions }
@@ -609,7 +695,7 @@ final class ReadingEngineTests: XCTestCase {
 
     func testCompositionUsesEveryPositionOrientationAndAreaLensDeterministically() throws {
         let library = try CardLibrary.load()
-        let picks = zip(QuestionPosition.allCases, library.cards.prefix(3)).map { position, card in
+        let picks = zip(ReadingType.question.positions, library.cards.prefix(3)).map { position, card in
             SpreadPick(position: position, card: card, orientation: position == .action ? .reversed : .upright)
         }
         let id = UUID()
@@ -636,7 +722,7 @@ final class ReadingEngineTests: XCTestCase {
         let library = try CardLibrary.load()
         for question in ["", "   ", "\n\t "] { XCTAssertFalse(ReadingEngine.canSubmit(question: question)) }
         XCTAssertTrue(ReadingEngine.canSubmit(question: "  How can I begin?  "))
-        let invalid = QuestionPosition.allCases.map { SpreadPick(position: $0, card: library.cards[0], orientation: .upright) }
+        let invalid = ReadingType.question.positions.map { SpreadPick(position: $0, card: library.cards[0], orientation: .upright) }
         for picks in [[], Array(invalid.prefix(2)), invalid] {
             XCTAssertThrowsError(try ReadingEngine.compose(id: UUID(), createdAt: Date(), area: .career,
                                                            question: "How can I begin?", picks: picks, library: library))
@@ -645,7 +731,7 @@ final class ReadingEngineTests: XCTestCase {
 
     func testReadingAnnotationsRoundTripWithoutChangingOriginalContent() throws {
         let library = try CardLibrary.load()
-        let picks = zip(QuestionPosition.allCases, library.cards.prefix(3)).map {
+        let picks = zip(ReadingType.question.positions, library.cards.prefix(3)).map {
             SpreadPick(position: $0, card: $1, orientation: .upright)
         }
         let original = try ReadingEngine.compose(id: UUID(), createdAt: Date(timeIntervalSince1970: 1234),
@@ -736,7 +822,7 @@ struct AskComposerRulesTests {
     @Test(arguments: [RelationshipStatus.single, .inRelationship, .complicated, .preferNotToSay])
     func relationshipLensMatchesStatusAndOtherAreasStayUnchanged(status: RelationshipStatus) throws {
         let library = try CardLibrary.load()
-        let picks = zip(QuestionPosition.allCases, library.cards.prefix(3)).map {
+        let picks = zip(ReadingType.question.positions, library.cards.prefix(3)).map {
             SpreadPick(position: $0, card: $1, orientation: .upright)
         }
         let content = library.questions.relationship
@@ -776,7 +862,7 @@ struct CrisisRulesTests {
     func syntheticDistressStopsReading(question: String) throws {
         let library = try CardLibrary.load()
         #expect(ReadingEngine.requiresSupport(question: question, content: library.crisis))
-        let picks = zip(QuestionPosition.allCases, library.cards.prefix(3)).map {
+        let picks = zip(ReadingType.question.positions, library.cards.prefix(3)).map {
             SpreadPick(position: $0, card: $1, orientation: .upright)
         }
         #expect(throws: (any Error).self) {

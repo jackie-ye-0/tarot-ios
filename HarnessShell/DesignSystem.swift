@@ -1215,6 +1215,10 @@ struct NoteField: View {
     @Binding var text: String
     @FocusState.Binding var focused: Bool
     var onFocus: () -> Void
+    var placeholder = "Write a note"
+    var label = "Your note"
+    var identifier = "note-field"
+    var minimumHeight: CGFloat = 220
 
     var body: some View {
         TextEditor(text: $text)
@@ -1228,7 +1232,7 @@ struct NoteField: View {
             }
             .overlay(alignment: .topLeading) {
                 if text.isEmpty {
-                    Text("Write a note").typeRole(.body)
+                    Text(placeholder).typeRole(.body)
                         .foregroundStyle(Design.Palette.placeholder)
                         .fixedSize(horizontal: false, vertical: true)
                         // Match the native text editor's text-container insets.
@@ -1238,12 +1242,65 @@ struct NoteField: View {
                         .accessibilityHidden(true)
                 }
             }
-            .frame(minHeight: 220)
+            .frame(minHeight: minimumHeight)
             .padding(Design.Space.related)
             .background(Design.Palette.surface, in: RoundedRectangle(cornerRadius: 20))
             .overlay { RoundedRectangle(cornerRadius: 20).strokeBorder(Design.Palette.ink, lineWidth: 1.5) }
-            .accessibilityLabel("Your note")
-            .accessibilityIdentifier("note-field")
+            .accessibilityLabel(label)
+            .accessibilityIdentifier(identifier)
+    }
+}
+
+struct NamedPersonEntry: View {
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: Design.Space.related) {
+                VStack(alignment: .leading, spacing: Design.Space.small) {
+                    Text("Ask about someone specific").typeRole(.metadata)
+                        .foregroundStyle(Design.Palette.ink)
+                    Text("You, them, and the connection between you").typeRole(.secondary)
+                        .foregroundStyle(Design.Palette.secondary)
+                }
+                .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right").typeRole(.label)
+                    .foregroundStyle(Design.Palette.ink).accessibilityHidden(true)
+            }
+            .multilineTextAlignment(.leading)
+            .padding(Design.Space.group)
+            .frame(maxWidth: .infinity, minHeight: Design.Space.target, alignment: .leading)
+            .background(Design.Palette.surface, in: RoundedRectangle(cornerRadius: 22))
+            .contentShape(RoundedRectangle(cornerRadius: 22))
+        }
+        .buttonStyle(ActionPressStyle())
+    }
+}
+
+struct PersonNameField: View {
+    @Binding var text: String
+    var onFocus: () -> Void
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        TextField("Their name or a nickname", text: $text,
+                  prompt: Text("e.g. Sam").foregroundStyle(Design.Palette.placeholder))
+            .typeRole(.body)
+            .foregroundStyle(Design.Palette.ink)
+            .tint(Design.Palette.ink)
+            .textInputAutocapitalization(.words)
+            .autocorrectionDisabled()
+            .focused($focused)
+            .onChange(of: focused) { _, value in if value { onFocus() } }
+            .submitLabel(.done)
+            .onSubmit { focused = false }
+            .padding(.horizontal, Design.Space.page)
+            .padding(.vertical, Design.Space.related)
+            .frame(minHeight: 60)
+            .background(Design.Palette.surface, in: Capsule())
+            .overlay { Capsule().strokeBorder(Design.Palette.ink, lineWidth: 1.5) }
+            .accessibilityIdentifier("person-name")
     }
 }
 
@@ -1447,7 +1504,7 @@ struct ComposerPreview: View {
             : AnyLayout(HStackLayout(alignment: .center, spacing: Design.Space.group))
         layout {
             HStack(spacing: Design.Space.small) {
-                ForEach(QuestionPosition.allCases) { position in
+                ForEach(ReadingType.question.positions) { position in
                     RoundedRectangle(cornerRadius: 3.4)
                         .strokeBorder(Design.Palette.secondary, style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
                         .frame(width: 34, height: 54.4)

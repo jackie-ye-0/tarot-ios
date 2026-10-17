@@ -100,7 +100,7 @@ private struct SharedReadingImage: View {
                     Text("“\(reading.question)”").typeRole(Design.TypeRole.title)
                     Text(reading.area.label).typeRole(Design.TypeRole.secondary).foregroundStyle(Design.Palette.secondary)
                 }
-                SpreadCards(picks: reading.picks)
+                SpreadCards(picks: reading.picks, type: reading.type)
                 ForEach(reading.sections, id: \.position) { section in
                     if let pick = reading.picks.first(where: { $0.position == section.position }) {
                         passage("\(pick.position.label) · \(pick.card.name)\(pick.orientation == .reversed ? ", reversed" : "")",

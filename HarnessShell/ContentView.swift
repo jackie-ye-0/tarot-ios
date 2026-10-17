@@ -43,6 +43,8 @@ struct ContentView: View {
                     AskScreen(session: session).id("ask")
                 case .composer:
                     QuestionComposerScreen(session: session).id("composer")
+                case .aboutSomeone:
+                    AboutSomeoneScreen(session: session).id("about-someone")
                 case .pick:
                     ThreeCardPickScreen(session: session, animationsEnabled: animationsEnabled,
                                         holdShuffle: holdShuffle, testMode: testMode).id("pick")

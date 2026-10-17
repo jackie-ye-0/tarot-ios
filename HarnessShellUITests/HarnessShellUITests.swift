@@ -2269,6 +2269,212 @@ final class HarnessShellUITests: XCTestCase {
 
     private let fixedSpread = ["--test-random-indices", "0,0,0,1,0,0"]
 
+    private func enterPerson(_ app: XCUIApplication, note: String = "") {
+        let name = app.textFields["person-name"]
+        scrollTo(name, in: app)
+        name.tap()
+        name.typeText("Sam\n")
+        scrollTo(app.buttons["person-relation-friend"], in: app)
+        app.buttons["person-relation-friend"].tap()
+        if !note.isEmpty {
+            let field = app.textViews["person-note"]
+            scrollTo(field, in: app)
+            field.tap()
+            field.typeText(note)
+            app.buttons["note-keyboard-done"].tap()
+        }
+    }
+
+    func testNamedPersonFormDraftPickAndSavedReadingEvidence() throws {
+        let app = app(extra: fixedSpread + ["--test-store-id", UUID().uuidString], memory: false, audit: true)
+        reachAsk(app)
+        for area in ["career", "social"] {
+            app.buttons["area-\(area)"].tap()
+            XCTAssertFalse(app.buttons["ask-person-entry"].exists)
+        }
+        app.buttons["area-relationship"].tap()
+        scrollTo(app.buttons["ask-person-entry"], in: app)
+        try auditAndCapture(app, "05-ask--named-person-entry", expecting: app.buttons["ask-person-entry"])
+        scrollTo(app.buttons["ask-person-entry"], in: app)
+        app.buttons["ask-person-entry"].tap()
+        XCTAssertEqual(app.staticTexts["person-explanation"].label,
+                       "No birth details needed for them. Just a name or nickname, so the reading can speak about them.")
+        XCTAssertEqual(app.textFields.count, 1)
+        XCTAssertEqual(app.textViews.count, 1)
+        for relation in ["partner", "crush", "ex", "family", "friend", "colleague"] {
+            XCTAssertFalse(app.buttons["person-relation-\(relation)"].isSelected)
+        }
+        XCTAssertFalse(app.buttons["submit-person"].isEnabled)
+        XCTAssertEqual(app.buttons["submit-person"].label, "Add a name and who they are")
+        try auditAndCapture(app, "07-about-someone", expecting: app.staticTexts["person-title"], app.buttons["submit-person"])
+        scrollTo(app.textViews["person-note"], in: app)
+        try auditAndCapture(app, "07-about-someone--bottom", expecting: app.textViews["person-note"])
+        app.buttons["person-relation-friend"].tap()
+        XCTAssertEqual(app.buttons["submit-person"].label, "Add a name or nickname")
+        enterPerson(app, note: "How can we make more time to talk?")
+        XCTAssertTrue(app.buttons["submit-person"].isEnabled)
+        XCTAssertEqual(app.buttons["submit-person"].label, "Draw for you and Sam")
+        showNavigationTop(app)
+        try auditAndCapture(app, "07-about-someone--filled", expecting: app.staticTexts["person-title"], app.buttons["submit-person"])
+        XCUIDevice.shared.press(.home)
+        app.activate()
+        app.terminate()
+        app.launch()
+        XCTAssertTrue(app.staticTexts["today-title"].waitForExistence(timeout: 5))
+        app.buttons["tab-ask"].tap()
+        scrollTo(app.buttons["ask-person-entry"], in: app)
+        app.buttons["ask-person-entry"].tap()
+        XCTAssertEqual(app.textFields["person-name"].value as? String, "Sam")
+        XCTAssertTrue(app.buttons["person-relation-friend"].isSelected)
+        XCTAssertEqual(app.textViews["person-note"].value as? String, "How can we make more time to talk?")
+        app.buttons["submit-person"].tap()
+        XCTAssertEqual(app.staticTexts["spread-question"].label, "“You and Sam”")
+        try auditAndCapture(app, "08-three-card-pick--named-person-reduce-motion", expecting: app.staticTexts["pick-prompt"], app.buttons["draw-card-3"])
+        for position in ["you", "them", "connection"] {
+            XCTAssertTrue(app.descendants(matching: .any)["spread-slot-\(position)"].firstMatch.label.contains("empty"))
+        }
+        app.buttons["draw-card-3"].tap()
+        let first = app.descendants(matching: .any)["spread-slot-you"].firstMatch.label
+        app.buttons["go-back"].tap()
+        XCTAssertTrue(app.staticTexts["person-title"].exists)
+        app.terminate()
+        app.launch()
+        app.buttons["tab-ask"].tap()
+        XCTAssertTrue(app.staticTexts["person-title"].waitForExistence(timeout: 5))
+        app.buttons["submit-person"].tap()
+        XCTAssertEqual(app.descendants(matching: .any)["spread-slot-you"].firstMatch.label, first)
+        for _ in 0..<2 { tapWhenSettled(app.buttons["draw-card-3"]) }
+        try auditAndCapture(app, "08-three-card-pick-complete--named-person-reduce-motion", expecting: app.buttons["read-spread"])
+        app.buttons["read-spread"].tap()
+        XCTAssertTrue(app.staticTexts["reading-saved"].waitForExistence(timeout: 5))
+        XCTAssertEqual(app.staticTexts["reading-saved"].label, "Relationship · Saved on this phone")
+        try auditAndCapture(app, "09-reading--named-person", expecting: app.staticTexts["reading-question"], app.buttons["reading-done"])
+        var original: [String: String] = [:]
+        for position in ["you", "them", "connection", "lens"] {
+            let section = app.staticTexts["reading-\(position)"]
+            scrollTo(section, in: app)
+            original[position] = section.label
+            XCTAssertFalse(section.label.isEmpty)
+            try auditAndCapture(app, "09-reading--named-person-\(position)", expecting: section)
+        }
+        XCTAssertTrue(original["lens"]!.contains("Sam"))
+        scrollTo(app.buttons["reading-response-notReally"], in: app)
+        try auditAndCapture(app, "09-reading--named-person-bottom", expecting: app.buttons["reading-response-notReally"])
+        app.terminate()
+        app.launchArguments += ["--test-revised-content", "--test-open-saved-reading"]
+        app.launch()
+        XCTAssertTrue(app.staticTexts["reading-question"].waitForExistence(timeout: 5))
+        XCTAssertEqual(app.staticTexts["reading-question"].label, "“You and Sam”")
+        for (position, text) in original { XCTAssertEqual(app.staticTexts["reading-\(position)"].label, text) }
+        app.buttons["reading-done"].tap()
+        app.buttons["tab-ask"].tap()
+        scrollTo(app.buttons["latest-area-reading"], in: app)
+        XCTAssertTrue(app.buttons["latest-area-reading"].label.contains("You and Sam"))
+        scrollTo(app.buttons["ask-person-entry"], in: app)
+        app.buttons["ask-person-entry"].tap()
+        XCTAssertFalse(app.buttons["submit-person"].isEnabled)
+    }
+
+    func testNamedPersonCrisisNoteClearsDraftAndBackDiscardsDetails() {
+        let app = app(extra: fixedSpread + ["--test-store-id", UUID().uuidString, "--test-crisis-discard-failure"], memory: false, audit: true)
+        reachAsk(app)
+        scrollTo(app.buttons["ask-person-entry"], in: app)
+        app.buttons["ask-person-entry"].tap()
+        enterPerson(app, note: "I want to kill myself")
+        app.buttons["submit-person"].tap()
+        XCTAssertTrue(app.staticTexts["support-title"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["draw-card-3"].exists)
+        XCTAssertFalse(app.buttons["support-today"].isEnabled)
+        app.terminate()
+        app.launchArguments.removeAll { $0 == "--test-crisis-discard-failure" }
+        app.launch()
+        XCTAssertTrue(app.staticTexts["support-title"].waitForExistence(timeout: 5))
+        app.buttons["support-today"].tap()
+        app.buttons["tab-ask"].tap()
+        XCTAssertFalse(app.buttons["latest-area-reading"].exists)
+        scrollTo(app.buttons["ask-person-entry"], in: app)
+        app.buttons["ask-person-entry"].tap()
+        XCTAssertFalse(app.buttons["submit-person"].isEnabled)
+        XCTAssertEqual(app.textViews["person-note"].value as? String, "")
+        enterPerson(app)
+        app.buttons["submit-person"].tap()
+        app.buttons["draw-card-3"].tap()
+        XCTAssertEqual(app.descendants(matching: .any)["spread-slot-you"].firstMatch.label, "You, The Star, Upright")
+        app.buttons["go-back"].tap()
+        app.buttons["go-back"].tap()
+        scrollTo(app.buttons["ask-person-entry"], in: app)
+        app.buttons["ask-person-entry"].tap()
+        XCTAssertFalse(app.buttons["submit-person"].isEnabled)
+        XCTAssertFalse(app.buttons["person-relation-friend"].isSelected)
+    }
+
+    func testNamedPersonLargestTextAndKeyboardEvidence() {
+        let app = app(extra: fixedSpread + ["--test-largest-text"], audit: true)
+        reachAsk(app, largest: true)
+        scrollTo(app.buttons["ask-person-entry"], in: app)
+        capture(app, "05-ask--named-person-entry-largest-text")
+        app.buttons["ask-person-entry"].tap()
+        capture(app, "07-about-someone--largest-text")
+        scrollTo(app.staticTexts["person-explanation"], in: app)
+        capture(app, "07-about-someone--largest-text-explanation")
+        for relation in ["partner", "crush", "ex", "family", "friend", "colleague"] {
+            scrollTo(app.buttons["person-relation-\(relation)"], in: app)
+            capture(app, "07-about-someone--largest-text-\(relation)")
+        }
+        scrollTo(app.buttons["submit-person"], in: app)
+        capture(app, "07-about-someone--largest-text-bottom")
+        let name = app.textFields["person-name"]
+        scrollTo(name, in: app)
+        name.tap()
+        name.typeText("Sam")
+        capture(app, "07-about-someone--largest-text-name-keyboard")
+        name.typeText("\n")
+        scrollTo(app.buttons["submit-person"], in: app)
+        XCTAssertFalse(app.buttons["submit-person"].isEnabled)
+        XCTAssertEqual(app.buttons["submit-person"].label, "Choose who they are to you")
+        scrollTo(app.buttons["person-relation-friend"], in: app)
+        app.buttons["person-relation-friend"].tap()
+        let note = app.textViews["person-note"]
+        scrollTo(note, in: app)
+        note.tap()
+        note.typeText("Time to talk.")
+        capture(app, "07-about-someone--largest-text-note-keyboard")
+        app.buttons["note-keyboard-done"].tap()
+        scrollTo(app.buttons["submit-person"], in: app)
+        assertVisible(app.buttons["submit-person"], in: app)
+        capture(app, "07-about-someone--largest-text-filled-bottom")
+        app.buttons["submit-person"].tap()
+        capture(app, "08-three-card-pick--named-person-largest-text")
+        for position in ["you", "them", "connection"] {
+            scrollTo(app.descendants(matching: .any)["spread-slot-\(position)"].firstMatch, in: app)
+            capture(app, "08-three-card-pick--named-person-largest-text-\(position)")
+        }
+        for _ in 0..<3 {
+            scrollTo(app.buttons["draw-card-3"], in: app)
+            tapWhenSettled(app.buttons["draw-card-3"])
+        }
+        showNavigationTop(app)
+        capture(app, "08-three-card-pick-complete--named-person-largest-text")
+        for position in ["you", "them", "connection"] {
+            scrollTo(app.descendants(matching: .any)["spread-slot-\(position)"].firstMatch, in: app)
+            capture(app, "08-three-card-pick-complete--named-person-largest-text-\(position)")
+        }
+        scrollTo(app.buttons["read-spread"], in: app)
+        capture(app, "08-three-card-pick-complete--named-person-largest-text-bottom")
+        app.buttons["read-spread"].tap()
+        capture(app, "09-reading--named-person-largest-text")
+        for index in 0..<20 {
+            if app.buttons["reading-done"].isHittable { break }
+            dragContent(app, up: true)
+            capture(app, "09-reading--named-person-largest-text-scroll-\(index)")
+        }
+        scrollTo(app.staticTexts["reading-disclaimer"], in: app)
+        assertVisible(app.buttons["reading-done"], in: app)
+        capture(app, "09-reading--named-person-largest-text-bottom")
+        app.buttons["reading-done"].tap()
+        XCTAssertTrue(app.buttons["tab-today"].exists)
+    }
+
     private func reachAsk(_ app: XCUIApplication, largest: Bool = false) {
         XCTAssertFalse(app.buttons["tab-ask"].exists)
         if largest {

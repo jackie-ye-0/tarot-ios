@@ -41,6 +41,7 @@ Add future research to `docs/research/`, using descriptive, lower-case hyphenate
 - [Morning reminder verification](reminder-verification.md): issue #21 invitation, notification controls, tests and manual-check status.
 - [Settings verification](settings-verification.md): issue #20 preferences, retention, screenshots and design comparison.
 - [History verification](history-verification.md): issue #19 combined archive, calendar, snapshots, scrolling and design evidence.
+- [Ask about someone verification](ask-about-someone-verification.md): issue #18 person details, named-position content, tests and design evidence.
 - [Harness principles](harness.md)
 
 Add a link here when adding a document. Keep each document's status clear and record approved scope changes in [decisions](decisions.md).
