@@ -555,6 +555,7 @@ struct DailyExtrasView: View {
 
 struct DailyScoreStrip: View {
     let daily: DailyContent
+    var areas: [ReadingArea] = ReadingArea.allCases
     @Environment(\.dynamicTypeSize) private var textSize
 
     var body: some View {
@@ -562,7 +563,7 @@ struct DailyScoreStrip: View {
             ? AnyLayout(VStackLayout(alignment: .leading, spacing: Design.Space.group))
             : AnyLayout(HStackLayout(alignment: .top, spacing: Design.Space.related))
         layout {
-            ForEach(ReadingArea.allCases, id: \.self) { area in
+            ForEach(areas, id: \.self) { area in
                 let score = daily.reading(for: area).score
                 VStack(alignment: .leading, spacing: Design.Space.small) {
                     Text(area.label).typeRole(.label).foregroundStyle(Design.Palette.label(for: area))
@@ -586,10 +587,11 @@ struct DailyScoreStrip: View {
 
 struct DailyAreaLines: View {
     let daily: DailyContent
+    var areas: [ReadingArea] = ReadingArea.allCases
     var body: some View {
         VStack(spacing: 0) {
-            ForEach(ReadingArea.allCases, id: \.self) { area in
-                if area != .career {
+            ForEach(areas, id: \.self) { area in
+                if area != areas.first {
                     Rectangle().fill(Design.Palette.surfaceHairline).frame(height: 1).accessibilityHidden(true)
                 }
                 VStack(alignment: .leading, spacing: 4) {
@@ -1148,6 +1150,7 @@ struct CardFan: View {
 
 struct AreaSelector: View {
     @Binding var selection: ReadingArea
+    var areas: [ReadingArea] = ReadingArea.allCases
     @Environment(\.dynamicTypeSize) private var textSize
 
     var body: some View {
@@ -1155,7 +1158,7 @@ struct AreaSelector: View {
         let layout = textSize.isAccessibilitySize
             ? AnyLayout(VStackLayout(spacing: 4)) : AnyLayout(HStackLayout(spacing: 4))
         layout {
-            ForEach(ReadingArea.allCases) { area in
+            ForEach(areas) { area in
                 Button { selection = area } label: {
                     Text(area.label)
                         .typeRole(.label)
@@ -1563,5 +1566,143 @@ struct ReflectionPanel: View {
         .padding(Design.Space.page)
         .foregroundStyle(Design.Palette.surface)
         .background(Design.Palette.ink, in: RoundedRectangle(cornerRadius: 22))
+    }
+}
+
+struct SettingsAction: View {
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: "gearshape")
+                .typeRole(.section)
+                .dynamicTypeSize(.large)
+                .foregroundStyle(Design.Palette.ink)
+                .frame(width: Design.Space.target, height: Design.Space.target)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(ActionPressStyle())
+        .accessibilityLabel("Settings")
+        .accessibilityIdentifier("open-settings")
+    }
+}
+
+struct SettingsGroup<Content: View>: View {
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        VStack(spacing: 0) { content }
+            .background(Design.Palette.surface, in: RoundedRectangle(cornerRadius: 22))
+    }
+}
+
+struct SettingsDivider: View {
+    var body: some View {
+        Rectangle().fill(Design.Palette.surfaceHairline).frame(height: 1).accessibilityHidden(true)
+    }
+}
+
+struct SettingsLink: View {
+    let title: String
+    var value: String? = nil
+    let action: () -> Void
+    @Environment(\.dynamicTypeSize) private var textSize
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: Design.Space.related) {
+                let layout = textSize.isAccessibilitySize
+                    ? AnyLayout(VStackLayout(alignment: .leading, spacing: Design.Space.small))
+                    : AnyLayout(HStackLayout(spacing: Design.Space.related))
+                layout {
+                    Text(title).typeRole(.body)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    if let value { Text(value).typeRole(.secondary).foregroundStyle(Design.Palette.secondary) }
+                }
+                Image(systemName: "chevron.right").typeRole(.label).dynamicTypeSize(.large)
+                    .accessibilityHidden(true)
+            }
+            .fixedSize(horizontal: false, vertical: true)
+            .multilineTextAlignment(.leading)
+            .padding(.horizontal, Design.Space.group)
+            .padding(.vertical, Design.Space.related)
+            .frame(minHeight: 60)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(ActionPressStyle())
+    }
+}
+
+struct AreaVisibilityToggle: View {
+    let area: ReadingArea
+    @Binding var isOn: Bool
+    var locked: Bool
+    @Environment(\.dynamicTypeSize) private var textSize
+
+    var body: some View {
+        Group {
+            if textSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: Design.Space.related) {
+                    areaLabel.accessibilityHidden(true)
+                    Button { isOn.toggle() } label: {
+                        Toggle("", isOn: .constant(isOn))
+                            .labelsHidden()
+                            .tint(Design.Palette.ink)
+                            .allowsHitTesting(false)
+                            .frame(maxWidth: .infinity, minHeight: Design.Space.target, alignment: .trailing)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(ActionPressStyle())
+                    .disabled(locked)
+                    .accessibilityRepresentation { toggle }
+                }
+            } else { toggle }
+        }
+        .padding(.horizontal, Design.Space.group)
+        .padding(.vertical, Design.Space.related)
+        .frame(minHeight: 60)
+    }
+
+    private var areaLabel: some View {
+        HStack(spacing: Design.Space.related) {
+            Circle().fill(Design.Palette.accent(for: area)).frame(width: 10, height: 10)
+                .accessibilityHidden(true)
+            Text(area.label).typeRole(.body).fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private var toggle: some View {
+        Toggle(isOn: $isOn) { areaLabel }
+            .tint(Design.Palette.ink)
+            .disabled(locked)
+            .accessibilityLabel(area.label)
+            .accessibilityHint(locked ? AppCopy.lastVisibleAreaHint : AppCopy.hiddenAreasHint)
+            .accessibilityIdentifier("visible-\(area.rawValue)")
+    }
+}
+
+struct SettingsChoice: View {
+    let title: String
+    let selected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: Design.Space.related) {
+                Text(title).typeRole(.body).fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                if selected {
+                    Image(systemName: "checkmark").typeRole(.label).dynamicTypeSize(.large)
+                        .accessibilityHidden(true)
+                }
+            }
+            .multilineTextAlignment(.leading)
+            .padding(.horizontal, Design.Space.group)
+            .padding(.vertical, Design.Space.related)
+            .frame(minHeight: 60)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(ActionPressStyle())
+        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }

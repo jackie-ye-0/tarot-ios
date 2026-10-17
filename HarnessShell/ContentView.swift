@@ -1,5 +1,11 @@
 import SwiftUI
 
+enum AppCopy {
+    static let entertainmentDisclaimer = "A mirror, not a forecast. Readings are for entertainment and reflection, not prediction or professional advice."
+    static let lastVisibleAreaHint = "Keep at least one area on so Today and Ask have an area to show."
+    static let hiddenAreasHint = "Hidden areas keep their past readings."
+}
+
 struct ContentView: View {
     @Bindable var session: AppSession
     var animationsEnabled = true
@@ -9,40 +15,47 @@ struct ContentView: View {
 
     var body: some View {
         ZStack {
-            switch session.screen {
-            case .welcome:
-                WelcomeScreen(animationsEnabled: animationsEnabled) {
-                    do { try session.completeWelcome() } catch { storageFailed() }
+            if session.showsSettings {
+                SettingsScreen(session: session)
+            } else {
+                switch session.screen {
+                case .welcome:
+                    WelcomeScreen(animationsEnabled: animationsEnabled) {
+                        do { try session.completeWelcome() } catch { storageFailed() }
+                    }
+                case .draw:
+                    DrawScreen(session: session, animationsEnabled: animationsEnabled,
+                               holdShuffle: holdShuffle, testMode: testMode).id("draw-\(session.dateKey)")
+                case .reveal(let draw):
+                    RevealScreen(draw: draw, animationsEnabled: animationsEnabled, testMode: testMode) {
+                        session.showToday(draw)
+                    }.id("reveal-\(draw.dateKey)")
+                case .today(let draw):
+                    TodayScreen(draw: draw, dateLabel: session.dateLabel,
+                                animationsEnabled: animationsEnabled, testMode: testMode,
+                                visibleAreas: session.visibleAreas, settings: { session.showsSettings = true },
+                                ask: session.openAsk).id("today-\(draw.dateKey)")
+                case .ask:
+                    AskScreen(session: session).id("ask")
+                case .composer:
+                    QuestionComposerScreen(session: session).id("composer")
+                case .pick:
+                    ThreeCardPickScreen(session: session, animationsEnabled: animationsEnabled,
+                                        holdShuffle: holdShuffle, testMode: testMode).id("pick")
+                case .support:
+                    SupportScreen(session: session).id("support")
+                case .reading(let reading):
+                    QuestionReadingScreen(reading: reading, session: session).id("reading-\(reading.id)")
                 }
-            case .draw:
-                DrawScreen(session: session, animationsEnabled: animationsEnabled,
-                           holdShuffle: holdShuffle, testMode: testMode).id("draw-\(session.dateKey)")
-            case .reveal(let draw):
-                RevealScreen(draw: draw, animationsEnabled: animationsEnabled, testMode: testMode) {
-                    session.showToday(draw)
-                }.id("reveal-\(draw.dateKey)")
-            case .today(let draw):
-                TodayScreen(draw: draw, dateLabel: session.dateLabel,
-                            animationsEnabled: animationsEnabled, testMode: testMode,
-                            ask: session.openAsk).id("today-\(draw.dateKey)")
-            case .ask:
-                AskScreen(session: session).id("ask")
-            case .composer:
-                QuestionComposerScreen(session: session).id("composer")
-            case .pick:
-                ThreeCardPickScreen(session: session, animationsEnabled: animationsEnabled,
-                                    holdShuffle: holdShuffle, testMode: testMode).id("pick")
-            case .support:
-                SupportScreen(session: session).id("support")
-            case .reading(let reading):
-                QuestionReadingScreen(reading: reading, session: session).id("reading-\(reading.id)")
             }
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            switch session.screen {
-            case .today, .ask:
-                RestingTabBar(askSelected: isAsk, today: session.goToToday, ask: session.openAsk)
-            default: EmptyView()
+            if !session.showsSettings {
+                switch session.screen {
+                case .today, .ask:
+                    RestingTabBar(askSelected: isAsk, today: session.goToToday, ask: session.openAsk)
+                default: EmptyView()
+                }
             }
         }
         .alert("Your welcome could not be saved", isPresented: $session.welcomeSaveFailed) {
@@ -117,7 +130,7 @@ struct WelcomeScreen: View {
             VStack(spacing: Design.Space.related) {
                 PrimaryAction(title: "Draw my first card", night: true, action: continueAction)
                     .accessibilityIdentifier("welcome-draw")
-                Text("A mirror, not a forecast. Readings are for entertainment and reflection, not prediction or professional advice.")
+                Text(AppCopy.entertainmentDisclaimer)
                     .typeRole(Design.TypeRole.caption)
                     .foregroundStyle(Design.Palette.nightSecondary)
                     .multilineTextAlignment(.center)
@@ -367,6 +380,8 @@ struct TodayScreen: View {
     let dateLabel: String
     let animationsEnabled: Bool
     let testMode: Bool
+    let visibleAreas: [ReadingArea]
+    let settings: () -> Void
     let ask: () -> Void
     @Environment(\.dynamicTypeSize) private var textSize
     @State private var showsReveal = false
@@ -374,8 +389,12 @@ struct TodayScreen: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Design.Space.section) {
-                Text(dateLabel).typeRole(.section)
-                    .accessibilityIdentifier("today-title")
+                HStack(alignment: .top, spacing: Design.Space.small) {
+                    Text(dateLabel).typeRole(.section)
+                        .accessibilityIdentifier("today-title")
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    SettingsAction(action: settings)
+                }
                 if textSize.isAccessibilitySize {
                     VStack(alignment: .leading, spacing: Design.Space.group) { card; details }
                 } else {
@@ -390,11 +409,11 @@ struct TodayScreen: View {
                     DailyExtrasView(daily: daily)
                     VStack(alignment: .leading, spacing: Design.Space.group) {
                         Text("How today sits").typeRole(.section)
-                        DailyScoreStrip(daily: daily)
+                        DailyScoreStrip(daily: daily, areas: visibleAreas)
                     }
                     VStack(alignment: .leading, spacing: Design.Space.group) {
                         Text("What to do about it").typeRole(.section)
-                        DailyAreaLines(daily: daily)
+                        DailyAreaLines(daily: daily, areas: visibleAreas)
                     }
                 } else {
                     Text("This earlier draw has no saved extras or area readings.")

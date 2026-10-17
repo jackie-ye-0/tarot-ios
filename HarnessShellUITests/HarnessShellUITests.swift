@@ -640,6 +640,198 @@ final class HarnessShellUITests: XCTestCase {
         XCTAssertTrue(app.buttons["see-meaning"].waitForExistence(timeout: 5))
     }
 
+    func testSettingsVisibilityPersistsWithoutChangingDailyCard() throws {
+        let app = app(extra: ["--test-store-id", UUID().uuidString], memory: false, audit: true)
+        reveal(app)
+        app.buttons["see-meaning"].tap()
+        app.buttons["tab-ask"].tap()
+        app.buttons["suggestion-0"].tap()
+        app.buttons["submit-question"].tap()
+        chooseSpread(app)
+        app.buttons["read-spread"].tap()
+        let savedQuestion = app.staticTexts["reading-question"].label
+        let savedLens = app.staticTexts["reading-lens"].label
+        app.buttons["reading-done"].tap()
+        let card = app.buttons["today-card"].label
+        let scores = ["career", "relationship", "social"].map {
+            app.descendants(matching: .any)["score-\($0)"].firstMatch.label
+        }
+        app.buttons["open-settings"].tap()
+        XCTAssertTrue(app.staticTexts["settings-title"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["tab-today"].isHittable)
+        XCTAssertEqual(app.staticTexts["settings-title"].label, "Settings")
+        for area in ["career", "relationship", "social"] {
+            XCTAssertEqual(app.switches["visible-\(area)"].label, area.capitalized)
+        }
+        XCTAssertEqual(app.staticTexts["area-visibility-hint"].label, "Hidden areas keep their past readings.")
+        for label in ["Areas on your Today screen", "About you", "Good to know"] {
+            XCTAssertTrue(app.staticTexts[label].exists)
+        }
+        let hierarchy = XCTAttachment(string: app.debugDescription)
+        hierarchy.name = "settings-accessibility-hierarchy"
+        hierarchy.lifetime = .keepAlways
+        add(hierarchy)
+        try auditAndCapture(app, "11-settings", expecting: app.switches["visible-career"])
+        scrollTo(app.buttons["settings-privacy"], in: app)
+        try auditAndCapture(app, "11-settings--bottom", expecting: app.buttons["settings-privacy"])
+        XCTAssertFalse(app.staticTexts["Birth details"].exists)
+        XCTAssertFalse(app.staticTexts["Pronouns"].exists)
+        scrollTo(app.switches["visible-relationship"], in: app)
+        app.switches["visible-relationship"].tap()
+        app.switches["visible-social"].tap()
+        XCTAssertFalse(app.switches["visible-career"].isEnabled)
+        XCTAssertEqual(app.switches["visible-career"].value as? String, "1")
+        XCTAssertTrue(app.staticTexts["area-visibility-hint"].label.contains("Keep at least one area on"))
+        try auditAndCapture(app, "11-settings--last-area", expecting: app.staticTexts["area-visibility-hint"])
+        showNavigationTop(app)
+        app.buttons["go-back"].tap()
+        XCTAssertEqual(app.buttons["today-card"].label, card)
+        XCTAssertFalse(app.descendants(matching: .any)["score-relationship"].firstMatch.exists)
+        XCTAssertFalse(app.staticTexts["line-relationship"].exists)
+        XCTAssertFalse(app.descendants(matching: .any)["score-social"].firstMatch.exists)
+        scrollTo(app.staticTexts["line-career"], in: app)
+        capture(app, "04-today--hidden-areas")
+        app.buttons["tab-ask"].tap()
+        XCTAssertTrue(app.buttons["area-career"].isSelected)
+        XCTAssertFalse(app.buttons["area-relationship"].exists)
+        XCTAssertFalse(app.buttons["area-social"].exists)
+        try auditAndCapture(app, "05-ask--hidden-areas", expecting: app.buttons["area-career"])
+        app.buttons["ask-question-entry"].tap()
+        XCTAssertFalse(app.buttons["area-relationship"].exists)
+        XCTAssertFalse(app.buttons["area-social"].exists)
+        try auditAndCapture(app, "06-composer--hidden-areas", expecting: app.buttons["area-career"])
+        let finalSuggestion = app.buttons["suggestion-2"]
+        scrollTo(finalSuggestion, in: app, abovePinnedFooter: true)
+        waitForSettled([finalSuggestion])
+        assertVisible(finalSuggestion, in: app, abovePinnedFooter: true)
+        XCTAssertGreaterThanOrEqual(scrollViewport(in: app).maxY - finalSuggestion.frame.maxY, 8,
+                                    "The complete final chip needs a clear gap above the pinned footer")
+        capture(app, "06-composer--hidden-areas-bottom")
+        showNavigationTop(app)
+        app.buttons["go-back"].tap()
+        app.terminate()
+        app.launch()
+        XCTAssertEqual(app.buttons["today-card"].label, card)
+        XCTAssertFalse(app.staticTexts["line-relationship"].exists)
+        app.buttons["open-settings"].tap()
+        XCTAssertEqual(app.switches["visible-relationship"].value as? String, "0")
+        app.switches["visible-relationship"].tap()
+        app.switches["visible-social"].tap()
+        XCTAssertTrue(app.switches["visible-career"].isEnabled)
+        app.buttons["go-back"].tap()
+        XCTAssertEqual(app.buttons["today-card"].label, card)
+        XCTAssertEqual(["career", "relationship", "social"].map {
+            app.descendants(matching: .any)["score-\($0)"].firstMatch.label
+        }, scores)
+        app.buttons["tab-ask"].tap()
+        app.buttons["area-relationship"].tap()
+        scrollTo(app.buttons["latest-area-reading"], in: app)
+        app.buttons["latest-area-reading"].tap()
+        XCTAssertEqual(app.staticTexts["reading-question"].label, savedQuestion)
+        XCTAssertEqual(app.staticTexts["reading-lens"].label, savedLens)
+    }
+
+    func testSettingsStatusInformationAndLargestTextEvidence() throws {
+        let app = app(extra: ["--test-store-id", UUID().uuidString], memory: false, audit: true)
+        reveal(app)
+        app.buttons["see-meaning"].tap()
+        app.buttons["open-settings"].tap()
+        scrollTo(app.buttons["settings-relationship"], in: app)
+        app.buttons["settings-relationship"].tap()
+        for status in ["single", "inRelationship", "complicated", "preferNotToSay"] {
+            let option = app.buttons["settings-status-\(status)"]
+            scrollTo(option, in: app)
+            option.tap()
+            XCTAssertTrue(option.isSelected)
+        }
+        showNavigationTop(app)
+        try auditAndCapture(app, "11-settings--relationship", expecting: app.staticTexts["settings-current-status"])
+        scrollTo(app.buttons["settings-clear-status"], in: app)
+        app.buttons["settings-clear-status"].tap()
+        XCTAssertTrue(app.buttons["settings-clear-status"].isSelected)
+        XCTAssertEqual(app.staticTexts["settings-current-status"].label, "Current status: Not set")
+        showNavigationTop(app)
+        app.buttons["go-back"].tap()
+        for (entry, copy, name) in [("settings-about", "settings-disclaimer", "about"),
+                                    ("settings-privacy", "settings-privacy-copy", "privacy")] {
+            scrollTo(app.buttons[entry], in: app)
+            app.buttons[entry].tap()
+            XCTAssertTrue(app.staticTexts[copy].exists)
+            if name == "privacy" {
+                XCTAssertEqual(app.staticTexts[copy].label,
+                               "Everything stays on this phone and in your phone's own backups.")
+                XCTAssertEqual(app.staticTexts["settings-privacy-detail"].label,
+                               "Nothing is sent anywhere else.")
+            }
+            try auditAndCapture(app, "11-settings--\(name)", expecting: app.staticTexts[copy])
+            app.buttons["go-back"].tap()
+        }
+        app.terminate()
+        app.launchArguments.append("--test-largest-text")
+        app.launch()
+        app.buttons["open-settings"].tap()
+        capture(app, "11-settings--largest-text")
+        for area in ["career", "relationship", "social"] {
+            let toggle = app.switches["visible-\(area)"]
+            scrollTo(toggle, in: app)
+            XCTAssertEqual(toggle.label, area.capitalized)
+            XCTAssertGreaterThanOrEqual(toggle.frame.height, 44)
+            // Exercise the added hit area above the native switch's 28-point artwork.
+            toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.05)).tap()
+            XCTAssertEqual(toggle.value as? String, "0")
+            toggle.tap()
+            XCTAssertEqual(toggle.value as? String, "1")
+            capture(app, "11-settings--largest-text-\(area)")
+        }
+        scrollTo(app.buttons["settings-privacy"], in: app)
+        capture(app, "11-settings--largest-text-bottom")
+        scrollTo(app.buttons["settings-relationship"], in: app)
+        XCTAssertTrue(app.buttons["settings-relationship"].label.contains("Not set"))
+        app.buttons["settings-relationship"].tap()
+        capture(app, "11-settings--relationship-largest-text")
+        let currentStatus = app.staticTexts["settings-current-status"]
+        let firstStatus = app.buttons["settings-status-single"]
+        scrollTo(currentStatus, in: app)
+        scrollTo(firstStatus, in: app)
+        waitForSettled([currentStatus, firstStatus])
+        XCTAssertEqual(currentStatus.label, "Current status: Not set")
+        assertVisible(currentStatus, in: app)
+        assertVisible(firstStatus, in: app)
+        capture(app, "11-settings--relationship-largest-text-current-status")
+        scrollTo(app.buttons["settings-clear-status"], in: app)
+        capture(app, "11-settings--relationship-largest-text-bottom")
+        showNavigationTop(app)
+        app.buttons["go-back"].tap()
+        for (entry, copy, name) in [("settings-about", "settings-disclaimer", "about"),
+                                    ("settings-privacy", "settings-privacy-copy", "privacy")] {
+            scrollTo(app.buttons[entry], in: app)
+            app.buttons[entry].tap()
+            capture(app, "11-settings--\(name)-largest-text")
+            scrollTo(app.staticTexts[name == "privacy" ? "settings-privacy-detail" : copy], in: app)
+            capture(app, "11-settings--\(name)-largest-text-bottom")
+            showNavigationTop(app)
+            app.buttons["go-back"].tap()
+        }
+        showNavigationTop(app)
+        app.buttons["go-back"].tap()
+        app.buttons["tab-ask"].tap()
+        XCTAssertFalse(app.staticTexts["relationship-prompt"].exists)
+    }
+
+    func testSettingsSaveFailureRetainsSettingAndCanRetry() throws {
+        let app = app(extra: ["--test-settings-save-failure"], audit: true)
+        reveal(app)
+        app.buttons["see-meaning"].tap()
+        app.buttons["open-settings"].tap()
+        app.switches["visible-social"].tap()
+        XCTAssertTrue(app.alerts["Your setting could not be saved"].waitForExistence(timeout: 5))
+        capture(app, "11-settings--save-error")
+        app.alerts.buttons["OK"].tap()
+        XCTAssertEqual(app.switches["visible-social"].value as? String, "1")
+        app.switches["visible-social"].tap()
+        XCTAssertEqual(app.switches["visible-social"].value as? String, "0")
+    }
+
     func testAllSeventyEightFacesRenderInBothOrientations() throws {
         let app = app(extra: ["--test-card-faces"], audit: true)
         var renderedFaces = Set<Data>()
