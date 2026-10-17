@@ -1,6 +1,6 @@
 # Settings verification (#20)
 
-Status: both independent-review capture corrections passed their assertions and were visually inspected. The delivery full check `20261016T063832.756516Z-check-77dbacdc` on clean commit `e755389e2e91ea20d827f8dba0a7eea54f067b28` passed **76/76 iOS tests**, with zero failures, skips or expected failures. All **34 command-contract tests** and the design-role guard passed. The earlier 75/76 post-review run and its passing 1/1 focused rerun remain recorded below as evidence of the known intermittent composer Done interaction.
+Status: both independent-review capture corrections passed their assertions and were visually inspected. A separate independent review of the final backup-aware Privacy screen also passed with no must-fix or should-fix items. The delivery full check `20261016T063832.756516Z-check-77dbacdc` on clean commit `e755389e2e91ea20d827f8dba0a7eea54f067b28` passed **76/76 iOS tests**, with zero failures, skips or expected failures. All **34 command-contract tests** and the design-role guard passed. The earlier 75/76 post-review run and its passing 1/1 focused rerun remain recorded below as evidence of the known intermittent composer Done interaction.
 
 The previous full check, `20261015T215219.051931Z-check-815ecaaf`, built clean commit `d7b4123963b6cca2278fd046165f863203035daa` and passed **76/76 iOS tests** with zero failures, skips or expected failures. The new capture assertions are covered by the post-review run described below.
 
@@ -98,7 +98,27 @@ The reviewer accepted every remaining finding for these manifest-based reasons:
 | S4–S5 | Reminder/export/delete remain #21/#22; About and Privacy chevrons identify navigation and Settings has no tab bar. |
 | S6–S8 | Exact last-area explanation, native recoverable-save alert, whole largest-text area words and normal-size switch artwork follow §11e. |
 | R1, R3 | The explicit current-value line reinforces the saved choice; multiline options and Clear retain the selected checkmark and readable layout. R2 separately adds the missing value evidence. |
-| B1–B2, P1–P2 | Quiet scrolling pages contained the required full disclaimer and then-current phone-only privacy copy; their paired largest-text captures covered that complete copy. The replacement backup-aware copy requires fresh pipeline evidence. |
+| B1–B2, P1–P2 | Quiet scrolling pages contained the required full disclaimer and then-current phone-only privacy copy; their paired largest-text captures covered that complete copy. The replacement backup-aware Privacy screen is covered by the independent follow-up below. |
+
+### Final backup-aware Privacy follow-up
+
+An independent reviewer who did not write the code compared the final Privacy screen's normal, largest-text top and largest-text bottom captures from focused run `20261017T132738.057867Z-test-8b40c4f2` at commit `559f93d6` against design manifest §11e and the parent Settings reference. The verdict was **PASS**, with no must-fix or should-fix items. This completes the independent comparison for the final backup-aware copy.
+
+The eventual pull-request description must list these independent findings and dispositions:
+
+| ID | Finding | Disposition |
+| --- | --- | --- |
+| P01 | Privacy is a different page from the parent Settings reference. | Accepted: §11e specifies a separate Privacy child page. |
+| P02 | Privacy is a plain page on the dawn ground. | Accepted: this follows the informational-page treatment in §11e. |
+| P03 | The native header varies slightly from the parent reference. | Accepted: the shared Back control and title remain clear. |
+| P04 | Grain and tone rendering differ slightly from the reference. | Accepted: the screen retains the manifest's dawn ground and grain roles. |
+| P05 | Native type rendering and the paragraph split differ from the reference. | Accepted: the exact backup-aware copy is complete and readable. |
+| P06 | The capture includes a real status bar. | Accepted: this is native simulator chrome. |
+| P07 | Privacy has no primary action. | Accepted: §11e requires an informational page with Back navigation. |
+| V01 | Largest text reflows without clipping. | Pass. |
+| V02 | Back remains visible at largest text. | Pass. |
+| V03 | The largest-text bottom capture contains the complete remaining copy. | Pass. |
+| V04 | No Reduce Motion variant is needed. | Pass: this screen adds no motion and is outside §12's required Reduce Motion screens. |
 
 The review does not certify the combined hidden-area/largest-text state or largest-text last-area/save-error variants; those combinations were not captured. It found no other obvious broken settled layout in the retained regression images. Still screenshots cannot establish behaviour, persistence, native semantics, exact fonts, measured contrast or motion timing. The test evidence supplies applicable runtime checks; manual VoiceOver order and real-device behaviour remain unverified.
 
