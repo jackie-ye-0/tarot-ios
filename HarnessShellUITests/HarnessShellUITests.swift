@@ -566,6 +566,12 @@ final class HarnessShellUITests: XCTestCase {
             scrollTo(app.buttons[entry], in: app)
             app.buttons[entry].tap()
             XCTAssertTrue(app.staticTexts[copy].exists)
+            if name == "privacy" {
+                XCTAssertEqual(app.staticTexts[copy].label,
+                               "Everything stays on this phone and in your phone's own backups.")
+                XCTAssertEqual(app.staticTexts["settings-privacy-detail"].label,
+                               "Nothing is sent anywhere else.")
+            }
             try auditAndCapture(app, "11-settings--\(name)", expecting: app.staticTexts[copy])
             app.buttons["go-back"].tap()
         }

@@ -15,7 +15,7 @@ The run used Xcode 27.0 (27A266a), iOS 26.5 and this checkout's dedicated iPhone
 | At least one area stays visible, with a reason | Parameterised engine test `lastAreaCannotBeHidden` tries each possible last area; UI test checks the disabled switch and explanatory hint |
 | Hiding preserves the daily card, all scores and saved readings | `preferencesPreserveSnapshotsAndSurviveReopening` compares full daily and question snapshots through disk reopening; the UI test restores all scores and reopens the original Relationship reading |
 | Relationship status can change or clear | `testSettingsStatusInformationAndLargestTextEvidence` exercises all four choices, clear and relaunch; store tests check persistence and the retained answered/skipped flag |
-| About and Privacy | UI tests open both pages, check the disclaimer and phone-only copy, run the existing all-category accessibility audit and capture normal and largest text sizes |
+| About and Privacy | UI tests open both pages, check the disclaimer and backup-aware privacy copy, run the existing all-category accessibility audit and capture normal and largest text sizes |
 | No birth-details or pronoun rows | UI assertions and the Settings source |
 | Failed saves are recoverable | `testSettingsSaveFailureRetainsSettingAndCanRetry` and `failedSettingsSaveKeepsPreviousChoiceAndRetryWorks` prove the previous preference remains, and a repeated choice succeeds |
 
@@ -33,7 +33,7 @@ The final run's Settings overview/bottom and About audits reported no issues. Th
 | --- | --- | --- |
 | `11-settings--last-area` | Explanation that one area must remain on | 5.242208:1 |
 | `11-settings--relationship` | Optional-status helper | 5.240743:1 |
-| `11-settings--privacy` | First phone-only paragraph | 9.061659:1 |
+| `11-settings--privacy` | Then-current phone-only statement, since replaced by backup-aware copy | 9.061659:1 |
 
 These elements were fully inside the viewport and exceeded the existing 4.5:1 floor. No control or other audit category was dismissed. The full run also passes the inherited Today, Ask and composer audits. Largest-text tests operate all three area switches, assert their labels and minimum 44-point targets, and tap near each target's top edge to prove that the expanded region responds. They retain the child-page bottom captures, relationship choices and clear action, and the existing reachable composer-action checks.
 
@@ -98,7 +98,7 @@ The reviewer accepted every remaining finding for these manifest-based reasons:
 | S4–S5 | Reminder/export/delete remain #21/#22; About and Privacy chevrons identify navigation and Settings has no tab bar. |
 | S6–S8 | Exact last-area explanation, native recoverable-save alert, whole largest-text area words and normal-size switch artwork follow §11c. |
 | R1, R3 | The explicit current-value line reinforces the saved choice; multiline options and Clear retain the selected checkmark and readable layout. R2 separately adds the missing value evidence. |
-| B1–B2, P1–P2 | Quiet scrolling pages contain the required full disclaimer and phone-only paragraphs; their paired largest-text captures cover the complete copy. |
+| B1–B2, P1–P2 | Quiet scrolling pages contained the required full disclaimer and then-current phone-only privacy copy; their paired largest-text captures covered that complete copy. The replacement backup-aware copy requires fresh pipeline evidence. |
 
 The review does not certify the combined hidden-area/largest-text state or largest-text last-area/save-error variants; those combinations were not captured. It found no other obvious broken settled layout in the retained regression images. Still screenshots cannot establish behaviour, persistence, native semantics, exact fonts, measured contrast or motion timing. The test evidence supplies applicable runtime checks; manual VoiceOver order and real-device behaviour remain unverified.
 
