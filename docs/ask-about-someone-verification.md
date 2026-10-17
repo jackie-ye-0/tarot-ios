@@ -1,6 +1,6 @@
 # Ask about someone (#18)
 
-Status: implemented; local UI verification and the independent image comparison are pending.
+Status: implemented; initial engine tests passed. Full local UI verification and the independent image comparison are pending.
 
 The Relationship-only Ask entry opens the reference's name/relation/context form. Name and one of Partner, Crush, Ex, Family, Friend or Colleague are required, and relation starts unselected. The disabled action explains what is missing; the enabled action names the person. No birth details are collected.
 
@@ -13,6 +13,8 @@ The existing draft, pick and saved-reading path now carries optional person deta
 - `testNamedPersonCrisisNoteClearsDraftAndBackDiscardsDetails` exercises note-triggered support before a pick, failed draft removal followed by relaunch/retry, no saved reading, and clearing person details on Back to Ask.
 - `testNamedPersonLargestTextAndKeyboardEvidence` captures the form, keyboard, each relation, named-person pick, completed pick and full reading at the largest text size, with actions reachable. Pick captures disable motion using the existing Debug Reduce Motion option.
 - The standard-size screen test runs the existing strict accessibility audit on the form, Ask entry, both pick states and reading scroll stops. The existing suite continues to verify fonts, source design roles and unchanged question-reading screens.
+
+A separate macOS command-line smoke run exercised 72 named-person compositions across all six starter cards, both orientations and all six relations, plus snapshot/draft decoding, crisis rejection and legacy draft compatibility. It used the actual engine sources and bundled JSON without a simulator. This supplements, but does not replace, the required full harness pass.
 
 ## Visual evidence
 

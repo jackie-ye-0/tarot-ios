@@ -1221,33 +1221,32 @@ struct NoteField: View {
     var minimumHeight: CGFloat = 220
 
     var body: some View {
-        TextEditor(text: $text)
-            .typeRole(.body)
-            .foregroundStyle(Design.Palette.ink)
-            .tint(Design.Palette.ink)
-            .scrollContentBackground(.hidden)
-            .focused($focused)
-            .onChange(of: focused) { _, isFocused in
-                if isFocused { onFocus() }
-            }
-            .overlay(alignment: .topLeading) {
-                if text.isEmpty {
-                    Text(placeholder).typeRole(.body)
-                        .foregroundStyle(Design.Palette.placeholder)
-                        .fixedSize(horizontal: false, vertical: true)
-                        // Match the native text editor's text-container insets.
-                        .padding(.horizontal, 5)
-                        .padding(.vertical, Design.Space.small)
-                        .allowsHitTesting(false)
-                        .accessibilityHidden(true)
+        ZStack(alignment: .topLeading) {
+            // Keep the placeholder's measured space when typing, including at large text sizes.
+            Text(placeholder).typeRole(.body)
+                .foregroundStyle(Design.Palette.placeholder)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, 5)
+                .padding(.vertical, Design.Space.small)
+                .opacity(text.isEmpty ? 1 : 0)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+            TextEditor(text: $text)
+                .typeRole(.body)
+                .foregroundStyle(Design.Palette.ink)
+                .tint(Design.Palette.ink)
+                .scrollContentBackground(.hidden)
+                .focused($focused)
+                .onChange(of: focused) { _, isFocused in
+                    if isFocused { onFocus() }
                 }
-            }
-            .frame(minHeight: minimumHeight)
-            .padding(Design.Space.related)
-            .background(Design.Palette.surface, in: RoundedRectangle(cornerRadius: 20))
-            .overlay { RoundedRectangle(cornerRadius: 20).strokeBorder(Design.Palette.ink, lineWidth: 1.5) }
-            .accessibilityLabel(label)
-            .accessibilityIdentifier(identifier)
+                .frame(minHeight: minimumHeight)
+                .accessibilityLabel(label)
+                .accessibilityIdentifier(identifier)
+        }
+        .padding(Design.Space.related)
+        .background(Design.Palette.surface, in: RoundedRectangle(cornerRadius: 20))
+        .overlay { RoundedRectangle(cornerRadius: 20).strokeBorder(Design.Palette.ink, lineWidth: 1.5) }
     }
 }
 

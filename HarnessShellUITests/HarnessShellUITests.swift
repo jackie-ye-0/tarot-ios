@@ -2271,6 +2271,7 @@ final class HarnessShellUITests: XCTestCase {
 
     private func enterPerson(_ app: XCUIApplication, note: String = "") {
         let name = app.textFields["person-name"]
+        scrollTo(app.staticTexts["Their name or a nickname"], in: app)
         scrollTo(name, in: app)
         name.tap()
         name.typeText("Sam\n")
@@ -2278,6 +2279,7 @@ final class HarnessShellUITests: XCTestCase {
         app.buttons["person-relation-friend"].tap()
         if !note.isEmpty {
             let field = app.textViews["person-note"]
+            scrollTo(app.staticTexts["Anything specific? (optional)"], in: app)
             scrollTo(field, in: app)
             field.tap()
             field.typeText(note)
@@ -2417,13 +2419,20 @@ final class HarnessShellUITests: XCTestCase {
         capture(app, "07-about-someone--largest-text")
         scrollTo(app.staticTexts["person-explanation"], in: app)
         capture(app, "07-about-someone--largest-text-explanation")
+        scrollTo(app.staticTexts["Their name or a nickname"], in: app)
+        scrollTo(app.textFields["person-name"], in: app)
+        capture(app, "07-about-someone--largest-text-name")
         for relation in ["partner", "crush", "ex", "family", "friend", "colleague"] {
             scrollTo(app.buttons["person-relation-\(relation)"], in: app)
             capture(app, "07-about-someone--largest-text-\(relation)")
         }
+        scrollTo(app.staticTexts["Anything specific? (optional)"], in: app)
+        scrollTo(app.textViews["person-note"], in: app)
+        capture(app, "07-about-someone--largest-text-note")
         scrollTo(app.buttons["submit-person"], in: app)
         capture(app, "07-about-someone--largest-text-bottom")
         let name = app.textFields["person-name"]
+        scrollTo(app.staticTexts["Their name or a nickname"], in: app)
         scrollTo(name, in: app)
         name.tap()
         name.typeText("Sam")
@@ -2435,6 +2444,7 @@ final class HarnessShellUITests: XCTestCase {
         scrollTo(app.buttons["person-relation-friend"], in: app)
         app.buttons["person-relation-friend"].tap()
         let note = app.textViews["person-note"]
+        scrollTo(app.staticTexts["Anything specific? (optional)"], in: app)
         scrollTo(note, in: app)
         note.tap()
         note.typeText("Time to talk.")
