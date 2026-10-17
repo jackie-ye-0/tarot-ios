@@ -1,6 +1,6 @@
 # Morning reminder verification (#21)
 
-Status: implementation and local iOS verification passed on 18 October 2026 (Sydney). The writer inspected the retained screenshots and comparison page. Independent comparison and the manual system-permission check remain pending; this is not yet a complete acceptance sign-off.
+Status: the initial implementation passed local iOS verification on 18 October 2026 (Sydney). The writer inspected its retained screenshots and comparison page. The L1/F2/F3 follow-up full run completed with 96/97 tests passing; the unchanged card-size proof test failed to advance from The Star to Ten of Wands. This follow-up is not a passing full check. Its limited recheck and the manual system-permission check remain pending; this is not yet a complete acceptance sign-off.
 
 ## Behaviour and tests
 
@@ -43,7 +43,29 @@ Accepted visible differences to carry into the PR:
 - **Settings:** the fixture relationship status is “Not set”, and the About/Privacy rows have navigation chevrons because they open child pages. Export and Delete remain omitted under #22, whose text owns those features. These are existing #20 scope/fixture differences.
 - **Denied and failure states:** no reference exists. They use the manifest's secondary text and native alert rules, explain the recovery path, and do not claim successful scheduling. Large-text captures show the full denial explanation.
 
-Independent comparison: pending firstmate's fresh-session review. Its verdict and every finding's disposition will be recorded here and in the PR before the first completion handoff.
+## Independent comparison and follow-up
+
+The fresh-session reviewer inspected all 384 images, with detailed review of the eight Settings/reminder states and a quick regression review of Today and other screens. Initial verdict: **pass after L1**, a missing middle scroll stop in the largest-text Settings evidence. The reviewer found no definite clipping or overlap defect in the reminder UI. Firstmate requested the following fixes and a limited check of the added images:
+
+| Finding | Disposition |
+| --- | --- |
+| L1, R3: area helper, About you and the complete relationship row lack largest-text evidence | Added UI-test stops named `11-settings--largest-text-area-helper`, `--largest-text-about-you-heading` and `--largest-text-about-you`. Each asserts its entire target is inside the viewport; no layout change. The captures were exported by the follow-up run; their writer inspection and the limited independent recheck are pending while the unrelated proof-test failure is diagnosed. |
+| F2: scheduling alert suggests an unestablished storage cause and redirects to Settings while already there | Fixed. The message now follows the failed action; enabling from Settings says “Try turning this reminder on again.” Invitation dismissal says “Try your reminder choice again.” Only failures outside app Settings name that destination. The UI test asserts the new scheduling recovery line. |
+| F3: native scheduling alert lacks largest system-text evidence | Added `testMorningReminderSchedulingFailureSystemTextEvidence`, which inherits real system text, records the category and verifies the whole title/message/OK action. The host set and read back `accessibility-extra-extra-extra-large` on this worktree's dedicated simulator. Focused run `20261017T192625.649543Z-test-cd5eabdf` passed 44/44 tests (engine target plus this UI test), with zero failures/skips. The writer inspected the retained `11-settings--reminder-schedule-failure-largest-text` image: title, recovery line and OK are complete and reachable. The host restored and read back `large`, and the original full-test scheme was restored byte-for-byte. The subsequent full run is recorded below; it is not green. |
+| S1–S2: system chrome and heavier native navigation symbols | Accepted: real status bar and recognisable native controls; no fake chrome or extra primary action. |
+| S3–S4: lower groups, taller rows, outer-guide alignment and native text metrics | Accepted: coherent 20-point alignment, readable rows and scrolling content; do not compress to fit the full web artboard. |
+| S5, S7, O1: native switch shape/grey off state and wrapped reminder label | Accepted: the manifest specifies native switches and growing rows. The on state is clear; large off/denied captures establish shared reflow. |
+| S6: relationship status “Not set” | Accepted: a valid saved fixture state explicitly supported by the manifest. |
+| S8: added 08:00 helper | Accepted: required by the updated manifest. |
+| S9: absent Export/Delete | Accepted: issue #22 owns these features; the manifest requires omission until functional. |
+| S10: About/Privacy chevrons | Accepted: the rows navigate to child pages, following the list rule. |
+| S11: more mottled/less pink grain and native edge rendering | Accepted: decorative texture preserves the dawn hierarchy; role/contrast checks establish code-level compliance separately. |
+| O2, D3, B2: shared shell differences | Accepted for S1–S11's reasons. The normal/bottom captures cover unchanged lower content. No separate large on-state claim is made. |
+| D1–D2, DL1: denied copy and no extra Settings button | Accepted: the complete explanation follows the manifest; no separate button is required. |
+| R1–R2, DL2, L2–L3, B1: large-text reflow and scroll-boundary crops | Accepted: complete controls/helpers are readable across overlapping captures. R2 is a denied-state stop; the ordinary helper is shown separately. L1 addresses the missing middle coverage. |
+| F1: native alert styling | Accepted: the manifest specifies a native error alert, with an off switch underneath and no success claim. |
+
+The reviewer also accepted the settled Reduce Motion captures and found no obvious regression in the other image families. Static images do not establish animation timing, VoiceOver order, notification permission or delivery. Firstmate requested one full harness check after the changes and then a limited recheck of the new images. Follow-up run `.harness/runs/20261017T192844.676625Z-check-e16dbdf6` completed with **97 total, 96 passed, one failed, zero skipped**, exit 65. Its only failure is `testFaceSizesAndLargestTextProof`: after the first Next cards tap, the first sample remained The Star when Ten of Wands was expected. The test method and proof sample/deck code are identical to `origin/main` at `25c012b9d466423ff2505a8f02683a854880e95c`; the proof entry bypasses AppSession and the store. Retained video confirms that page advancement did not complete. This supports a pre-existing proof-navigation timing failure, but the exact reason the tap failed to advance is unproven without a rerun. Firstmate requested retained-evidence diagnosis only and a stop before any rerun; the limited image recheck remains pending.
 
 ## Manual system permission check
 

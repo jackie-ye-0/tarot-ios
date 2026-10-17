@@ -827,6 +827,7 @@ final class HarnessShellUITests: XCTestCase {
         scrollTo(failed.switches["morning-reminder"], in: failed)
         failed.switches["morning-reminder"].tap()
         XCTAssertTrue(failed.alerts["Your reminder could not be updated"].waitForExistence(timeout: 5))
+        XCTAssertTrue(failed.alerts.staticTexts["Try turning this reminder on again."].exists)
         capture(failed, "11-settings--reminder-schedule-failure")
         failed.alerts.buttons["OK"].tap()
         XCTAssertEqual(failed.switches["morning-reminder"].value as? String, "0")
@@ -834,6 +835,45 @@ final class HarnessShellUITests: XCTestCase {
         failed.switches["morning-reminder"].tap()
         XCTAssertEqual(failed.switches["morning-reminder"].value as? String, "1")
         assertReminderEvidence(failed, contains: "requests=1; pending=morning-reminder")
+    }
+
+    @MainActor
+    func testMorningReminderSchedulingFailureSystemTextEvidence() {
+        // The host selects the actual system size for the focused capture run.
+        // No app-only override: the native alert and SwiftUI inherit the same setting.
+        let app = app(extra: ["--test-notification-permission", "schedule-failure"], audit: true)
+        scrollTo(app.buttons["draw-card-3"], in: app)
+        tapWhenSettled(app.buttons["draw-card-3"])
+        scrollTo(app.buttons["turn-over"], in: app)
+        app.buttons["turn-over"].tap()
+        scrollTo(app.buttons["see-meaning"], in: app)
+        app.buttons["see-meaning"].tap()
+        scrollTo(app.buttons["open-settings"], in: app)
+        app.buttons["open-settings"].tap()
+        scrollTo(app.switches["morning-reminder"], in: app)
+        app.switches["morning-reminder"].tap()
+        let alert = app.alerts["Your reminder could not be updated"]
+        XCTAssertTrue(alert.waitForExistence(timeout: 5))
+        let heading = alert.staticTexts["Your reminder could not be updated"]
+        let message = alert.staticTexts["Try turning this reminder on again."]
+        let action = alert.buttons["OK"]
+        waitForSettled([heading, message, action])
+        for element in [heading, message, action] {
+            XCTAssertTrue(app.windows.firstMatch.frame.contains(element.frame))
+        }
+        XCTAssertTrue(action.isHittable)
+        let category = UIApplication.shared.preferredContentSizeCategory
+        let categoryEvidence = XCTAttachment(string: category.rawValue)
+        categoryEvidence.name = "reminder-alert-system-text-category"
+        categoryEvidence.lifetime = .keepAlways
+        add(categoryEvidence)
+        let suffix = category == .accessibilityExtraExtraExtraLarge ? "largest-text" : "system-text"
+        capture(app, "11-settings--reminder-schedule-failure-\(suffix)")
+        action.tap()
+        XCTAssertEqual(app.switches["morning-reminder"].value as? String, "0")
+        app.switches["morning-reminder"].tap()
+        XCTAssertEqual(app.switches["morning-reminder"].value as? String, "1")
+        app.terminate()
     }
 
     func testSettingsVisibilityPersistsWithoutChangingDailyCard() throws {
@@ -978,6 +1018,14 @@ final class HarnessShellUITests: XCTestCase {
             toggle.tap()
             XCTAssertEqual(toggle.value as? String, "1")
             capture(app, "11-settings--largest-text-\(area)")
+        }
+        for (element, name) in [(app.staticTexts["area-visibility-hint"], "area-helper"),
+                                 (app.staticTexts["About you"], "about-you-heading"),
+                                 (app.buttons["settings-relationship"], "about-you")] {
+            scrollTo(element, in: app)
+            waitForSettled([element])
+            assertVisible(element, in: app)
+            capture(app, "11-settings--largest-text-\(name)")
         }
         scrollTo(app.buttons["settings-privacy"], in: app)
         capture(app, "11-settings--largest-text-bottom")

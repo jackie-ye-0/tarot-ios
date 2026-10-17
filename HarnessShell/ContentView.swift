@@ -67,7 +67,7 @@ struct ContentView: View {
         .alert("Your reminder could not be updated", isPresented: $session.reminderSaveFailed) {
             Button("OK", role: .cancel) { }
         } message: {
-            Text("Check the free space on your phone and try the reminder choice again. You can also turn it on or off in Settings.")
+            Text(session.reminderFailureMessage)
         }
         .alert("Your welcome could not be saved", isPresented: $session.welcomeSaveFailed) {
             Button("OK", role: .cancel) { }

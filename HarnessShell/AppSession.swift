@@ -126,6 +126,7 @@ final class AppSession {
     var showsSettings = false
     var settingsSaveFailed = false
     var reminderSaveFailed = false
+    private(set) var reminderFailureMessage = ""
     private(set) var reminderBusy = false
     private(set) var reminderDenied = false
     private(set) var reminderInvitationDenied = false
@@ -345,7 +346,10 @@ final class AppSession {
             preference.invitationAnswered = true
             try store.saveReminderPreference(preference)
             reminderPreference = preference
-        } catch { reminderSaveFailed = true }
+        } catch {
+            reminderFailureMessage = "Try your reminder choice again."
+            reminderSaveFailed = true
+        }
     }
 
     func setReminderEnabled(_ enabled: Bool) async {
@@ -382,7 +386,12 @@ final class AppSession {
             do { try store.saveReminderPreference(preference) }
             catch { notifications.cancel(); reminderScheduled = false; throw error }
             reminderPreference = preference
-        } catch { reminderSaveFailed = true }
+        } catch {
+            reminderFailureMessage = showsSettings
+                ? "Try turning this reminder \(enabled ? "on" : "off") again."
+                : "Try turning the reminder on in the app's Settings."
+            reminderSaveFailed = true
+        }
     }
 
     /// Reconcile on launch and foreground without ever asking for permission.
@@ -409,6 +418,9 @@ final class AppSession {
         } catch {
             notifications.cancel()
             reminderScheduled = false
+            reminderFailureMessage = showsSettings
+                ? "Try the reminder switch again."
+                : "Try the reminder switch in the app's Settings."
             reminderSaveFailed = true
         }
     }
