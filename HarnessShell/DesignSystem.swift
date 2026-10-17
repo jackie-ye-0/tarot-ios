@@ -1707,6 +1707,8 @@ struct SettingsChoice: View {
         }
         .buttonStyle(ActionPressStyle())
         .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+}
 
 struct HistoryListSurface: ViewModifier {
     func body(content: Content) -> some View {
