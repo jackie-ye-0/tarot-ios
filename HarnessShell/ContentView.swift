@@ -3,6 +3,7 @@ import SwiftUI
 enum AppCopy {
     static let entertainmentDisclaimer = "A mirror, not a forecast. Readings are for entertainment and reflection, not prediction or professional advice."
     static let lastVisibleAreaHint = "Keep at least one area on so Today and Ask have an area to show."
+    static let reminderDeniedHint = "Notifications are off for this app. Open the iPhone Settings app, choose Notifications, then this app, and turn on Allow Notifications. Then turn this reminder on."
     static let hiddenAreasHint = "Hidden areas keep their past readings."
 }
 
@@ -33,7 +34,7 @@ struct ContentView: View {
                 case .today(let draw):
                     TodayScreen(draw: draw, dateLabel: session.dateLabel,
                                 animationsEnabled: animationsEnabled, testMode: testMode,
-                                visibleAreas: session.visibleAreas, settings: { session.showsSettings = true },
+                                visibleAreas: session.visibleAreas, reminderSession: session, settings: { session.showsSettings = true },
                                 ask: session.openAsk).id("today-\(draw.dateKey)")
                 case .history:
                     HistoryScreen(session: session, animationsEnabled: animationsEnabled, testMode: testMode)
@@ -62,6 +63,11 @@ struct ContentView: View {
                 default: EmptyView()
                 }
             }
+        }
+        .alert("Your reminder could not be updated", isPresented: $session.reminderSaveFailed) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("Check the free space on your phone and try the reminder choice again. You can also turn it on or off in Settings.")
         }
         .alert("Your welcome could not be saved", isPresented: $session.welcomeSaveFailed) {
             Button("OK", role: .cancel) { }
@@ -400,6 +406,7 @@ struct TodayScreen: View {
     let animationsEnabled: Bool
     let testMode: Bool
     let visibleAreas: [ReadingArea]
+    var reminderSession: AppSession? = nil
     let settings: (() -> Void)?
     let ask: () -> Void
     var backToHistory: (() -> Void)? = nil
@@ -417,6 +424,7 @@ struct TodayScreen: View {
                 HStack(alignment: .top, spacing: Design.Space.small) {
                     Text(dateLabel).typeRole(.section)
                         .accessibilityIdentifier("today-title")
+                        .testReminderEvidence(reminderSession?.reminderEvidence)
                         .frame(maxWidth: .infinity, alignment: .leading)
                     if let settings { SettingsAction(action: settings) }
                 }
@@ -432,6 +440,20 @@ struct TodayScreen: View {
                     .accessibilityIdentifier("core-interpretation")
                 if let daily = draw.meaning.daily {
                     DailyExtrasView(daily: daily)
+                }
+                if let reminderSession {
+                    if reminderSession.showsReminderInvitation {
+                        ReminderInvitation(busy: reminderSession.reminderBusy,
+                                           accept: { Task { await reminderSession.setReminderEnabled(true) } },
+                                           decline: reminderSession.dismissReminderInvitation)
+                    } else if reminderSession.reminderInvitationDenied {
+                        Text(AppCopy.reminderDeniedHint)
+                            .typeRole(Design.TypeRole.secondary).foregroundStyle(Design.Palette.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .accessibilityIdentifier("today-reminder-denied")
+                    }
+                }
+                if let daily = draw.meaning.daily {
                     VStack(alignment: .leading, spacing: Design.Space.group) {
                         Text("How today sits").typeRole(.section)
                         DailyScoreStrip(daily: daily, areas: visibleAreas)

@@ -236,7 +236,7 @@ final class HarnessShellUITests: XCTestCase {
         return normalised(lines.sorted { $0.y < $1.y }.map(\.text).joined(separator: " "))
     }
 
-    private func app(extra: [String] = [], memory: Bool = true, seed: String = "reference-1", date: String = "2026-10-11T00:00:00Z", animations: Bool = false, audit: Bool = false, welcome: Bool = false) -> XCUIApplication {
+    private func app(extra: [String] = [], memory: Bool = true, seed: String = "reference-1", date: String = "2026-10-11T00:00:00Z", animations: Bool = false, audit: Bool = false, welcome: Bool = false, reminderInvitation: Bool = false) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = ["--test-mode", "--test-date", date,
                                "--test-time-zone", "Australia/Sydney", "--test-seed", seed]
@@ -245,6 +245,7 @@ final class HarnessShellUITests: XCTestCase {
         app.launchArguments += extra
         if audit { app.launchArguments.append("--test-reduce-motion") }
         if !welcome { app.launchArguments.append("--test-welcome-completed") }
+        if !reminderInvitation { app.launchArguments.append("--test-reminder-answered") }
         app.launch()
         return app
     }
@@ -645,6 +646,194 @@ final class HarnessShellUITests: XCTestCase {
         XCTAssertTrue(turnOver.waitForExistence(timeout: 5))
         turnOver.tap()
         XCTAssertTrue(app.buttons["see-meaning"].waitForExistence(timeout: 5))
+    }
+
+    private func assertReminderEvidence(_ app: XCUIApplication, contains expected: String,
+                                        file: StaticString = #filePath, line: UInt = #line) {
+        let title = app.staticTexts["settings-title"].exists
+            ? app.staticTexts["settings-title"] : app.staticTexts["today-title"]
+        let ready = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            (title.value as? String)?.contains(expected) == true
+        }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 5), .completed,
+                       "Expected \(expected), got \(title.value ?? "nil")", file: file, line: line)
+    }
+
+    func testMorningInvitationEvidenceAndPermanentDecline() throws {
+        let app = app(extra: ["--test-store-id", UUID().uuidString], memory: false,
+                      audit: true, reminderInvitation: true)
+        XCTAssertFalse(app.buttons["reminder-accept"].exists)
+        reveal(app)
+        XCTAssertFalse(app.buttons["reminder-accept"].exists)
+        app.buttons["see-meaning"].tap()
+        try auditAndCapture(app, "04-today-first-day", today: true, expecting: app.buttons["today-card"])
+        positionTodayAuditBelowCard(app, revealing: app.buttons["reminder-decline"])
+        assertVisible(app.buttons["reminder-accept"], in: app)
+        XCTAssertEqual(app.buttons["reminder-accept"].frame.width, app.buttons["reminder-decline"].frame.width, accuracy: 1)
+        XCTAssertGreaterThanOrEqual(app.buttons["reminder-decline"].frame.height, 44)
+        try auditAndCapture(app, "04-today-first-day--invitation", today: true,
+                            expecting: app.buttons["reminder-decline"])
+        scrollTo(app.staticTexts["next-card-arrival"], in: app)
+        capture(app, "04-today-first-day--bottom")
+        app.terminate()
+        app.launchArguments.append("--test-largest-text")
+        app.launch()
+        capture(app, "04-today-first-day--largest-text")
+        scrollTo(app.staticTexts["reminder-invitation-title"], in: app)
+        capture(app, "04-today-first-day--largest-text-invitation")
+        for choice in ["accept", "decline"] {
+            scrollTo(app.buttons["reminder-\(choice)"], in: app)
+            capture(app, "04-today-first-day--largest-text-\(choice)")
+        }
+        app.buttons["reminder-decline"].tap()
+        XCTAssertFalse(app.buttons["reminder-accept"].exists)
+        assertReminderEvidence(app, contains: "requests=0; pending=none")
+        app.terminate()
+        app.launchArguments.removeAll { $0 == "--test-largest-text" }
+        app.launch()
+        XCTAssertTrue(app.staticTexts["today-title"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["reminder-accept"].exists)
+        app.buttons["open-settings"].tap()
+        scrollTo(app.switches["morning-reminder"], in: app)
+        XCTAssertEqual(app.switches["morning-reminder"].value as? String, "0")
+        assertReminderEvidence(app, contains: "requests=0; pending=none")
+    }
+
+    func testMorningInvitationExpiresAfterFirstDateEvenWithoutAnswer() {
+        let app = app(extra: ["--test-store-id", UUID().uuidString], memory: false, reminderInvitation: true)
+        reveal(app)
+        app.buttons["see-meaning"].tap()
+        XCTAssertTrue(app.buttons["reminder-accept"].exists)
+        app.terminate()
+        let dateIndex = app.launchArguments.firstIndex(of: "--test-date")! + 1
+        app.launchArguments[dateIndex] = "2026-10-12T00:00:00Z"
+        app.launch()
+        reveal(app)
+        app.buttons["see-meaning"].tap()
+        XCTAssertFalse(app.buttons["reminder-accept"].exists)
+        app.terminate()
+        app.launchArguments[dateIndex] = "2026-10-11T00:00:00Z"
+        app.launch()
+        XCTAssertTrue(app.staticTexts["today-title"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["reminder-accept"].exists, "Going back a date cannot revive an expired invitation")
+    }
+
+    func testMorningReminderSchedulesPersistsCancelsAndReflectsRevocation() throws {
+        let app = app(extra: ["--test-store-id", UUID().uuidString], memory: false,
+                      audit: true, reminderInvitation: true)
+        reveal(app)
+        app.buttons["see-meaning"].tap()
+        scrollTo(app.buttons["reminder-accept"], in: app)
+        app.buttons["reminder-accept"].tap()
+        XCTAssertFalse(app.buttons["reminder-accept"].exists)
+        assertReminderEvidence(app, contains: "requests=1; pending=morning-reminder; hour=8; minute=0; repeats=true; deviceTime=true")
+        assertReminderEvidence(app, contains: "title=Your card is ready; body=Take a quiet moment for today's reading.")
+        app.terminate()
+        app.launchArguments += ["--test-notification-permission", "allowed"]
+        app.launch()
+        app.buttons["open-settings"].tap()
+        let toggle = app.switches["morning-reminder"]
+        scrollTo(toggle, in: app)
+        XCTAssertEqual(toggle.value as? String, "1")
+        assertReminderEvidence(app, contains: "requests=0; pending=morning-reminder")
+        try auditAndCapture(app, "11-settings--reminder-on", expecting: toggle)
+        scrollTo(toggle, in: app)
+        toggle.tap()
+        XCTAssertEqual(toggle.value as? String, "0")
+        assertReminderEvidence(app, contains: "requests=0; pending=none")
+        app.terminate()
+        app.launch()
+        app.buttons["open-settings"].tap()
+        scrollTo(toggle, in: app)
+        XCTAssertEqual(toggle.value as? String, "0")
+        assertReminderEvidence(app, contains: "pending=none")
+        toggle.tap()
+        XCTAssertEqual(toggle.value as? String, "1")
+        app.terminate()
+        let permissionIndex = app.launchArguments.firstIndex(of: "--test-notification-permission")! + 1
+        app.launchArguments[permissionIndex] = "denied"
+        app.launch()
+        app.buttons["open-settings"].tap()
+        scrollTo(toggle, in: app)
+        XCTAssertEqual(toggle.value as? String, "0")
+        assertReminderEvidence(app, contains: "requests=0; pending=none")
+    }
+
+    func testMorningReminderDenialAndSettingsPermissionRequest() throws {
+        let app = app(extra: ["--test-notification-permission", "deny"], audit: true, reminderInvitation: true)
+        reveal(app)
+        app.buttons["see-meaning"].tap()
+        scrollTo(app.buttons["reminder-accept"], in: app)
+        app.buttons["reminder-accept"].tap()
+        XCTAssertFalse(app.buttons["reminder-accept"].exists)
+        XCTAssertTrue(app.staticTexts["today-reminder-denied"].exists)
+        assertReminderEvidence(app, contains: "requests=1; pending=none")
+        positionTodayAuditBelowCard(app, revealing: app.staticTexts["today-reminder-denied"])
+        try auditAndCapture(app, "04-today-first-day--permission-denied", today: true,
+                            expecting: app.staticTexts["today-reminder-denied"])
+        scrollTo(app.buttons["open-settings"], in: app)
+        app.buttons["open-settings"].tap()
+        scrollTo(app.switches["morning-reminder"], in: app)
+        app.switches["morning-reminder"].tap()
+        XCTAssertEqual(app.switches["morning-reminder"].value as? String, "0")
+        assertReminderEvidence(app, contains: "requests=1; pending=none")
+        scrollTo(app.staticTexts["reminder-hint"], in: app)
+        XCTAssertTrue(app.staticTexts["reminder-hint"].label.contains("Allow Notifications"))
+        try auditAndCapture(app, "11-settings--reminder-denied", expecting: app.staticTexts["reminder-hint"])
+        app.terminate()
+        let largest = self.app(extra: ["--test-largest-text", "--test-notification-permission", "denied"], audit: true)
+        scrollTo(largest.buttons["draw-card-3"], in: largest)
+        tapWhenSettled(largest.buttons["draw-card-3"])
+        scrollTo(largest.buttons["turn-over"], in: largest)
+        largest.buttons["turn-over"].tap()
+        scrollTo(largest.buttons["see-meaning"], in: largest)
+        largest.buttons["see-meaning"].tap()
+        scrollTo(largest.buttons["open-settings"], in: largest)
+        largest.buttons["open-settings"].tap()
+        scrollTo(largest.switches["morning-reminder"], in: largest)
+        XCTAssertGreaterThanOrEqual(largest.switches["morning-reminder"].frame.height, 44)
+        capture(largest, "11-settings--reminder-largest-text")
+        scrollTo(largest.staticTexts["reminder-hint"], in: largest)
+        capture(largest, "11-settings--reminder-denied-largest-text")
+        largest.terminate()
+        let settings = self.app()
+        reveal(settings)
+        settings.buttons["see-meaning"].tap()
+        settings.buttons["open-settings"].tap()
+        scrollTo(settings.switches["morning-reminder"], in: settings)
+        settings.switches["morning-reminder"].tap()
+        XCTAssertEqual(settings.switches["morning-reminder"].value as? String, "1")
+        assertReminderEvidence(settings, contains: "requests=1; pending=morning-reminder")
+    }
+
+    func testMorningReminderFailuresRemainRecoverable() {
+        let app = app(extra: ["--test-reminder-save-failure"], reminderInvitation: true)
+        reveal(app)
+        app.buttons["see-meaning"].tap()
+        scrollTo(app.buttons["reminder-decline"], in: app)
+        app.buttons["reminder-decline"].tap()
+        XCTAssertTrue(app.alerts["Your reminder could not be updated"].waitForExistence(timeout: 5))
+        capture(app, "04-today-first-day--save-failure")
+        app.alerts.buttons["OK"].tap()
+        XCTAssertTrue(app.buttons["reminder-decline"].exists)
+        app.buttons["reminder-decline"].tap()
+        XCTAssertFalse(app.buttons["reminder-decline"].exists)
+        assertReminderEvidence(app, contains: "requests=0; pending=none")
+        app.terminate()
+        let failed = self.app(extra: ["--test-notification-permission", "schedule-failure"])
+        reveal(failed)
+        failed.buttons["see-meaning"].tap()
+        failed.buttons["open-settings"].tap()
+        scrollTo(failed.switches["morning-reminder"], in: failed)
+        failed.switches["morning-reminder"].tap()
+        XCTAssertTrue(failed.alerts["Your reminder could not be updated"].waitForExistence(timeout: 5))
+        capture(failed, "11-settings--reminder-schedule-failure")
+        failed.alerts.buttons["OK"].tap()
+        XCTAssertEqual(failed.switches["morning-reminder"].value as? String, "0")
+        assertReminderEvidence(failed, contains: "requests=1; pending=none")
+        failed.switches["morning-reminder"].tap()
+        XCTAssertEqual(failed.switches["morning-reminder"].value as? String, "1")
+        assertReminderEvidence(failed, contains: "requests=1; pending=morning-reminder")
     }
 
     func testSettingsVisibilityPersistsWithoutChangingDailyCard() throws {

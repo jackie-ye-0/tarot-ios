@@ -1871,3 +1871,92 @@ struct HistoryRow: View {
         .accessibilityIdentifier("history-\(entry.id)")
     }
 }
+
+struct ReminderInvitation: View {
+    let busy: Bool
+    let accept: () -> Void
+    let decline: () -> Void
+    @Environment(\.dynamicTypeSize) private var textSize
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Design.Space.related) {
+            Text("A new card arrives each morning").typeRole(.metadata)
+                .accessibilityIdentifier("reminder-invitation-title")
+            Text(busy ? "Setting up your reminder…" : "Want a nudge when it's ready? One notification a day, nothing else.")
+                .typeRole(.secondary).foregroundStyle(Design.Palette.secondary)
+            let layout = textSize.isAccessibilitySize
+                ? AnyLayout(VStackLayout(spacing: Design.Space.small))
+                : AnyLayout(HStackLayout(spacing: Design.Space.small))
+            layout {
+                choice("Remind me", filled: true, action: accept).accessibilityIdentifier("reminder-accept")
+                choice("Not now", filled: false, action: decline).accessibilityIdentifier("reminder-decline")
+            }
+            .disabled(busy)
+        }
+        .fixedSize(horizontal: false, vertical: true)
+        .padding(Design.Space.group)
+        .background(Design.Palette.surface, in: RoundedRectangle(cornerRadius: 22))
+    }
+
+    private func choice(_ title: String, filled: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title).typeRole(.button).multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .foregroundStyle(filled ? Design.Palette.surface : Design.Palette.ink)
+                .padding(.horizontal, Design.Space.related)
+                .padding(.vertical, Design.Space.small)
+                .frame(maxWidth: .infinity, minHeight: Design.Space.target)
+                .background(filled ? Design.Palette.ink : Design.Palette.surface,
+                            in: RoundedRectangle(cornerRadius: 22))
+                .overlay { RoundedRectangle(cornerRadius: 22).strokeBorder(filled ? Design.Palette.ink : Design.Palette.controlBorder, lineWidth: 1.5) }
+        }
+        .buttonStyle(ActionPressStyle())
+    }
+}
+
+struct ReminderToggle: View {
+    @Binding var isOn: Bool
+    let busy: Bool
+    @Environment(\.dynamicTypeSize) private var textSize
+    private let title = "Remind me when my card is ready"
+
+    var body: some View {
+        Group {
+            if textSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: Design.Space.related) {
+                    Text(title).typeRole(.body).fixedSize(horizontal: false, vertical: true)
+                        .accessibilityHidden(true)
+                    Button { isOn.toggle() } label: {
+                        Toggle("", isOn: .constant(isOn))
+                            .labelsHidden().tint(Design.Palette.ink).allowsHitTesting(false)
+                            .frame(maxWidth: .infinity, minHeight: Design.Space.target, alignment: .trailing)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(ActionPressStyle())
+                    .accessibilityRepresentation { toggle }
+                }
+            } else { toggle }
+        }
+        .disabled(busy)
+        .padding(.horizontal, Design.Space.group)
+        .padding(.vertical, Design.Space.related)
+        .frame(minHeight: 60)
+    }
+
+    private var toggle: some View {
+        Toggle(isOn: $isOn) { Text(title).typeRole(.body).fixedSize(horizontal: false, vertical: true) }
+            .tint(Design.Palette.ink)
+            .accessibilityLabel(title)
+            .accessibilityIdentifier("morning-reminder")
+    }
+}
+
+extension View {
+    @ViewBuilder func testReminderEvidence(_ value: String?) -> some View {
+        #if DEBUG
+        if let value { accessibilityValue(value) } else { self }
+        #else
+        self
+        #endif
+    }
+}

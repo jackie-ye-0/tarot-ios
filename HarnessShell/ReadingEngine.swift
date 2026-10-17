@@ -204,3 +204,25 @@ enum ReadingEngine {
                          card: card, contentVersion: library.version, createdAt: createdAt)
     }
 }
+
+
+struct ReminderPreference: Equatable {
+    var firstDrawDateKey: String?
+    var invitationAnswered = false
+    var enabled = false
+
+    func shouldInvite(on dateKey: String, hasDraw: Bool) -> Bool {
+        hasDraw && firstDrawDateKey == dateKey && !invitationAnswered && !enabled
+    }
+
+    mutating func expireInvitation(on dateKey: String) {
+        if let firstDrawDateKey, firstDrawDateKey != dateKey { invitationAnswered = true }
+    }
+}
+
+enum MorningReminderRule {
+    // No fixed date or time zone: the system matches 8 am in the device's current zone.
+    static var time: DateComponents { DateComponents(hour: 8, minute: 0) }
+    static let title = "Your card is ready"
+    static let body = "Take a quiet moment for today's reading."
+}

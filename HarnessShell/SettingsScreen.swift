@@ -19,6 +19,7 @@ struct SettingsScreen: View {
                     else { page = .settings }
                 }
                 Text(page.rawValue).typeRole(Design.TypeRole.title).accessibilityIdentifier("settings-title")
+                    .testReminderEvidence(session.reminderEvidence)
                 switch page {
                 case .settings: overview
                 case .relationship: relationship
@@ -79,6 +80,19 @@ struct SettingsScreen: View {
                     }
                     .accessibilityIdentifier("settings-relationship")
                 }
+            }
+            VStack(alignment: .leading, spacing: Design.Space.related) {
+                sectionTitle("Morning reminder")
+                SettingsGroup {
+                    ReminderToggle(isOn: Binding(get: { session.reminderEnabled }, set: { enabled in
+                        Task { await session.setReminderEnabled(enabled) }
+                    }), busy: session.reminderBusy)
+                }
+                Text(session.reminderBusy ? "Setting up your reminder…" : session.reminderDenied
+                     ? AppCopy.reminderDeniedHint : "Every day at 8:00 am on this phone.")
+                    .typeRole(Design.TypeRole.caption).foregroundStyle(Design.Palette.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("reminder-hint")
             }
             VStack(alignment: .leading, spacing: Design.Space.related) {
                 sectionTitle("Good to know")

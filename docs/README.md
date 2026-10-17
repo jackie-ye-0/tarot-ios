@@ -38,6 +38,7 @@ Add future research to `docs/research/`, using descriptive, lower-case hyphenate
 - [Reading in full verification](reading-verification.md): issue #16 annotations, deletion, independent review dispositions and verification status.
 - [Sharing verification](share-verification.md): issue #23 local image sharing, retained payloads and design comparison. The [independent sharing comparison](share-design-review.md) records its image-only findings and accepted differences.
 - [Crisis support verification](crisis-support-verification.md): issue #17 detection, draft removal, support states and design evidence.
+- [Morning reminder verification](reminder-verification.md): issue #21 invitation, notification controls, tests and manual-check status.
 - [Settings verification](settings-verification.md): issue #20 preferences, retention, screenshots and design comparison.
 - [History verification](history-verification.md): issue #19 combined archive, calendar, snapshots, scrolling and design evidence.
 - [Harness principles](harness.md)
