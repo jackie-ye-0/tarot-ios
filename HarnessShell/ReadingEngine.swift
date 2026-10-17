@@ -116,6 +116,7 @@ struct CardLibrary: Codable {
     let editorialStatus: String
     let cards: [TarotCard]
     let questions: QuestionContent
+    let crisis: CrisisContent
 
     static func load() throws -> CardLibrary {
         guard let url = Bundle.main.url(forResource: "starter-cards", withExtension: "json") else {
@@ -135,7 +136,7 @@ struct CardLibrary: Codable {
                       $0.daily?.isComplete == true &&
                       $0.questionPositions?.isComplete == true
                   }
-              }), library.questions.isComplete else { throw CocoaError(.coderReadCorrupt) }
+              }), library.questions.isComplete, library.crisis.isComplete else { throw CocoaError(.coderReadCorrupt) }
         return library
     }
 }

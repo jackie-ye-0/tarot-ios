@@ -39,6 +39,7 @@ final class DrawStore {
     var failsNextWelcomeSave = false
     var failsNextSpreadSave = false
     var failsNextDraftSave = false
+    var failsNextDraftDiscard = false
     var failsNextReadingUpdate = false
     var failsNextReadingDelete = false
     #endif
@@ -252,6 +253,12 @@ final class DrawStore {
         do {
             for draft in try context.fetch(FetchDescriptor<StoredSpreadDraft>()) { context.delete(draft) }
             for draft in try context.fetch(FetchDescriptor<StoredQuestionDraft>()) { context.delete(draft) }
+            #if DEBUG
+            if failsNextDraftDiscard {
+                failsNextDraftDiscard = false
+                throw CocoaError(.fileWriteOutOfSpace)
+            }
+            #endif
             try context.save()
         } catch {
             context.rollback()
