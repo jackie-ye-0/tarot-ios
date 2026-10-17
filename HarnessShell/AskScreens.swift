@@ -17,7 +17,6 @@ struct AskScreen: View {
                 SuggestedQuestions(questions: session.suggestions) { session.openComposer(question: $0) }
                 if session.area == .relationship {
                     NamedPersonEntry(action: session.openAboutSomeone)
-                        .accessibilityIdentifier("ask-person-entry")
                 }
                 if session.area == .relationship && !session.relationshipStatusAsked {
                     relationshipPrompt

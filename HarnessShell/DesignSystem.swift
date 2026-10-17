@@ -101,6 +101,7 @@ enum Design {
         static let drawHeadingHeight: CGFloat = 108
         static let readingLeading: CGFloat = 4
         static let target: CGFloat = 44
+        static let chip: CGFloat = 48
         static let button: CGFloat = 56
     }
 
@@ -1200,7 +1201,7 @@ struct QuestionChip: View {
                 .frame(maxWidth: fillsWidth ? .infinity : nil, alignment: centresTitle ? .center : .leading)
                 .padding(.horizontal, Design.Space.group)
                 .padding(.vertical, Design.Space.related)
-                .frame(minHeight: Design.Space.target)
+                .frame(minHeight: Design.Space.chip)
                 .foregroundStyle(selected ? Design.Palette.surface : Design.Palette.ink)
                 .background(selected ? Design.Palette.ink : Design.Palette.surface, in: shape)
                 .overlay { shape.strokeBorder(Design.Palette.controlBorder, lineWidth: 1) }
@@ -1252,28 +1253,42 @@ struct NoteField: View {
 
 struct NamedPersonEntry: View {
     let action: () -> Void
+    @Environment(\.dynamicTypeSize) private var textSize
 
     var body: some View {
-        Button(action: action) {
-            HStack(spacing: Design.Space.related) {
-                VStack(alignment: .leading, spacing: Design.Space.small) {
-                    Text("Ask about someone specific").typeRole(.metadata)
-                        .foregroundStyle(Design.Palette.ink)
-                    Text("You, them, and the connection between you").typeRole(.secondary)
-                        .foregroundStyle(Design.Palette.secondary)
+        VStack(alignment: .leading, spacing: 0) {
+            Button(action: action) {
+                HStack(spacing: Design.Space.related) {
+                    VStack(alignment: .leading, spacing: Design.Space.small) {
+                        Text("Ask about someone specific").typeRole(.metadata)
+                            .foregroundStyle(Design.Palette.ink)
+                        if !textSize.isAccessibilitySize { explanation }
+                    }
+                    .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 0)
+                    Image(systemName: "chevron.right").typeRole(.label)
+                        .foregroundStyle(Design.Palette.ink).accessibilityHidden(true)
                 }
-                .fixedSize(horizontal: false, vertical: true)
-                Spacer(minLength: 0)
-                Image(systemName: "chevron.right").typeRole(.label)
-                    .foregroundStyle(Design.Palette.ink).accessibilityHidden(true)
+                .multilineTextAlignment(.leading)
+                .padding(Design.Space.group)
+                .frame(maxWidth: .infinity, minHeight: Design.Space.target, alignment: .leading)
+                .contentShape(RoundedRectangle(cornerRadius: 22))
             }
-            .multilineTextAlignment(.leading)
-            .padding(Design.Space.group)
-            .frame(maxWidth: .infinity, minHeight: Design.Space.target, alignment: .leading)
-            .background(Design.Palette.surface, in: RoundedRectangle(cornerRadius: 22))
-            .contentShape(RoundedRectangle(cornerRadius: 22))
+            .buttonStyle(ActionPressStyle())
+            .accessibilityIdentifier("ask-person-entry")
+            if textSize.isAccessibilitySize {
+                explanation
+                    .padding([.horizontal, .bottom], Design.Space.group)
+                    .accessibilityIdentifier("ask-person-explanation")
+            }
         }
-        .buttonStyle(ActionPressStyle())
+        .background(Design.Palette.surface, in: RoundedRectangle(cornerRadius: 22))
+    }
+
+    private var explanation: some View {
+        Text("You, them, and the connection between you").typeRole(.secondary)
+            .foregroundStyle(Design.Palette.secondary)
+            .fixedSize(horizontal: false, vertical: true)
     }
 }
 
