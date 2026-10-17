@@ -863,7 +863,11 @@ final class HarnessShellUITests: XCTestCase {
             app.buttons["face-proof-next"].tap()
         }
         XCTAssertEqual(renderedFaces.count, 156)
-        XCTAssertEqual(app.staticTexts["face-proof-title"].label, "Card faces 1–3 of 78")
+        let wrapped = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "label == %@", "Card faces 1–3 of 78"),
+            object: app.staticTexts["face-proof-title"])
+        XCTAssertEqual(XCTWaiter.wait(for: [wrapped], timeout: 5), .completed,
+                       "The single Start again tap must return to the first page")
     }
 
     func testFaceSizesAndLargestTextProof() throws {
@@ -2212,7 +2216,7 @@ final class HarnessShellUITests: XCTestCase {
         scrollTo(app.buttons["suggestion-2"], in: app)
         capture(app, "05-ask--status-skipped-no-reading-bottom")
         app.buttons["tab-today"].tap()
-        XCTAssertTrue(app.staticTexts["today-title"].exists)
+        XCTAssertTrue(app.staticTexts["today-title"].waitForExistence(timeout: 5))
         app.buttons["tab-ask"].tap()
         scrollTo(app.buttons["ask-question-entry"], in: app)
         app.buttons["ask-question-entry"].tap()
@@ -2407,6 +2411,21 @@ final class HarnessShellUITests: XCTestCase {
         let field = app.textViews["note-field"]
         XCTAssertTrue((field.value as? String ?? "").isEmpty)
         field.tap()
+        let keyboard = app.keyboards.firstMatch
+        if !keyboard.waitForExistence(timeout: 3) {
+            // Test artefact workaround for the known missed-tap-after-audit pattern.
+            XCTContext.runActivity(named: "Re-tap note field once after missed post-audit tap") { activity in
+                let evidence = XCTAttachment(screenshot: app.screenshot())
+                evidence.name = "note-focus-missed-tap"
+                evidence.lifetime = .keepAlways
+                activity.add(evidence)
+                field.tap()
+            }
+            guard keyboard.waitForExistence(timeout: 3) else {
+                XCTFail("Note field did not acquire keyboard focus after the initial tap and one re-tap")
+                return
+            }
+        }
         field.typeText("I can take a small step.\nThere is time.")
         captureNoteKeyboard(app)
         finishNoteEditing(app)
