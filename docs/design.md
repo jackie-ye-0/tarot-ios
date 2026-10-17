@@ -235,7 +235,7 @@ Hidden areas are omitted from Today's scores and lines and from the Ask and comp
 
 The relationship-status page has a back chevron, title, optional helper, the four existing status labels in surface list rows and “Clear relationship status”. A checkmark and selected trait identify the saved choice; clearing selects “Not set” and retains the answered/skipped preference so Ask does not prompt again. Each change saves immediately and the page stays open. A native alert on a failed preference save explains that the previous setting remains and asks the user to try the switch or choice again.
 
-“About these readings” and “Privacy” each open a scrolling dawn page with a back chevron, screen-title role and body copy. About repeats Welcome's full entertainment-and-reflection disclaimer. Privacy states that readings, questions, drafts and preferences stay on this phone, with no account, server, analytics or AI calls. These pages, the status editor, last-area hint and save alert have no separate reference images; they use the existing type, colour, spacing, navigation and surface roles. All settings pages scroll and fit the largest text size without truncating labels.
+“About these readings” and “Privacy” each open a scrolling dawn page with a back chevron, screen-title role and body copy. About repeats Welcome's full entertainment-and-reflection disclaimer. Privacy says: “Everything stays on this phone and in your phone's own backups. Nothing is sent anywhere else.” These pages, the status editor, last-area hint and save alert have no separate reference images; they use the existing type, colour, spacing, navigation and surface roles. All settings pages scroll and fit the largest text size without truncating labels.
 
 ## 11f. Not yet designed
 

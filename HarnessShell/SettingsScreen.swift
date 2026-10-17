@@ -28,11 +28,11 @@ struct SettingsScreen: View {
                         .lineSpacing(Design.Space.readingLeading)
                         .accessibilityIdentifier("settings-disclaimer")
                 case .privacy:
-                    Text("Everything stays on this phone. Your readings, questions, drafts and preferences are stored here.")
+                    Text("Everything stays on this phone and in your phone's own backups.")
                         .typeRole(Design.TypeRole.body)
                         .lineSpacing(Design.Space.readingLeading)
                         .accessibilityIdentifier("settings-privacy-copy")
-                    Text("There is no account, server, analytics or AI call. Nothing is sent to us or anyone else.")
+                    Text("Nothing is sent anywhere else.")
                         .typeRole(Design.TypeRole.body)
                         .lineSpacing(Design.Space.readingLeading)
                         .accessibilityIdentifier("settings-privacy-detail")

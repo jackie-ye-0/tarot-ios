@@ -29,6 +29,8 @@ Jackie approved a first product build: a **local-first** tarot app covering the 
 
 This supersedes the exclusions below only for what that spec lists as in scope: tarot cards and reading rules, on-device persistence and product UI. Everything in the spec's Out of Scope section stays excluded and still needs a human decision. Delivery for product work: feature-branch PRs, never merged without approval.
 
+Jackie approved retaining standard phone backups on 17 October 2026. The app does not exclude its SwiftData store from those backups, and Settings discloses that data stays on the phone and in the phone's own backups.
+
 ## Explicitly excluded and unresolved
 
 Do not implement tarot cards, reading algorithms, accounts, persistence, networking, AI providers, payments, production UI or App Store delivery.
