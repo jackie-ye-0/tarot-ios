@@ -2,7 +2,7 @@
 
 Status: both independent-review capture corrections passed their assertions and were visually inspected. The delivery full check `20261016T063832.756516Z-check-77dbacdc` on clean commit `e755389e2e91ea20d827f8dba0a7eea54f067b28` passed **76/76 iOS tests**, with zero failures, skips or expected failures. All **34 command-contract tests** and the design-role guard passed. The earlier 75/76 post-review run and its passing 1/1 focused rerun remain recorded below as evidence of the known intermittent composer Done interaction.
 
-The previous full check, `20261015T215219.051931Z-check-815ecaaf`, built clean commit `d7b4123963b6cca2278fd046165f863203035daa` and passed **76/76 iOS tests** with zero failures, skips or expected failures. App code and the manifest are unchanged since that pass. The new capture assertions are covered by the post-review run described below.
+The previous full check, `20261015T215219.051931Z-check-815ecaaf`, built clean commit `d7b4123963b6cca2278fd046165f863203035daa` and passed **76/76 iOS tests** with zero failures, skips or expected failures. The new capture assertions are covered by the post-review run described below.
 
 The run used Xcode 27.0 (27A266a), iOS 26.5 and this checkout's dedicated iPhone 17e simulator. Doctor passed in `20261015T131021.455040Z-doctor-92234b57`. `./scripts/harness evidence --run .harness/runs/20261015T215219.051931Z-check-815ecaaf` was read, the final `design-comparison.html` was opened with `chrome-devtools-axi`, and the exported images described below were inspected.
 
