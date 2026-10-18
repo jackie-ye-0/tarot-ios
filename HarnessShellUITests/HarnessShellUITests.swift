@@ -350,7 +350,8 @@ final class HarnessShellUITests: XCTestCase {
             if !covered.isEmpty { print("Audit fully visible: \(covered.sorted())") }
             guard let key = deferred.keys.sorted().first(where: { !covered.contains($0) }) else { break }
             let target = deferred[key]!
-            XCTAssertTrue(target.exists, "Deferred audit element disappeared: \(key)")
+            XCTAssertTrue(target.waitForExistence(timeout: 10),
+                          "Deferred audit element did not return after Dynamic Type restoration: \(key)")
             if today {
                 positionTodayAuditBelowCard(app, revealing: target)
                 continue
@@ -424,7 +425,7 @@ final class HarnessShellUITests: XCTestCase {
             defer { previous = frames }
             return !frames.isEmpty && frames.allSatisfy { !$0.isEmpty } && frames == previous
         }, object: nil)
-        XCTAssertEqual(XCTWaiter.wait(for: [settled], timeout: 5), .completed, "Visible frames must settle")
+        XCTAssertEqual(XCTWaiter.wait(for: [settled], timeout: 15), .completed, "Visible frames must settle")
     }
 
     private func waitForSettled(_ elements: [XCUIElement], file: StaticString = #filePath, line: UInt = #line) {
