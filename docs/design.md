@@ -4,7 +4,7 @@
 
 Updated 16 October 2026: crisis support and draft-removal failure states (§11d) are documented. Updated 17 October 2026: §11c describes local image sharing, its document layout and the Reveal/Reading Share controls. Updated 19 October 2026: §11h defines Ask about someone, and shared question and relationship-choice chips use a 48-point minimum.
 
-**What this does not do.** It does not approve building product features. [Decisions and scope](decisions.md) still governs what may be implemented. Issue #7 implements Draw, Reveal and a basic Today; issue #9 fills Today and makes its card reopen Reveal; issue #13 adds the first complete Ask path; issue #14 adds full Ask context and composer safeguards; issue #20 adds Settings. Other screens remain reference designs.
+**What this does not do.** It does not approve building product features. [Decisions and scope](decisions.md) governs what may be implemented.
 
 **Sources.** The reference screens are the eleven artboards (01 Welcome to 11 Settings) and the flow map on the [design canvas](https://claude.ai/artifact/3H8wh1JXA8eg4xQMdDqUw6), a private link. The canvas holds one design; earlier drafts are only in its version history. Because the link is private, a picture of every screen is kept in [design-reference/](design-reference/README.md); use those when you cannot open the canvas. The starting point was the [V1 PRD](prds/prd-divination-app-v1.md) §10 "Soft dawn". Where the two disagree, this file wins. It changes §10 in two ways: cards are tall rounded rectangles, not arch-topped, and the screens before a card is turned use a deep indigo night palette.
 

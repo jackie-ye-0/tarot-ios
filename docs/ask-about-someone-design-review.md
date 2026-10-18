@@ -160,4 +160,3 @@ There is no standalone reference. Authority: M:206. Inspected the six note-edito
 - Successful taps, saving/restoring drafts, keyboard-dismissal behaviour, error recovery, persistence, local storage, hidden-area routing or whether each relation generates the correct stored reading. Filled/selected screenshots establish visible states only.
 - Whether C-M1 is a scroll-position capture problem or an app layout limitation. A complete empty-composer chip at another standard-size stop would resolve the evidence gap; otherwise fix the layout and recapture.
 - Exact motion timing or interaction during animation. No motion filmstrip was provided. Different card orientations between independent fixtures do not by themselves show a persistence bug.
-
