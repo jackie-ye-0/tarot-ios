@@ -177,12 +177,12 @@ final class AppSession {
         self.store = store
         self.library = library
         self.randomIndex = randomIndex
+        self.createSeed = createSeed
         self.notifications = notifications ?? ReminderNotifications()
         reminderPreference = try store.reminderPreference()
         let originalPreference = reminderPreference
         reminderPreference.expireInvitation(on: dateKey)
         if reminderPreference != originalPreference { try store.saveReminderPreference(reminderPreference) }
-        self.createSeed = createSeed
         if let draft = try store.spreadDraft() {
             area = draft.area
             question = draft.question

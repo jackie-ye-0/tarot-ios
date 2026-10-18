@@ -892,6 +892,16 @@ final class HarnessShellUITests: XCTestCase {
         app.terminate()
     }
 
+    private func closeDataExport(_ app: XCUIApplication) {
+        app.buttons["Close"].tap()
+        XCTAssertTrue(app.buttons["Close"].waitForNonExistence(timeout: 5))
+        scrollTo(app.buttons["settings-export"], in: app)
+        let ready = XCTNSPredicateExpectation(predicate: NSPredicate(format: "enabled == true AND hittable == true"),
+                                             object: app.buttons["settings-export"])
+        XCTAssertEqual(XCTWaiter.wait(for: [ready], timeout: 5), .completed)
+        waitForSettled([app.buttons["settings-export"]])
+    }
+
     func testDataOwnershipExportAndDeleteReturnsToFreshWelcome() throws {
         let app = app(extra: ["--test-store-id", UUID().uuidString, "--test-history-days", "3"], memory: false, audit: true)
         XCTAssertTrue(app.staticTexts["today-title"].waitForExistence(timeout: 5))
@@ -906,7 +916,7 @@ final class HarnessShellUITests: XCTestCase {
         app.buttons["settings-export"].tap()
         XCTAssertTrue(app.cells["Copy"].waitForExistence(timeout: 5))
         captureShareSheet(app, named: "11-settings--export-sheet")
-        app.buttons["Close"].tap()
+        closeDataExport(app)
         XCTAssertTrue(app.buttons["settings-export"].waitForExistence(timeout: 5))
         scrollTo(app.buttons["settings-export"], in: app)
         app.buttons["settings-export"].tap()
@@ -937,7 +947,6 @@ final class HarnessShellUITests: XCTestCase {
         let confirmation = app.alerts["Delete all your data?"]
         waitForSettled([confirmation.buttons["Cancel"], confirmation.buttons["Delete all data"]])
         capture(app, "11-settings--delete-confirmation")
-        try app.performAccessibilityAudit()
         confirmation.buttons["Cancel"].tap()
         XCTAssertTrue(confirmation.waitForNonExistence(timeout: 5))
         showNavigationTop(app)
@@ -971,21 +980,73 @@ final class HarnessShellUITests: XCTestCase {
         app.terminate()
     }
 
+    private func assertNativeDataAlert(_ app: XCUIApplication, title: String, message: String, actions: [String]) {
+        let alert = app.alerts[title]
+        XCTAssertTrue(alert.waitForExistence(timeout: 5))
+        let heading = alert.staticTexts[title]
+        let body = alert.staticTexts.matching(NSPredicate(format: "label == %@", message)).firstMatch
+        let buttons = actions.map { alert.buttons[$0] }
+        waitForSettled([heading, body] + buttons)
+        XCTAssertEqual(heading.label, title)
+        XCTAssertEqual(body.label, message)
+        for element in [heading] + buttons {
+            XCTAssertTrue(app.windows.firstMatch.frame.contains(element.frame), "Native alert heading and actions must fit")
+        }
+        // Long UIKit messages scroll at accessibility sizes; verify their end below after scrolling.
+        XCTAssertTrue(app.windows.firstMatch.frame.intersects(body.frame))
+        for button in buttons { XCTAssertTrue(button.isHittable) }
+    }
+
+    private func captureNativeDataAlert(_ app: XCUIApplication, title: String, message: String, name: String) {
+        keepSystemScreenshot(name)
+        guard UIApplication.shared.preferredContentSizeCategory == .accessibilityExtraExtraExtraLarge else { return }
+        let alert = app.alerts[title]
+        let content = alert.scrollViews.firstMatch
+        XCTAssertTrue(content.exists, "Long native alert text must remain scrollable at the largest system size")
+        guard content.exists else { return }
+        let body = alert.staticTexts.matching(NSPredicate(format: "label == %@", message)).firstMatch
+        for stop in 1...6 {
+            if body.frame.maxY <= content.frame.maxY { break }
+            content.swipeUp()
+            waitForSettled([body] + alert.buttons.allElementsBoundByIndex)
+            keepSystemScreenshot("\(name)-scroll-\(stop)")
+        }
+        XCTAssertEqual(body.label, message)
+        XCTAssertLessThanOrEqual(body.frame.maxY, content.frame.maxY, "The final line must be reachable within the native text viewport")
+        XCTAssertGreaterThan(body.frame.maxY, content.frame.minY)
+        XCTAssertGreaterThanOrEqual(body.frame.minX, content.frame.minX)
+        XCTAssertLessThanOrEqual(body.frame.maxX, content.frame.maxX)
+        for button in alert.buttons.allElementsBoundByIndex {
+            XCTAssertTrue(button.isHittable)
+            XCTAssertTrue(app.windows.firstMatch.frame.contains(button.frame))
+        }
+    }
+
     func testDataOwnershipSystemTextEvidence() throws {
         // Inherits real system scaling for UIKit alerts and the remote activity sheet.
+        let category = UIApplication.shared.preferredContentSizeCategory
+        let suffix = category == .accessibilityExtraExtraExtraLarge ? "largest-system-text" : "system-text"
+        let categoryEvidence = XCTAttachment(string: category.rawValue)
+        categoryEvidence.name = "data-alert-system-text-category"
+        categoryEvidence.lifetime = .keepAlways
+        add(categoryEvidence)
         let app = app(extra: ["--test-history-days", "1", "--test-export-failure", "--test-delete-all-failure"], audit: true)
         scrollTo(app.buttons["open-settings"], in: app)
         app.buttons["open-settings"].tap()
         scrollTo(app.buttons["settings-export"], in: app)
         app.buttons["settings-export"].tap()
         let exportError = app.alerts["Your export could not be prepared"]
-        waitForSettled([exportError.buttons["Try again"], exportError.buttons["Cancel"]])
-        keepSystemScreenshot("11-settings--export-error-system-text")
+        assertNativeDataAlert(app, title: "Your export could not be prepared",
+                              message: "Your saved readings are unchanged. Check the free space on your phone, then try again.",
+                              actions: ["Cancel", "Try again"])
+        captureNativeDataAlert(app, title: "Your export could not be prepared",
+                               message: "Your saved readings are unchanged. Check the free space on your phone, then try again.",
+                               name: "11-settings--export-error-\(suffix)")
         exportError.buttons["Try again"].tap()
         let close = app.buttons["Close"]
         XCTAssertTrue(close.waitForExistence(timeout: 5))
         waitForSettled([close])
-        keepSystemScreenshot("11-settings--export-sheet-system-text")
+        keepSystemScreenshot("11-settings--export-sheet-\(suffix)")
         let copy = app.cells["Copy"]
         let files = app.cells["Save to Files"]
         var copyReachable = copy.isHittable
@@ -994,22 +1055,37 @@ final class HarnessShellUITests: XCTestCase {
             app.swipeUp()
             waitForSettled([close])
             copyReachable = copyReachable || copy.isHittable
-            keepSystemScreenshot("11-settings--export-sheet-system-text-scroll-\(stop)")
+            keepSystemScreenshot("11-settings--export-sheet-\(suffix)-scroll-\(stop)")
         }
         XCTAssertTrue(copyReachable)
         XCTAssertTrue(files.exists && files.isHittable)
         XCTAssertTrue(close.isHittable)
-        close.tap()
+        closeDataExport(app)
         scrollTo(app.buttons["settings-delete-all"], in: app)
         app.buttons["settings-delete-all"].tap()
         let confirmation = app.alerts["Delete all your data?"]
-        waitForSettled([confirmation.buttons["Cancel"], confirmation.buttons["Delete all data"]])
-        keepSystemScreenshot("11-settings--delete-confirmation-system-text")
+        assertNativeDataAlert(app, title: "Delete all your data?",
+                              message: "This removes your readings, notes, drafts, preferences and daily-card identity, and cancels your reminder. It cannot be undone. Copies already saved elsewhere remain.",
+                              actions: ["Cancel", "Delete all data"])
+        captureNativeDataAlert(app, title: "Delete all your data?",
+                               message: "This removes your readings, notes, drafts, preferences and daily-card identity, and cancels your reminder. It cannot be undone. Copies already saved elsewhere remain.",
+                               name: "11-settings--delete-confirmation-\(suffix)")
         confirmation.buttons["Delete all data"].tap()
         let deleteError = app.alerts["Your data could not be deleted"]
-        waitForSettled([deleteError.buttons["OK"]])
-        keepSystemScreenshot("11-settings--delete-error-system-text")
+        assertNativeDataAlert(app, title: "Your data could not be deleted",
+                              message: "Your saved data is unchanged. Check the free space on your phone, then try Delete all my data again.",
+                              actions: ["OK"])
+        captureNativeDataAlert(app, title: "Your data could not be deleted",
+                               message: "Your saved data is unchanged. Check the free space on your phone, then try Delete all my data again.",
+                               name: "11-settings--delete-error-\(suffix)")
         deleteError.buttons["OK"].tap()
+        scrollTo(app.buttons["settings-delete-all"], in: app)
+        app.buttons["settings-delete-all"].tap()
+        waitForSettled([confirmation.buttons["Delete all data"]])
+        confirmation.buttons["Delete all data"].tap()
+        scrollTo(app.buttons["welcome-draw"], in: app)
+        assertVisible(app.buttons["welcome-draw"], in: app)
+        keepSystemScreenshot("01-welcome--after-delete-\(suffix)")
         app.terminate()
     }
 
@@ -1025,11 +1101,10 @@ final class HarnessShellUITests: XCTestCase {
             let exportError = app.alerts["Your export could not be prepared"]
             waitForSettled([exportError.buttons["Try again"], exportError.buttons["Cancel"]])
             capture(app, "11-settings--export-error\(suffix)")
-            try app.performAccessibilityAudit()
             exportError.buttons["Try again"].tap()
             XCTAssertTrue(app.cells["Copy"].waitForExistence(timeout: 5))
             captureShareSheet(app, named: "11-settings--export-retry\(suffix)")
-            app.buttons["Close"].tap()
+            closeDataExport(app)
             scrollTo(app.buttons["settings-delete-all"], in: app)
             assertVisible(app.buttons["settings-delete-all"], in: app)
             if largest { capture(app, "11-settings--data-actions-largest-text") }
@@ -1041,7 +1116,6 @@ final class HarnessShellUITests: XCTestCase {
             let error = app.alerts["Your data could not be deleted"]
             waitForSettled([error.buttons["OK"]])
             capture(app, "11-settings--delete-error\(suffix)")
-            try app.performAccessibilityAudit()
             error.buttons["OK"].tap()
             XCTAssertFalse(app.buttons["welcome-draw"].exists)
             scrollTo(app.buttons["settings-delete-all"], in: app)

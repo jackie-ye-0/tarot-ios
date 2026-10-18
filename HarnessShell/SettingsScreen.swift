@@ -4,6 +4,7 @@ struct SettingsScreen: View {
     @Bindable var session: AppSession
     @State private var page: Page = .settings
     @State private var export: ReadingExport?
+    @State private var exporting = false
     @State private var exportFailed = false
     @State private var confirmsDeletion = false
     @State private var deletionFailed = false
@@ -133,6 +134,7 @@ struct SettingsScreen: View {
                     SettingsDivider()
                     SettingsLink(title: "Export my readings", showsChevron: false, action: prepareExport)
                         .accessibilityIdentifier("settings-export")
+                        .disabled(exporting)
                     SettingsDivider()
                     SettingsLink(title: "Delete all my data", showsChevron: false, role: .destructive) {
                         confirmsDeletion = true
@@ -172,12 +174,18 @@ struct SettingsScreen: View {
     }
 
     private func prepareExport() {
-        do { export = try session.exportReadings() }
+        guard !exporting else { return }
+        do {
+            export = try session.exportReadings()
+            exporting = true
+        }
         catch { exportFailed = true }
     }
 
     private func removeExport() {
         // Cleanup is retried on next export, deletion and launch if the OS temporarily refuses it.
         try? ReadingExport.removeTemporaryCopy()
+        // Do not let an earlier dismissal remove a newly prepared file.
+        exporting = false
     }
 }
