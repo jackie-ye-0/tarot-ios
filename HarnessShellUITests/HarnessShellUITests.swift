@@ -2331,6 +2331,7 @@ final class HarnessShellUITests: XCTestCase {
         XCTAssertEqual(app.textViews["person-note"].value as? String, "How can we make more time to talk?")
         app.buttons["submit-person"].tap()
         XCTAssertEqual(app.staticTexts["spread-question"].label, "“You and Sam”")
+        XCTAssertEqual(app.staticTexts["pick-prompt"].label, "Choose a card for you")
         try auditAndCapture(app, "08-three-card-pick--named-person-reduce-motion", expecting: app.staticTexts["pick-prompt"], app.buttons["draw-card-3"])
         for position in ["you", "them", "connection"] {
             XCTAssertTrue(app.descendants(matching: .any)["spread-slot-\(position)"].firstMatch.label.contains("empty"))
@@ -2345,7 +2346,11 @@ final class HarnessShellUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["person-title"].waitForExistence(timeout: 5))
         app.buttons["submit-person"].tap()
         XCTAssertEqual(app.descendants(matching: .any)["spread-slot-you"].firstMatch.label, first)
-        for _ in 0..<2 { tapWhenSettled(app.buttons["draw-card-3"]) }
+        for (position, subject) in [("them", "them"), ("connection", "the connection")] {
+            XCTAssertEqual(app.staticTexts["pick-prompt"].label, "Choose a card for \(subject)")
+            capture(app, "08-three-card-pick--named-person-prompt-\(position)-reduce-motion")
+            tapWhenSettled(app.buttons["draw-card-3"])
+        }
         try auditAndCapture(app, "08-three-card-pick-complete--named-person-reduce-motion", expecting: app.buttons["read-spread"])
         app.buttons["read-spread"].tap()
         XCTAssertTrue(app.staticTexts["reading-saved"].waitForExistence(timeout: 5))
@@ -2510,7 +2515,11 @@ final class HarnessShellUITests: XCTestCase {
             scrollTo(app.descendants(matching: .any)["spread-slot-\(position)"].firstMatch, in: app)
             capture(app, "08-three-card-pick--named-person-largest-text-\(position)")
         }
-        for _ in 0..<3 {
+        for (position, subject) in [("you", "you"), ("them", "them"), ("connection", "the connection")] {
+            let prompt = app.staticTexts["pick-prompt"]
+            scrollTo(prompt, in: app)
+            XCTAssertEqual(prompt.label, "Choose a card for \(subject)")
+            capture(app, "08-three-card-pick--named-person-largest-text-prompt-\(position)")
             scrollTo(app.buttons["draw-card-3"], in: app)
             tapWhenSettled(app.buttons["draw-card-3"])
         }
@@ -2742,8 +2751,15 @@ final class HarnessShellUITests: XCTestCase {
             XCTAssertEqual(app.descendants(matching: .any)["composer-preview-\(position)"].firstMatch.label, "\(position.capitalized), empty")
         }
         try auditAndCapture(app, "06-composer", expecting: app.descendants(matching: .any)["question-field"].firstMatch, app.buttons["submit-question"])
-        scrollTo(app.buttons["suggestion-2"], in: app)
-        try auditAndCapture(app, "06-composer--bottom", expecting: app.buttons["suggestion-2"])
+        let finalSuggestion = app.buttons["suggestion-2"]
+        scrollTo(finalSuggestion, in: app, abovePinnedFooter: true)
+        // Reach the content's bottom so the chip has space above the pinned footer.
+        dragContent(app, up: true, abovePinnedFooter: true)
+        waitForSettled([finalSuggestion])
+        assertVisible(finalSuggestion, in: app, abovePinnedFooter: true)
+        XCTAssertGreaterThanOrEqual(scrollViewport(in: app).maxY - finalSuggestion.frame.maxY, 8,
+                                    "The complete final chip needs a clear gap above the pinned footer")
+        try auditAndCapture(app, "06-composer--bottom", expecting: finalSuggestion)
         scrollTo(app.buttons["suggestion-0"], in: app)
         app.buttons["suggestion-0"].tap()
         XCTAssertTrue(app.buttons["submit-question"].isEnabled)

@@ -154,9 +154,9 @@ enum QuestionPosition: String, Codable, CaseIterable, Identifiable {
     var label: String { self == .connection ? "The Connection" : rawValue.capitalized }
     var pickPrompt: String {
         switch self {
-        case .you: "Choose your You card"
-        case .them: "Choose your Them card"
-        case .connection: "Choose your Connection card"
+        case .you: "Choose a card for you"
+        case .them: "Choose a card for them"
+        case .connection: "Choose a card for the connection"
         default: "Choose your \(rawValue) card"
         }
     }

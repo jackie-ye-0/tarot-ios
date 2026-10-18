@@ -1,6 +1,6 @@
 # Ask about someone (#18)
 
-Status: final full check `20261017T205214.525756Z-check-1c7ea2ed` passed **96/96 iOS tests**, with zero failures, skips or expected failures, on clean `2d142eba19c400dcce73098c5a56ae677adfb965`, rebased onto Settings at `25c012b`. All **34 command-contract tests**, Swift frontend parsing and the design-role guard passed. Author image inspection is complete; the independent comparison is pending. Subsequent changes to this document record evidence only.
+Status: final full check `20261017T205214.525756Z-check-1c7ea2ed` passed **96/96 iOS tests**, with zero failures, skips or expected failures, on clean `2d142eba19c400dcce73098c5a56ae677adfb965`, rebased onto Settings at `25c012b`. All **34 command-contract tests**, Swift frontend parsing and the design-role guard passed. Author image inspection and one independent comparison are complete. The reviewer returned a conditional pass with one must-fix capture and one wording improvement. Those corrections are implemented but await a new authorised simulator check; the 96/96 result describes the pre-correction revision only.
 
 The Relationship-only Ask entry opens the reference's name/relation/context form. Name and one of Partner, Crush, Ex, Family, Friend or Colleague are required, and relation starts unselected. The disabled action explains what is missing; the enabled action names the person. No birth details are collected.
 
@@ -52,7 +52,18 @@ These are the author's dispositions for the independent reviewer and the eventua
 
 The earlier full check `20261017T132432.746532Z-check-11d23d53` had two failures: a fractional 44-point status-chip frame and an oscillating scroll attempt around the largest-text combined entry. The 48-point minimum and separate accessible helper resolved both; `20261017T144832.549176Z-check-ea841f82` passed 89/89 before the Settings rebase. The final 96/96 run additionally covers retaining a named-person draft's Relationship tag while the visible area changes. The interrupted first run was affected by another simulator user and is not verification evidence.
 
-Final review material is copied outside the worktree into the task's `final-evidence` directory: the exact design manifest, references, exported screenshots, comparison page and a screen/state handoff. A fresh-session independent comparison must still be recorded here, with each finding fixed or explicitly accepted, before the first completion handoff. No no-mistakes run has started.
+Final review material is copied outside the worktree into the task's `final-evidence` directory: the exact design manifest, references, exported screenshots, comparison page and a screen/state handoff. The first independent comparison is now recorded below. No no-mistakes run has started.
+
+## Independent review and corrections
+
+A fresh agent session reviewed only the supplied manifest and images on 18 October 2026: seven references and 142 built screenshots. Its verdict was **pass after C-M1**, with P-S1 recommended as well. The [review record](ask-about-someone-design-review.md) preserves every accepted visual difference and its reason; its image-only verdict does not replace the full harness/accessibility results.
+
+| Finding | Disposition and validation status |
+| --- | --- |
+| **C-M1**, must fix: the ordinary empty composer's main and bottom screenshots both cut the last suggestion's lower rounded edge at the pinned footer | The standard empty-state test now deliberately scrolls to the content bottom, waits for the chip to settle, asserts its complete frame is visible and checks at least eight points of separation from the footer before retaining the bottom screenshot. The 48-point chip and existing footer/content spacing are unchanged. This capture-first correction awaits simulator execution and image inspection; only if it cannot expose the chip will layout clearance need changing. |
+| **P-S1**, should fix: “Choose your You card” is awkward | Changed all three prompts to “Choose a card for you”, “Choose a card for them” and “Choose a card for the connection”. UI tests assert each actual displayed instruction and retain the intermediate normal-size and all three largest-text prompt captures. Manifest §11f states the wording. Simulator assertions and image inspection are pending. |
+
+All other reviewed differences were accepted with the manifest-based reasons in the review record. The reviewer found no must-fix form, named reading, completed-pick, largest-text or settled Reduce Motion issue. The supplied static images do not certify motion timing, actual accessibility semantics, or font/contrast measurements; those remain covered by their corresponding automated evidence and stated limits.
 
 ## Limits
 
