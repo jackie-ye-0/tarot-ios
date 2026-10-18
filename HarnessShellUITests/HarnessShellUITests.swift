@@ -704,6 +704,15 @@ final class HarnessShellUITests: XCTestCase {
         reveal(app)
         app.buttons["see-meaning"].tap()
         XCTAssertTrue(app.buttons["reminder-accept"].exists)
+        openHistory(app)
+        let archived = app.buttons["history-daily-2026-10-11"]
+        scrollTo(archived, in: app)
+        archived.tap()
+        XCTAssertTrue(app.buttons["back-to-history"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["reminder-accept"].exists, "Archived cards must not show the live invitation")
+        app.buttons["back-to-history"].tap()
+        app.buttons["tab-today"].tap()
+        XCTAssertTrue(app.buttons["reminder-accept"].waitForExistence(timeout: 5))
         app.terminate()
         let dateIndex = app.launchArguments.firstIndex(of: "--test-date")! + 1
         app.launchArguments[dateIndex] = "2026-10-12T00:00:00Z"
