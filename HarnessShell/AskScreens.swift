@@ -15,6 +15,9 @@ struct AskScreen: View {
                 QuestionEntry(title: "Ask about \(session.area.subject)") { session.openComposer() }
                     .accessibilityIdentifier("ask-question-entry")
                 SuggestedQuestions(questions: session.suggestions) { session.openComposer(question: $0) }
+                if session.area == .relationship {
+                    NamedPersonEntry(action: session.openAboutSomeone)
+                }
                 if session.area == .relationship && !session.relationshipStatusAsked {
                     relationshipPrompt
                 }
@@ -142,8 +145,79 @@ struct QuestionComposerScreen: View {
     }
 }
 
+struct AboutSomeoneScreen: View {
+    @Bindable var session: AppSession
+    @Environment(\.dynamicTypeSize) private var textSize
+    @FocusState private var noteFocused: Bool
+
+    var body: some View {
+        ScrollViewReader { scroll in
+            ReadingScreenLayout {
+                VStack(alignment: .leading, spacing: Design.Space.page) {
+                    NavigationAction(action: session.backToAsk)
+                    VStack(alignment: .leading, spacing: Design.Space.small) {
+                        Text("Who's on your mind?").typeRole(Design.TypeRole.title)
+                            .accessibilityIdentifier("person-title")
+                        Text("No birth details needed for them. Just a name or nickname, so the reading can speak about them.")
+                            .typeRole(Design.TypeRole.secondary).foregroundStyle(Design.Palette.secondary)
+                            .accessibilityIdentifier("person-explanation")
+                    }
+                    VStack(alignment: .leading, spacing: Design.Space.small) {
+                        Text("Their name or a nickname").typeRole(.metadata)
+                        PersonNameField(text: Binding(get: { session.person?.name ?? "" }, set: { session.person?.name = $0 })) {
+                            scroll.scrollTo("person-name", anchor: .top)
+                        }.id("person-name")
+                    }
+                    VStack(alignment: .leading, spacing: Design.Space.small) {
+                        Text("They are your...").typeRole(.metadata)
+                        let columns = textSize.isAccessibilitySize ? 1 : 3
+                        Grid(horizontalSpacing: Design.Space.small, verticalSpacing: Design.Space.small) {
+                            ForEach(0..<(PersonRelation.allCases.count / columns), id: \.self) { row in
+                                GridRow {
+                                    ForEach(0..<columns, id: \.self) { column in
+                                        let relation = PersonRelation.allCases[row * columns + column]
+                                        QuestionChip(title: relation.label, fillsWidth: true, centresTitle: true,
+                                                     selected: session.person?.relation == relation) {
+                                            session.person?.relation = relation
+                                        }.accessibilityIdentifier("person-relation-\(relation.rawValue)")
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    VStack(alignment: .leading, spacing: Design.Space.small) {
+                        Text("Anything specific? (optional)").typeRole(.metadata)
+                        NoteField(text: Binding(get: { session.person?.note ?? "" }, set: { session.person?.note = $0 }),
+                                  focused: $noteFocused, onFocus: { scroll.scrollTo("person-note", anchor: .top) },
+                                  placeholder: "We've been talking for two months and I can't read where it's going.",
+                                  label: "Anything specific? Optional note", identifier: "person-note", minimumHeight: 96)
+                            .id("person-note")
+                    }
+                }
+                .foregroundStyle(Design.Palette.ink)
+                .padding(.horizontal, Design.Space.page)
+                .padding(.vertical, Design.Space.related)
+            } footer: {
+                VStack(spacing: Design.Space.group) {
+                    Text("You · Them · The Connection")
+                        .typeRole(Design.TypeRole.secondary).foregroundStyle(Design.Palette.secondary)
+                        .multilineTextAlignment(.center)
+                    PrimaryAction(title: session.person?.actionTitle ?? "Add a name and who they are", action: session.submitQuestion)
+                        .disabled(!session.canSubmit)
+                        .accessibilityIdentifier("submit-person")
+                }
+            }
+            .scrollDismissesKeyboard(.never)
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                if noteFocused { NoteKeyboardDismissal { noteFocused = false } }
+            }
+        }
+    }
+}
+
 struct SpreadCards: View {
     let picks: [SpreadPick]
+    var type: ReadingType = .question
     var night = false
     var animationsEnabled = false
     @Environment(\.dynamicTypeSize) private var textSize
@@ -153,7 +227,7 @@ struct SpreadCards: View {
             ? AnyLayout(VStackLayout(alignment: .center, spacing: Design.Space.section))
             : AnyLayout(HStackLayout(alignment: .top, spacing: Design.Space.related))
         layout {
-            ForEach(Array(QuestionPosition.allCases.enumerated()), id: \.element) { index, position in
+            ForEach(Array(type.positions.enumerated()), id: \.element) { index, position in
                 let pick = picks.first { $0.position == position }
                 VStack(spacing: Design.Space.small) {
                     if let pick {
@@ -208,15 +282,15 @@ struct ThreeCardPickScreen: View {
                         .accessibilityIdentifier("spread-progress")
                 }
                 VStack(alignment: .leading, spacing: Design.Space.small) {
-                    Text("“\(session.question)”").typeRole(.section).accessibilityIdentifier("spread-question")
-                    Text("Your \(session.area.rawValue) question")
+                    Text("“\(session.spreadTitle)”").typeRole(.section).accessibilityIdentifier("spread-question")
+                    Text(session.person == nil ? "Your \(session.area.rawValue) question" : "Your relationship reading")
                         .typeRole(Design.TypeRole.secondary).foregroundStyle(Design.Palette.nightSecondary)
                 }
                 Divider().overlay(Design.Palette.nightHairline)
-                SpreadCards(picks: session.picks, night: true, animationsEnabled: animationsEnabled)
+                SpreadCards(picks: session.picks, type: session.readingType, night: true, animationsEnabled: animationsEnabled)
                     .zIndex(1)
                 if session.picks.count < 3 {
-                    Text("Choose your \(QuestionPosition.allCases[session.picks.count].rawValue) card")
+                    Text(session.readingType.positions[session.picks.count].pickPrompt)
                         .typeRole(.section)
                         .frame(maxWidth: .infinity)
                         .multilineTextAlignment(.center)
@@ -351,7 +425,7 @@ struct QuestionReadingScreen: View {
                     Text("“\(reading.question)”").typeRole(Design.TypeRole.title).accessibilityIdentifier("reading-question")
                     ReadingSavedMetadata(area: reading.area)
                 }
-                SpreadCards(picks: reading.picks)
+                SpreadCards(picks: reading.picks, type: reading.type)
                 ForEach(reading.picks) { pick in
                     if let section = reading.sections.first(where: { $0.position == pick.position }) {
                         passage(title: "\(pick.position.label) · \(pick.card.name)\(pick.orientation == .reversed ? ", reversed" : "")",

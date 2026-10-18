@@ -8,6 +8,8 @@ struct CardMeaning: Codable, Equatable {
     var daily: DailyContent? = nil
     // Absent only in snapshots saved before Ask was added.
     var questionPositions: QuestionPositionMeanings? = nil
+    // Older saved snapshots remain readable without named-person content.
+    var namedPersonPositions: NamedPersonPositionMeanings? = nil
 }
 
 struct AreaReading: Codable, Equatable {
@@ -134,7 +136,7 @@ struct CardLibrary: Codable {
                   [card.upright, card.reversed].allSatisfy {
                       (3...4).contains($0.keywords.count) && !$0.interpretation.isEmpty &&
                       $0.daily?.isComplete == true &&
-                      $0.questionPositions?.isComplete == true
+                      $0.questionPositions?.isComplete == true && $0.namedPersonPositions?.isComplete == true
                   }
               }), library.questions.isComplete, library.crisis.isComplete else { throw CocoaError(.coderReadCorrupt) }
         return library

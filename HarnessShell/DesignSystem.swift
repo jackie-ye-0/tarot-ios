@@ -101,6 +101,7 @@ enum Design {
         static let drawHeadingHeight: CGFloat = 108
         static let readingLeading: CGFloat = 4
         static let target: CGFloat = 44
+        static let chip: CGFloat = 48
         static let button: CGFloat = 56
     }
 
@@ -1200,7 +1201,7 @@ struct QuestionChip: View {
                 .frame(maxWidth: fillsWidth ? .infinity : nil, alignment: centresTitle ? .center : .leading)
                 .padding(.horizontal, Design.Space.group)
                 .padding(.vertical, Design.Space.related)
-                .frame(minHeight: Design.Space.target)
+                .frame(minHeight: Design.Space.chip)
                 .foregroundStyle(selected ? Design.Palette.surface : Design.Palette.ink)
                 .background(selected ? Design.Palette.ink : Design.Palette.surface, in: shape)
                 .overlay { shape.strokeBorder(Design.Palette.controlBorder, lineWidth: 1) }
@@ -1215,35 +1216,105 @@ struct NoteField: View {
     @Binding var text: String
     @FocusState.Binding var focused: Bool
     var onFocus: () -> Void
+    var placeholder = "Write a note"
+    var label = "Your note"
+    var identifier = "note-field"
+    var minimumHeight: CGFloat = 220
 
     var body: some View {
-        TextEditor(text: $text)
+        ZStack(alignment: .topLeading) {
+            // Keep the placeholder's measured space when typing, including at large text sizes.
+            Text(placeholder).typeRole(.body)
+                .foregroundStyle(Design.Palette.placeholder)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, 5)
+                .padding(.vertical, Design.Space.small)
+                .opacity(text.isEmpty ? 1 : 0)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+            TextEditor(text: $text)
+                .typeRole(.body)
+                .foregroundStyle(Design.Palette.ink)
+                .tint(Design.Palette.ink)
+                .scrollContentBackground(.hidden)
+                .focused($focused)
+                .onChange(of: focused) { _, isFocused in
+                    if isFocused { onFocus() }
+                }
+                .frame(minHeight: minimumHeight)
+                .accessibilityLabel(label)
+                .accessibilityIdentifier(identifier)
+        }
+        .padding(Design.Space.related)
+        .background(Design.Palette.surface, in: RoundedRectangle(cornerRadius: 20))
+        .overlay { RoundedRectangle(cornerRadius: 20).strokeBorder(Design.Palette.ink, lineWidth: 1.5) }
+    }
+}
+
+struct NamedPersonEntry: View {
+    let action: () -> Void
+    @Environment(\.dynamicTypeSize) private var textSize
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Button(action: action) {
+                HStack(spacing: Design.Space.related) {
+                    VStack(alignment: .leading, spacing: Design.Space.small) {
+                        Text("Ask about someone specific").typeRole(.metadata)
+                            .foregroundStyle(Design.Palette.ink)
+                        if !textSize.isAccessibilitySize { explanation }
+                    }
+                    .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 0)
+                    Image(systemName: "chevron.right").typeRole(.label)
+                        .foregroundStyle(Design.Palette.ink).accessibilityHidden(true)
+                }
+                .multilineTextAlignment(.leading)
+                .padding(Design.Space.group)
+                .frame(maxWidth: .infinity, minHeight: Design.Space.target, alignment: .leading)
+                .contentShape(RoundedRectangle(cornerRadius: 22))
+            }
+            .buttonStyle(ActionPressStyle())
+            .accessibilityIdentifier("ask-person-entry")
+            if textSize.isAccessibilitySize {
+                explanation
+                    .padding([.horizontal, .bottom], Design.Space.group)
+                    .accessibilityIdentifier("ask-person-explanation")
+            }
+        }
+        .background(Design.Palette.surface, in: RoundedRectangle(cornerRadius: 22))
+    }
+
+    private var explanation: some View {
+        Text("You, them, and the connection between you").typeRole(.secondary)
+            .foregroundStyle(Design.Palette.secondary)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+}
+
+struct PersonNameField: View {
+    @Binding var text: String
+    var onFocus: () -> Void
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        TextField("Their name or a nickname", text: $text,
+                  prompt: Text("e.g. Sam").foregroundStyle(Design.Palette.placeholder))
             .typeRole(.body)
             .foregroundStyle(Design.Palette.ink)
             .tint(Design.Palette.ink)
-            .scrollContentBackground(.hidden)
+            .textInputAutocapitalization(.words)
+            .autocorrectionDisabled()
             .focused($focused)
-            .onChange(of: focused) { _, isFocused in
-                if isFocused { onFocus() }
-            }
-            .overlay(alignment: .topLeading) {
-                if text.isEmpty {
-                    Text("Write a note").typeRole(.body)
-                        .foregroundStyle(Design.Palette.placeholder)
-                        .fixedSize(horizontal: false, vertical: true)
-                        // Match the native text editor's text-container insets.
-                        .padding(.horizontal, 5)
-                        .padding(.vertical, Design.Space.small)
-                        .allowsHitTesting(false)
-                        .accessibilityHidden(true)
-                }
-            }
-            .frame(minHeight: 220)
-            .padding(Design.Space.related)
-            .background(Design.Palette.surface, in: RoundedRectangle(cornerRadius: 20))
-            .overlay { RoundedRectangle(cornerRadius: 20).strokeBorder(Design.Palette.ink, lineWidth: 1.5) }
-            .accessibilityLabel("Your note")
-            .accessibilityIdentifier("note-field")
+            .onChange(of: focused) { _, value in if value { onFocus() } }
+            .submitLabel(.done)
+            .onSubmit { focused = false }
+            .padding(.horizontal, Design.Space.page)
+            .padding(.vertical, Design.Space.related)
+            .frame(minHeight: 60)
+            .background(Design.Palette.surface, in: Capsule())
+            .overlay { Capsule().strokeBorder(Design.Palette.ink, lineWidth: 1.5) }
+            .accessibilityIdentifier("person-name")
     }
 }
 
@@ -1447,7 +1518,7 @@ struct ComposerPreview: View {
             : AnyLayout(HStackLayout(alignment: .center, spacing: Design.Space.group))
         layout {
             HStack(spacing: Design.Space.small) {
-                ForEach(QuestionPosition.allCases) { position in
+                ForEach(ReadingType.question.positions) { position in
                     RoundedRectangle(cornerRadius: 3.4)
                         .strokeBorder(Design.Palette.secondary, style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
                         .frame(width: 34, height: 54.4)

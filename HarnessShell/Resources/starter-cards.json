@@ -1,5 +1,5 @@
 {
-  "version": 4,
+  "version": 5,
   "editorialStatus": "Original first-draft content. Requires Jackie's editorial review before release to real users.",
   "cards": [
     {
@@ -38,6 +38,11 @@
           "situation": "You may be finding room for hope after a period of uncertainty. Notice what already gives you a little steadiness.",
           "action": "Give one hopeful idea a small, practical expression. You could begin with a conversation or a little time set aside.",
           "outcome": "Renewal may look like a gentler relationship with uncertainty. Notice the signs of progress without asking them to promise an ending."
+        },
+        "namedPersonPositions": {
+          "you": "You may be ready to bring a little more hope and honesty to this connection. Notice what helps you feel safe enough to be yourself.",
+          "them": "Leave room to discover what gives the other person hope. Their needs are something to ask about, rather than something this card can tell you.",
+          "connection": "The connection may benefit from patient, ordinary acts of care. Notice where trust already has room to grow."
         }
       },
       "reversed": {
@@ -70,6 +75,11 @@
           "situation": "Reassurance may feel distant, even when something worthwhile is taking shape. Notice which expectations are making it hard to see what is here.",
           "action": "Make room for rest and one source of support you trust. You do not need to force confidence before taking a small step.",
           "outcome": "A quieter kind of hope may become available when certainty is no longer the test. Consider what would help you recognise it."
+        },
+        "namedPersonPositions": {
+          "you": "You may be finding it hard to trust your own hopes here. Give yourself time to name what you need without judging it.",
+          "them": "A quiet response can have many meanings. Ask what support the other person wants rather than filling the silence with assumptions.",
+          "connection": "The connection may need gentler expectations. Consider one small way to rebuild openness without demanding reassurance."
         }
       }
     },
@@ -109,6 +119,11 @@
           "situation": "Something in this situation may feel open, warm or easy to name. Notice what becomes clearer when you let a good moment be simple.",
           "action": "Say what matters plainly and leave room for an honest response. A little openness may be more useful than trying to impress.",
           "outcome": "The Sun offers an image of warmth and being seen. Consider how openness might shape your next step, without treating it as a promise."
+        },
+        "namedPersonPositions": {
+          "you": "You may bring warmth and a wish to be seen to this connection. Notice which moments let you show up without performing.",
+          "them": "Be curious about what the other person enjoys and chooses to share. Let their words guide you, rather than treating cheerfulness as the whole story.",
+          "connection": "Shared enjoyment may offer a useful starting point for this connection. Make room for an honest conversation as well as an easy moment."
         }
       },
       "reversed": {
@@ -141,6 +156,11 @@
           "situation": "You may feel pressure to make this look brighter than it feels. Notice the difference between a pleasant appearance and your own experience.",
           "action": "Let yourself name what is difficult alongside what is good. An honest pause may make room for a more comfortable pace.",
           "outcome": "Ease may take a quieter form than you expected. Notice whether a smaller, more honest version of enjoyment would be enough."
+        },
+        "namedPersonPositions": {
+          "you": "You may feel pressure to keep everything bright. Notice whether there is a feeling you would like to express more plainly.",
+          "them": "The other person does not need to be cheerful to be understood. Ask an open question and allow a complicated answer.",
+          "connection": "The connection may have room for both pleasure and difficulty. Consider whether expecting constant ease leaves something important unsaid."
         }
       }
     },
@@ -179,6 +199,11 @@
           "situation": "You may be at a beginning, with more possibility than certainty. Notice what draws your curiosity and what you still need to learn.",
           "action": "Try one manageable step that leaves room to reconsider. Curiosity works best here with attention to your limits.",
           "outcome": "A new perspective may come from experience rather than planning alone. Consider what you would like to learn, whatever the result."
+        },
+        "namedPersonPositions": {
+          "you": "You may be approaching this connection with curiosity and little certainty. Choose a small step that respects your comfort and boundaries.",
+          "them": "Meet the other person with questions rather than a ready-made story. There may be parts of their experience you have yet to hear.",
+          "connection": "The connection may invite a fresh approach. Notice what becomes possible when neither of you has to follow an old script."
         }
       },
       "reversed": {
@@ -210,6 +235,11 @@
           "situation": "Momentum may be outrunning your attention. Notice which parts of this situation you have not yet had time to understand.",
           "action": "Pause long enough to ask one useful question or check an assumption. Preparation can support a beginning without removing all uncertainty.",
           "outcome": "A more considered start may feel less dramatic but more workable. Notice what would let you move at your own pace."
+        },
+        "namedPersonPositions": {
+          "you": "You may want to pause before taking a leap in this connection. Name what you need to know and what pace feels right for you.",
+          "them": "Do not mistake unfamiliarity for a sign of what the other person intends. A direct conversation may give you more than guessing.",
+          "connection": "The connection may benefit from clearer expectations before a new step. Consider how you could check that you both understand the invitation."
         }
       }
     },
@@ -248,6 +278,11 @@
           "situation": "You may have more to work with than you first noticed. Consider which skills, time or support are already within reach.",
           "action": "Choose one intention and put a resource you already have to use. A clear, modest action can help turn attention into practice.",
           "outcome": "Focused practice may reveal what is useful and what needs adjusting. Notice what you can shape without claiming control over everything."
+        },
+        "namedPersonPositions": {
+          "you": "You have choices in how you speak and act here. Notice which words and actions express your intentions most clearly.",
+          "them": "Invite the other person to describe what they can offer and what they want. Their agency matters as much as your own.",
+          "connection": "The connection may strengthen when words and actions line up. Choose one practical thing you can each understand and freely agree to."
         }
       },
       "reversed": {
@@ -279,6 +314,11 @@
           "situation": "Your attention may be pulled between several intentions. Notice where a persuasive idea is missing a clear purpose for you.",
           "action": "Name the limit of what you can do, then choose one task inside it. You do not need to make every possibility real at once.",
           "outcome": "Clarity may come from doing less with greater intention. Consider which result would feel meaningful enough to keep working towards."
+        },
+        "namedPersonPositions": {
+          "you": "You may be trying to find the perfect way to influence this connection. Bring your attention back to honest expression and what is yours to choose.",
+          "them": "You cannot settle another person's intentions by reading signs. Ask for clarity and notice the actions they choose over time.",
+          "connection": "The connection may need less performance and more plain language. Consider where an expectation could become an explicit conversation."
         }
       }
     },
@@ -317,6 +357,11 @@
           "situation": "You may need room to hear your own view. Notice which outside expectations have become louder than your own questions.",
           "action": "Take a little quiet time and write down what matters before seeking more opinions. You can return to others with a clearer question.",
           "outcome": "Reflection may help you recognise a direction that fits your values. Consider how to carry that understanding back into everyday contact."
+        },
+        "namedPersonPositions": {
+          "you": "You may need a little quiet to hear your own response to this connection. Reflection can help you return with something clear to say.",
+          "them": "Allow the other person room to think without deciding what their silence means. Ask what pace of contact works for them.",
+          "connection": "The connection may benefit from space as well as contact. Explore how you can stay considerate while respecting separate needs."
         }
       },
       "reversed": {
@@ -348,6 +393,11 @@
           "situation": "Useful solitude may be turning into distance. Notice whether being alone is giving perspective or keeping a question out of reach.",
           "action": "Invite a small conversation with someone you trust. You can ask for perspective while keeping the decision your own.",
           "outcome": "Connection and space may be able to coexist. Consider what balance would help you remain both supported and true to yourself."
+        },
+        "namedPersonPositions": {
+          "you": "You may be keeping a need to yourself for longer than feels useful. Consider who could help you put it into words.",
+          "them": "Distance alone cannot explain the other person's feelings. If it feels appropriate, offer a clear invitation to talk without pressing for an answer.",
+          "connection": "The connection may need a more explicit bridge between time alone and time together. Notice whether either person is left guessing about contact."
         }
       }
     },
@@ -386,6 +436,11 @@
           "situation": "This situation may be asking for patience rather than force. Notice where gentleness already helps you stay present.",
           "action": "Respond with care and a clear boundary. Courage can mean staying with a difficult conversation without pushing it to a quick conclusion.",
           "outcome": "A steadier response may leave more room for understanding. Consider what strength would look like if it included kindness to yourself."
+        },
+        "namedPersonPositions": {
+          "you": "You may bring steadiness by naming a feeling without letting it make every choice. Treat your own limits with the same care you offer others.",
+          "them": "Make room for the other person to speak in their own way. Listening does not require you to set aside your boundaries.",
+          "connection": "The connection may benefit from patience joined with honesty. Consider how kindness and a clear limit could sit together."
         }
       },
       "reversed": {
@@ -417,6 +472,11 @@
           "situation": "You may be stretching past a limit in an effort to hold everything together. Notice what that effort is asking of you.",
           "action": "Give one limit a name and allow yourself to respect it. A gentler next step may be more sustainable than another push.",
           "outcome": "Renewal may begin with asking less of yourself for a while. Consider what support would make a patient approach possible."
+        },
+        "namedPersonPositions": {
+          "you": "You may be using effort to hold more than your share of this connection. Notice where a pause or a boundary would help you respond honestly.",
+          "them": "The other person's reactions are theirs to explain and manage. You can ask with care without taking responsibility for every response.",
+          "connection": "The connection may need less endurance and more mutual care. Consider what each person can reasonably offer without pushing past their limits."
         }
       }
     }
