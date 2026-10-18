@@ -2336,8 +2336,10 @@ final class HarnessShellUITests: XCTestCase {
         for position in ["you", "them", "connection"] {
             XCTAssertTrue(app.descendants(matching: .any)["spread-slot-\(position)"].firstMatch.label.contains("empty"))
         }
-        app.buttons["draw-card-3"].tap()
+        tapWhenSettled(app.buttons["draw-card-3"])
         let first = app.descendants(matching: .any)["spread-slot-you"].firstMatch.label
+        XCTAssertFalse(first.contains("empty"), "A card must be picked before checking draft restoration")
+        XCTAssertEqual(app.staticTexts["pick-prompt"].label, "Choose a card for them")
         app.buttons["go-back"].tap()
         XCTAssertTrue(app.staticTexts["person-title"].exists)
         app.terminate()
