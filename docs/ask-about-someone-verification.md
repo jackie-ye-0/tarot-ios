@@ -1,6 +1,6 @@
 # Ask about someone (#18)
 
-Status: the branch is rebased onto Morning reminder at `9974dae`, with one combined full check pending. The pre-review full check `20261017T205214.525756Z-check-1c7ea2ed` passed **96/96 iOS tests**, with zero failures, skips or expected failures, on clean `2d142eba19c400dcce73098c5a56ae677adfb965`; its **34 command-contract tests**, Swift parsing and design-role guard also passed. That result describes the pre-correction revision only. One independent comparison returned a conditional pass with C-M1 and P-S1; both corrections now have passing assertions and inspected images, with a fresh comparison of the final combined evidence still required. The later failed runs and diagnostic reruns remain recorded separately below.
+Status: the branch is rebased onto Morning reminder at `9974dae`, with one combined full check pending. The pre-review full check `20261017T205214.525756Z-check-1c7ea2ed` passed **96/96 iOS tests**, with zero failures, skips or expected failures, on clean `2d142eba19c400dcce73098c5a56ae677adfb965`; its **34 command-contract tests**, Swift parsing and design-role guard also passed. That result describes the pre-correction revision only. The original independent comparison passed after C-M1, with P-S1 suggested; on 19 October 2026, a fresh independent reviewer re-compared the final `05ec3d3` evidence and passed the limited recheck with both findings closed and no must-fix remaining. The later failed runs and diagnostic reruns remain recorded separately below.
 
 The Relationship-only Ask entry opens the reference's name/relation/context form. Name and one of Partner, Crush, Ex, Family, Friend or Colleague are required, and relation starts unselected. The disabled action explains what is missing; the enabled action names the person. No birth details are collected.
 
@@ -37,7 +37,7 @@ These are the author's dispositions for the independently reviewed `1c7ea2ed` im
 | Name and context borders are dark ink, rather than the reference's pale outline | Manifest §5 requires the main-entry field's 1.5-point ink border. This matches the established question and note fields. |
 | The name field and context box are taller; the context keeps its reserved space after entering a short note | The shared field roles use a 60-point name minimum and padded multiline editor. Reserving the full placeholder height keeps the example readable at the largest text size and prevents layout jumps on typing. |
 | “Anything specific? (optional)” is one label rather than a separate right-aligned Optional label | A single label preserves the relationship between the field and its optional status when text wraps. |
-| Relation, question, status and feedback chips use a 48-point minimum rather than 44 | Fractional scroll coordinates had exposed a height just below 44. The design-system minimum leaves room above that accessibility floor, without weakening the assertion. |
+| Relation, question, status and feedback chips use a 48-point minimum rather than 44 | Accepted reference difference C-A2: the larger minimum keeps chips tappable at larger text sizes without clipping and leaves room above the accessibility floor when scroll coordinates are fractional. The independent review accepted this difference. |
 | Ask's entry helper wraps to two lines at ordinary size; at accessibility sizes it is a separate text region inside the same surface panel | The existing body/metadata roles remain readable, and the navigation target can fit fully within the scroll viewport. All helper copy is retained. |
 | Ask uses the saved card context, question-form suggestions, stacked status choices and conditional recent-reading row | Existing manifest §11b behaviour uses actual saved data and keeps all status choices readable. The reference's example history row is absent for a fresh store. |
 | Ask has two tabs with a dark selected pill | History remains #19. The existing high-contrast selected treatment is specified in §5. |
@@ -52,11 +52,13 @@ These are the author's dispositions for the independently reviewed `1c7ea2ed` im
 
 The earlier full check `20261017T132432.746532Z-check-11d23d53` had two failures: a fractional 44-point status-chip frame and an oscillating scroll attempt around the largest-text combined entry. The 48-point minimum and separate accessible helper resolved both; `20261017T144832.549176Z-check-ea841f82` passed 89/89 before the Settings rebase. The final 96/96 run additionally covers retaining a named-person draft's Relationship tag while the visible area changes. The interrupted first run was affected by another simulator user and is not verification evidence.
 
-Final review material is copied outside the worktree into the task's `final-evidence` directory: the exact design manifest, references, exported screenshots, comparison page and a screen/state handoff. The first independent comparison is now recorded below. No no-mistakes run has started.
+Final review material is copied outside the worktree into the task's `final-evidence` directory: the exact design manifest, references, exported screenshots, comparison page and a screen/state handoff. The independent comparison and final limited recheck are recorded below.
 
 ## Independent review and corrections
 
 A fresh agent session reviewed only the supplied manifest and images on 18 October 2026: seven references and 142 built screenshots. Its verdict was **pass after C-M1**, with P-S1 recommended as well. The [review record](ask-about-someone-design-review.md) preserves every accepted visual difference and its reason; its image-only verdict does not replace the full harness/accessibility results.
+
+On 19 October 2026, a fresh independent reviewer who did not write the code re-compared the final `05ec3d3` evidence. The limited recheck passed with C-M1 and P-S1 closed and no must-fix remaining.
 
 | Finding | Disposition and validation status |
 | --- | --- |
