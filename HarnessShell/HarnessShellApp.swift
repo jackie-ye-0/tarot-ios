@@ -72,6 +72,7 @@ struct LaunchView: View {
             }
         }
         .onAppear { if session == nil && !failed { load() } }
+        .task(id: session != nil) { await session?.refreshReminder() }
         .onChange(of: scenePhase) { _, phase in
             #if DEBUG
             if phase == .background && advanceOnBackground {
@@ -79,7 +80,10 @@ struct LaunchView: View {
                 advanceOnBackground = false
             }
             #endif
-            if phase == .active { session?.refreshDay() }
+            if phase == .active {
+                session?.refreshDay()
+                Task { await session?.refreshReminder() }
+            }
         }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.significantTimeChangeNotification)) { _ in
             session?.refreshDay()

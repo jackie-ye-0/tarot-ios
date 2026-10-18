@@ -30,6 +30,9 @@ struct LaunchConfiguration {
     var settingsSaveFailure = false
     var historyDays = 0
     var historyReadFailure = false
+    var reminderInvitationAnswered = false
+    var reminderSaveFailure = false
+    var notificationFixture: String?
 
     static func current() -> LaunchConfiguration {
         var result = LaunchConfiguration()
@@ -67,6 +70,10 @@ struct LaunchConfiguration {
         result.settingsSaveFailure = arguments.contains("--test-settings-save-failure")
         result.historyDays = min(1000, max(0, value("--test-history-days").flatMap(Int.init) ?? 0))
         result.historyReadFailure = arguments.contains("--test-history-read-failure")
+        result.reminderInvitationAnswered = arguments.contains("--test-reminder-answered")
+        result.reminderSaveFailure = arguments.contains("--test-reminder-save-failure")
+        result.notificationFixture = arguments.contains("--test-real-notifications") ? nil
+            : (value("--test-notification-permission") ?? "allow")
         #endif
         return result
     }
@@ -118,6 +125,17 @@ final class AppSession {
     private(set) var crisisRemovalFailed = false
     var showsSettings = false
     var settingsSaveFailed = false
+    var reminderSaveFailed = false
+    private(set) var reminderFailureMessage = ""
+    private(set) var reminderBusy = false
+    private(set) var reminderDenied = false
+    private(set) var reminderInvitationDenied = false
+    private var reminderScheduled = false
+    private(set) var reminderPreference: ReminderPreference
+    private let notifications: ReminderNotifications
+    #if DEBUG
+    private(set) var reminderTestState = ""
+    #endif
     private(set) var hiddenAreas: Set<ReadingArea> = []
     var area: ReadingArea = .relationship { didSet { persistDraft(); persistSpreadDraft() } }
     var question = "" { didSet { persistDraft(); persistSpreadDraft() } }
@@ -141,7 +159,7 @@ final class AppSession {
     private let randomIndex: (Int) -> Int
 
     init(clock: SessionClock, seed: String, store: DrawStore, library: CardLibrary,
-         randomIndex: @escaping (Int) -> Int) throws {
+         randomIndex: @escaping (Int) -> Int, notifications: ReminderNotifications? = nil) throws {
         self.clock = clock
         let now = clock.now
         let zone = clock.timeZone
@@ -152,6 +170,11 @@ final class AppSession {
         self.store = store
         self.library = library
         self.randomIndex = randomIndex
+        self.notifications = notifications ?? ReminderNotifications()
+        reminderPreference = try store.reminderPreference()
+        let originalPreference = reminderPreference
+        reminderPreference.expireInvitation(on: dateKey)
+        if reminderPreference != originalPreference { try store.saveReminderPreference(reminderPreference) }
         if let draft = try store.spreadDraft() {
             area = draft.area
             question = draft.question
@@ -234,6 +257,7 @@ final class AppSession {
         do {
             let saved = try store.save(draw)
             today = saved
+            if reminderPreference.firstDrawDateKey == nil { reminderPreference.firstDrawDateKey = saved.dateKey }
             screen = .reveal(saved)
         }
         catch DrawStore.StoreError.read(_) { dayRefreshFailed = true }
@@ -263,6 +287,12 @@ final class AppSession {
         // A same-date foreground or time-zone event must leave the current ritual untouched.
         guard key != dateKey else { return false }
         let saved = try store.draw(for: key)
+        var preference = reminderPreference
+        preference.expireInvitation(on: key)
+        if preference != reminderPreference {
+            try store.saveReminderPreference(preference)
+            reminderPreference = preference
+        }
         today = saved
         // The disclaimer must remain in place until the welcome action is taken.
         switch screen {
@@ -270,6 +300,7 @@ final class AppSession {
         default: screen = saved.map(Screen.today) ?? .draw
         }
         dateKey = key
+        reminderInvitationDenied = false
         saveFailed = false
         date = now
         timeZone = zone
@@ -292,6 +323,114 @@ final class AppSession {
             hiddenAreas = hidden
             if hidden.contains(self.area), let first = visibleAreas.first { self.area = first }
         } catch { settingsSaveFailed = true }
+    }
+
+    var showsReminderInvitation: Bool {
+        reminderPreference.shouldInvite(on: dateKey, hasDraw: today != nil)
+    }
+
+    var reminderEnabled: Bool { reminderPreference.enabled && reminderScheduled && !reminderDenied }
+
+    var reminderEvidence: String? {
+        #if DEBUG
+        return reminderTestState.isEmpty ? nil : reminderTestState
+        #else
+        return nil
+        #endif
+    }
+
+    func dismissReminderInvitation() {
+        guard !reminderBusy else { return }
+        do {
+            var preference = reminderPreference
+            preference.invitationAnswered = true
+            try store.saveReminderPreference(preference)
+            reminderPreference = preference
+        } catch {
+            reminderFailureMessage = "Try your reminder choice again."
+            reminderSaveFailed = true
+        }
+    }
+
+    func setReminderEnabled(_ enabled: Bool) async {
+        guard !reminderBusy else { return }
+        let wasInvitation = showsReminderInvitation
+        reminderBusy = true
+        defer { finishReminderOperation() }
+        do {
+            // Save the answer before asking; denial or a scheduling error must not ask again.
+            var preference = reminderPreference
+            preference.invitationAnswered = true
+            if !enabled { preference.enabled = false }
+            try store.saveReminderPreference(preference)
+            reminderPreference = preference
+            if !enabled {
+                notifications.cancel()
+                reminderScheduled = false
+                return
+            }
+            var permission = await notifications.permission()
+            if permission == .notDetermined {
+                permission = try await notifications.requestPermission() ? .allowed : .denied
+            }
+            reminderDenied = permission == .denied
+            reminderInvitationDenied = wasInvitation && reminderDenied
+            guard permission == .allowed else {
+                notifications.cancel()
+                reminderScheduled = false
+                return
+            }
+            try await notifications.schedule()
+            reminderScheduled = true
+            preference.enabled = true
+            do { try store.saveReminderPreference(preference) }
+            catch { notifications.cancel(); reminderScheduled = false; throw error }
+            reminderPreference = preference
+        } catch {
+            reminderFailureMessage = showsSettings
+                ? "Try turning this reminder \(enabled ? "on" : "off") again."
+                : "Try turning the reminder on in the app's Settings."
+            reminderSaveFailed = true
+        }
+    }
+
+    /// Reconcile on launch and foreground without ever asking for permission.
+    func refreshReminder() async {
+        guard !reminderBusy else { return }
+        reminderBusy = true
+        defer { finishReminderOperation() }
+        let permission = await notifications.permission()
+        reminderDenied = permission == .denied
+        if !reminderDenied { reminderInvitationDenied = false }
+        do {
+            if reminderPreference.enabled && permission == .allowed {
+                try await notifications.schedule()
+                reminderScheduled = true
+            } else {
+                notifications.cancel()
+                reminderScheduled = false
+                if reminderPreference.enabled {
+                    var preference = reminderPreference
+                    preference.enabled = false
+                    try store.saveReminderPreference(preference)
+                    reminderPreference = preference
+                }
+            }
+        } catch {
+            notifications.cancel()
+            reminderScheduled = false
+            reminderFailureMessage = showsSettings
+                ? "Try the reminder switch again."
+                : "Try the reminder switch in the app's Settings."
+            reminderSaveFailed = true
+        }
+    }
+
+    private func finishReminderOperation() {
+        reminderBusy = false
+        #if DEBUG
+        reminderTestState = notifications.testState
+        #endif
     }
 
     func persistDraft() {
@@ -557,6 +696,12 @@ enum AppLaunch {
                     question: library.questions.content(for: area).suggestions[0], picks: picks, library: library))
             }
         }
+        if configuration.reminderInvitationAnswered {
+            var preference = try store.reminderPreference()
+            preference.invitationAnswered = true
+            try store.saveReminderPreference(preference)
+        }
+        store.failsNextReminderSave = configuration.reminderSaveFailure
         if configuration.earlierSnapshot {
             let draw = ReadingEngine.dailyDraw(seed: seed, dateKey: ReadingEngine.dateKey(for: clock.now, timeZone: clock.timeZone),
                                               position: 3, library: library)
@@ -568,8 +713,14 @@ enum AppLaunch {
                                         card: earlierCard, contentVersion: 1))
         }
         #endif
+        let notifications: ReminderNotifications
+        #if DEBUG
+        notifications = ReminderNotifications(fixture: configuration.notificationFixture)
+        #else
+        notifications = ReminderNotifications()
+        #endif
         let session = try AppSession(clock: clock, seed: seed, store: store,
-                                     library: library, randomIndex: randomIndex)
+                                     library: library, randomIndex: randomIndex, notifications: notifications)
         #if DEBUG
         session.failHistoryRead = configuration.historyReadFailure
         if configuration.openSavedReading { try session.openSavedReadingForTest() }

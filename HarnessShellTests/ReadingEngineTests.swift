@@ -899,3 +899,74 @@ struct AreaVisibilityTests {
         #expect(session.relationshipStatusAsked)
     }
 }
+
+struct MorningReminderRuleTests {
+    @MainActor @Test
+    func foregroundRefreshClearsRecoveredInvitationDenial() async throws {
+        let store = try DrawStore(configuration: ModelConfiguration(isStoredInMemoryOnly: true, cloudKitDatabase: .none))
+        let seed = try store.installSeed { "reminder-recovery" }
+        try store.completeWelcome()
+        let library = try CardLibrary.load()
+        let draw = ReadingEngine.dailyDraw(seed: seed, dateKey: "2026-10-11", position: 3, library: library)
+        _ = try store.save(draw)
+        var configuration = LaunchConfiguration()
+        configuration.fixedDate = try #require(ISO8601DateFormatter().date(from: "2026-10-11T00:00:00Z"))
+        configuration.timeZone = try #require(TimeZone(identifier: "Australia/Sydney"))
+        let notifications = ReminderNotifications(fixture: "deny")
+        let session = try AppSession(clock: SessionClock(configuration: configuration), seed: seed,
+                                     store: store, library: library, randomIndex: { _ in 0 },
+                                     notifications: notifications)
+
+        #expect(session.showsReminderInvitation)
+        await session.setReminderEnabled(true)
+        #expect(session.reminderInvitationDenied)
+
+        notifications.setTestPermission(.allowed)
+        await session.refreshReminder()
+
+        #expect(!session.reminderDenied)
+        #expect(!session.reminderInvitationDenied)
+    }
+
+    @Test func invitationRequiresFirstSavedDrawAndUnansweredFirstDate() {
+        var preference = ReminderPreference()
+        #expect(!preference.shouldInvite(on: "2026-10-11", hasDraw: false))
+        preference.firstDrawDateKey = "2026-10-11"
+        #expect(!preference.shouldInvite(on: "2026-10-11", hasDraw: false))
+        #expect(preference.shouldInvite(on: "2026-10-11", hasDraw: true))
+        #expect(!preference.shouldInvite(on: "2026-10-12", hasDraw: true))
+        preference.invitationAnswered = true
+        #expect(!preference.shouldInvite(on: "2026-10-11", hasDraw: true))
+        preference.invitationAnswered = false
+        preference.enabled = true
+        #expect(!preference.shouldInvite(on: "2026-10-11", hasDraw: true))
+    }
+
+    @Test func leavingFirstDatePermanentlyExpiresInvitation() {
+        var preference = ReminderPreference(firstDrawDateKey: "2026-10-11")
+        preference.expireInvitation(on: "2026-10-11")
+        #expect(!preference.invitationAnswered)
+        preference.expireInvitation(on: "2026-10-12")
+        preference.expireInvitation(on: "2026-10-11")
+        #expect(!preference.shouldInvite(on: "2026-10-11", hasDraw: true))
+        var undrawn = ReminderPreference()
+        undrawn.expireInvitation(on: "2026-10-12")
+        #expect(!undrawn.invitationAnswered)
+    }
+
+    @Test(arguments: ["Australia/Sydney", "Pacific/Honolulu", "Europe/London"])
+    func reminderUsesLocalEightAcrossDaylightSaving(zone: String) throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = try #require(TimeZone(identifier: zone))
+        // Sydney's daylight-saving boundary is 4 October 2026.
+        let before = try #require(calendar.date(from: DateComponents(year: 2026, month: 10, day: 3, hour: 9)))
+        let next = try #require(calendar.nextDate(after: before, matching: MorningReminderRule.time,
+                                                 matchingPolicy: .nextTime))
+        let parts = calendar.dateComponents([.day, .hour, .minute], from: next)
+        #expect(parts.day == 4)
+        #expect(parts.hour == 8)
+        #expect(parts.minute == 0)
+        #expect(MorningReminderRule.time.timeZone == nil)
+        #expect(MorningReminderRule.time.day == nil)
+    }
+}

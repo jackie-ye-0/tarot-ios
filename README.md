@@ -4,6 +4,8 @@ A local-first native Swift/SwiftUI tarot app. First open shows Welcome with its 
 
 The starter reading library contains six cards in both orientations with original draft writing, question-position meanings, three area lenses, suggestions and reflection questions. The separate artwork catalogue contains all 78 named card identities and distinct code-drawn faces, ready for the remaining interpretations in #24–#26. No account, network, AI, analytics or paid service is used. Content needs editorial review before release to real users. Draw shuffles into a fan and Reveal turns the card as the screen warms to dawn; both remain interruptible and honour Reduce Motion. Local-day changes route to Draw, or restore Today when that date already has a saved card. Recent card identities trigger up to three salted retries, then the last result is accepted. This bounded rule cannot guarantee fourteen repeat-free days with the six-card starter. Later issues add the full interpretation library and named-person readings.
 
+The first drawn day's Today offers a one-time morning reminder with equal-effort Remind me and Not now choices. Settings can enable or cancel the daily 8:00 am local notification. The system is asked only after an explicit opt-in, and denial explains how to change notification permission. Notification copy is generic and names no card. See [reminder verification](docs/reminder-verification.md) for test and manual-check evidence.
+
 Share on Reveal or in the reading header prepares an image entirely on-device and opens the system share sheet. The image includes the disclaimer; a reading includes its full original text and three cards. Notes and responses stay on the phone. Cancelling returns to the same screen. See [sharing verification](docs/share-verification.md) for evidence and limitations.
 
 ## Setup
@@ -80,6 +82,10 @@ Only Debug builds, with `--test-mode`, read these launch arguments. This mode al
 - `--test-seed <string>` supplies the seed when the store has no installation identity.
 - `--test-memory-store` starts with an empty temporary SwiftData store on each launch.
 - `--test-welcome-completed` preloads a completed Welcome for tests of later screens. Omit it to test first open; completion otherwise persists through the real welcome action in an isolated disk store.
+- `--test-reminder-answered` preloads a dismissed reminder invitation for unrelated screen tests. Omit it to test the first-draw invitation and expiry.
+- `--test-notification-permission <fixture>` uses a Debug-only in-memory notification boundary: `allow` (default in test mode) or `deny` starts undetermined and answers the explicit request; `allowed` and `denied` start with an existing permission decision. `schedule-failure` fails one scheduling attempt and allows retry. The same notification request is constructed in real and simulated paths; Today and Settings title values expose request count and scheduled fields only in these fixtures. Relaunch tests specify the permission the system would retain separately from the app's SwiftData preference.
+- `--test-reminder-save-failure` fails the first invitation/preference save after mutation and exercises rollback.
+- `--test-real-notifications` opts a Debug test launch into the actual system notification centre for a manual permission check. It must be explicit; ordinary test-mode launches never prompt or create real notifications. Ordinary non-test launches use the real centre.
 - `--test-settings-save-failure` fails the first area-visibility or relationship-status save, then lets a repeated choice succeed.
 - `--test-spread-save-failure` fails the first draft save, then lets the retry succeed.
 - `--test-crisis-discard-failure` fails the first draft removal after its in-memory deletion, exercising rollback, visible support and removal retry.

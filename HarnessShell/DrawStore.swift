@@ -45,11 +45,12 @@ final class DrawStore {
     var failsNextReadingUpdate = false
     var failsNextReadingDelete = false
     var failsNextSettingsSave = false
+    var failsNextReminderSave = false
     #endif
 
     init(configuration: ModelConfiguration) throws {
         container = try ModelContainer(for: InstallIdentity.self, StoredDailyDraw.self, StoredQuestionReading.self, StoredSpreadDraft.self,
-                                       StoredQuestionDraft.self, StoredRelationshipPreference.self, StoredAreaPreference.self,
+                                       StoredQuestionDraft.self, StoredRelationshipPreference.self, StoredAreaPreference.self, StoredReminderPreference.self,
                                        configurations: configuration)
         context.autosaveEnabled = false
     }
@@ -101,7 +102,10 @@ final class DrawStore {
     func save(_ draw: DailyDraw) throws -> DailyDraw {
         if let saved = try self.draw(for: draw.dateKey) { return saved }
         do {
+            var preference = try reminderPreference()
+            if preference.firstDrawDateKey == nil { preference.firstDrawDateKey = draw.dateKey }
             context.insert(try StoredDailyDraw(draw))
+            try writeReminderPreference(preference)
             try context.save()
             historyRevision += 1
             return draw
@@ -317,6 +321,38 @@ final class DrawStore {
         } catch { context.rollback(); throw error }
     }
 
+    func reminderPreference() throws -> ReminderPreference {
+        if let saved = try context.fetch(FetchDescriptor<StoredReminderPreference>()).first {
+            return ReminderPreference(firstDrawDateKey: saved.firstDrawDateKey,
+                                      invitationAnswered: saved.invitationAnswered, enabled: saved.enabled)
+        }
+        // Existing installations use their earliest saved draw, never a new invitation day.
+        var request = FetchDescriptor<StoredDailyDraw>(sortBy: [SortDescriptor(\.dateKey)])
+        request.fetchLimit = 1
+        return ReminderPreference(firstDrawDateKey: try context.fetch(request).first?.dateKey)
+    }
+
+    func saveReminderPreference(_ preference: ReminderPreference) throws {
+        do {
+            try writeReminderPreference(preference)
+            #if DEBUG
+            if failsNextReminderSave {
+                failsNextReminderSave = false
+                throw CocoaError(.fileWriteOutOfSpace)
+            }
+            #endif
+            try context.save()
+        } catch { context.rollback(); throw error }
+    }
+
+    private func writeReminderPreference(_ preference: ReminderPreference) throws {
+        if let saved = try context.fetch(FetchDescriptor<StoredReminderPreference>()).first {
+            saved.firstDrawDateKey = preference.firstDrawDateKey
+            saved.invitationAnswered = preference.invitationAnswered
+            saved.enabled = preference.enabled
+        } else { context.insert(StoredReminderPreference(preference)) }
+    }
+
     private func checkSettingsSave() throws {
         #if DEBUG
         if failsNextSettingsSave {
@@ -381,5 +417,21 @@ final class StoredQuestionReading {
         id = reading.id
         createdAt = reading.createdAt
         snapshot = try JSONEncoder().encode(reading)
+    }
+}
+
+
+@Model
+final class StoredReminderPreference {
+    @Attribute(.unique) var key: String
+    var firstDrawDateKey: String?
+    var invitationAnswered: Bool
+    var enabled: Bool
+
+    init(_ preference: ReminderPreference) {
+        key = "morning-reminder"
+        firstDrawDateKey = preference.firstDrawDateKey
+        invitationAnswered = preference.invitationAnswered
+        enabled = preference.enabled
     }
 }
