@@ -56,7 +56,6 @@ final class ReminderNotifications {
         #if DEBUG
         if let fixture {
             requests += 1
-            if fixture == "request-failure" { throw CocoaError(.featureUnsupported) }
             fixturePermission = fixture == "deny" ? .denied : .allowed
             return fixturePermission == .allowed
         }
@@ -89,7 +88,6 @@ final class ReminderNotifications {
         if fixture != nil { pending = nil; return }
         #endif
         center.removePendingNotificationRequests(withIdentifiers: [Self.identifier])
-        center.removeDeliveredNotifications(withIdentifiers: [Self.identifier])
     }
 
     #if DEBUG
