@@ -901,6 +901,33 @@ struct AreaVisibilityTests {
 }
 
 struct MorningReminderRuleTests {
+    @MainActor @Test
+    func foregroundRefreshClearsRecoveredInvitationDenial() async throws {
+        let store = try DrawStore(configuration: ModelConfiguration(isStoredInMemoryOnly: true, cloudKitDatabase: .none))
+        let seed = try store.installSeed { "reminder-recovery" }
+        try store.completeWelcome()
+        let library = try CardLibrary.load()
+        let draw = ReadingEngine.dailyDraw(seed: seed, dateKey: "2026-10-11", position: 3, library: library)
+        _ = try store.save(draw)
+        var configuration = LaunchConfiguration()
+        configuration.fixedDate = try #require(ISO8601DateFormatter().date(from: "2026-10-11T00:00:00Z"))
+        configuration.timeZone = try #require(TimeZone(identifier: "Australia/Sydney"))
+        let notifications = ReminderNotifications(fixture: "deny")
+        let session = try AppSession(clock: SessionClock(configuration: configuration), seed: seed,
+                                     store: store, library: library, randomIndex: { _ in 0 },
+                                     notifications: notifications)
+
+        #expect(session.showsReminderInvitation)
+        await session.setReminderEnabled(true)
+        #expect(session.reminderInvitationDenied)
+
+        notifications.setTestPermission(.allowed)
+        await session.refreshReminder()
+
+        #expect(!session.reminderDenied)
+        #expect(!session.reminderInvitationDenied)
+    }
+
     @Test func invitationRequiresFirstSavedDrawAndUnansweredFirstDate() {
         var preference = ReminderPreference()
         #expect(!preference.shouldInvite(on: "2026-10-11", hasDraw: false))

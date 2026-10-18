@@ -1,6 +1,6 @@
 # Morning reminder verification (#21)
 
-Status: the initial implementation passed local iOS verification on 18 October 2026 (Sydney). The writer inspected its retained screenshots and comparison page. The L1/F2/F3 follow-up full run completed with 96/97 tests passing; the unchanged card-size proof test failed to advance from The Star to Ten of Wands. This follow-up is not a passing full check. The independent visual recheck passed with L1/F2/F3 closed. Validation after rebasing onto History and the manual system-permission check remain pending; this is not yet a complete acceptance sign-off.
+Status: the initial implementation passed local iOS verification on 18 October 2026 (Sydney), and the independent visual recheck closed L1/F2/F3. A native system-permission check on 19 October confirmed Not now, the native prompt, Allow, denial and cancellation, and reproduced a stale Today denial message after permission recovery. This change fixes that defect with an automated regression test; the native recovery path has not been manually rechecked after the fix. The rebased full harness check remains pending, so this is not yet a complete acceptance sign-off.
 
 ## Behaviour and tests
 
@@ -18,6 +18,7 @@ The UI switch turns on only after permission, scheduling and preference persiste
 | Allow schedules daily 08:00 with generic copy | `testMorningReminderSchedulesPersistsCancelsAndReflectsRevocation` checks the actual request built at the platform boundary |
 | Settings asks only when needed; denied remains off | `testMorningReminderDenialAndSettingsPermissionRequest` exercises both entry points, no repeated request after denial, and the explanation |
 | Off cancels; on/off survives relaunch; revoked permission | `testMorningReminderSchedulesPersistsCancelsAndReflectsRevocation` |
+| Foreground refresh after system permission recovery | `foregroundRefreshClearsRecoveredInvitationDenial` reproduces the stale invitation-denial state and checks that an allowed refresh clears it |
 | Failure recovery | `testMorningReminderFailuresRemainRecoverable` checks rollback on failed dismissal and a scheduling retry with no second permission request |
 | Engine seam | `MorningReminderRuleTests` checks eligibility, permanent expiry and local 08:00 across three zones including Sydney's daylight-saving change |
 
@@ -77,4 +78,32 @@ Before the full integration run, Swift parsing passed for all 17 Swift files, al
 
 ## Manual system permission check
 
-Pending. Use the dedicated harness simulator after the harness queue is available. Launch an ordinary app session through `./scripts/harness launch` (or an explicitly configured Debug `--test-real-notifications` session). Record the simulator/runtime, date, visible permission prompt and selected response. Check that Not now never opens a prompt; Remind me opens the native prompt; Allow enables the switch; denied permission leaves it off with the explanation; and off cancels the request. Do not change another simulator or assume a simulated permission fixture proves the native prompt. Device notification delivery and Focus/Scheduled Summary timing remain system-controlled.
+Revision: `6a46907b017244b950c3b2bf529b04917b67d67d`, branch `fm/tarot-21-morning-reminder`. No production source changed during this check. Firstmate authorised a temporary, uncommitted XCTest to drive the actual native prompt and Settings app; its source and scheme were restored byte-for-byte afterward. This was a real system-boundary check with writer inspection of retained screenshots, not the in-memory permission fixture and not a claim that a human physically tapped the screen.
+
+Environment: 19 October 2026 Australia/Sydney (18 October UTC), Xcode 27.0 (27A266a), iOS Simulator 26.5, dedicated `iPhone Tarot Harness 36a5dbe24882e53f`, UDID `7F3CF927-C74F-458F-8320-D614D6AC2AFA`, 390 × 844 points. System text `large` was read back before every case. Only `dev.local.tarotharness.HarnessShell` on this simulator was uninstalled to reset notification permission. All builds and tests used plain `./scripts/harness` and its simulator queue. Test launches used `--test-real-notifications` with isolated synthetic disk stores; the fixed reading date was 11 October 2026, while the notification centre used the actual simulator clock.
+
+### Confirmed results
+
+- **Not now:** first draw → Not now dismissed the invitation; no SpringBoard permission alert appeared. A subsequent fresh synthetic store still produced the native prompt on explicit opt-in, confirming that Not now had not consumed the system permission decision. Retained image: `manual-permission-not-now.png`.
+- **Remind me:** opened the actual native “HarnessShell” notification permission alert with Allow and Don’t Allow. Retained image: `manual-permission-allow-prompt.png`.
+- **Allow:** the app Settings reminder switch turned on. The simulator's persisted pending-notification store contained exactly one `morning-reminder` calendar request: hour 8, minute 0, repeating true, with no date or time-zone component; title “Your card is ready”; body “Take a quiet moment for today's reading.” No card was named. Retained image: `manual-permission-allow-enabled.png`. Read-only OS-store evidence: `allow-enabled-settled/notifications.json`, captured 2026-10-18T14:26:24Z, plus copied raw property lists.
+- **Off:** the app Settings switch turned off and the actual OS pending list became empty. Retained image: `manual-permission-allow-off.png`; `allow-off-settled/notifications.json`, captured 2026-10-18T14:26:59Z.
+- **Don't Allow:** the actual native denial response dismissed the invitation, kept the app switch off, and displayed permission guidance on Today and Settings. Retained images: `manual-permission-deny-prompt.png`, `manual-permission-denied-today.png`, `manual-permission-denied-settings.png`. The app's OS store contained no pending notification request.
+
+### Recovery outcome
+
+**FAIL before the fix: native recovery reproduced `stale-invitation-denial`.** On the app's page in iOS Settings (Apps → HarnessShell → Notifications), Allow Notifications changed from off to on. The existing app process was foregrounded without relaunching or changing its reminder preference. App Settings correctly replaced the denial explanation with “Every day at 8:00 am on this phone.” and kept the reminder switch off because the reminder had not been enabled. Returning to Today still displayed “Notifications are off for this app…” and instructions to enable permission, despite the actual permission now being allowed.
+
+Writer-inspected images establish the sequence: `manual-permission-system-denied.png`, `manual-permission-system-enabled.png`, `manual-permission-recovered-settings.png`, `manual-permission-recovery-stale-today.png`. The stale Today message was captured after the foreground refresh and Settings recovery assertion, before any app-switch action could clear it. The retained test log records the failed assertion. This reproduced the review finding in `AppSession.refreshReminder()`, which updated `reminderDenied` but not `reminderInvitationDenied`.
+
+The manual sequence stopped at this defect. Native Allow/on/off cancellation had been confirmed separately above, but the full native recovery criterion was not signed off. The fix now clears the invitation-specific denial state when foreground reconciliation finds permission is no longer denied, and `foregroundRefreshClearsRecoveredInvitationDenial` covers that same-session transition. No manual post-fix recheck has been performed.
+
+Final recovery run: `.harness/runs/20261018T143716.253019Z-test-1b8babb8`, 48 total, 47 passed, one failed, zero skipped, exit 65. The failure was `testManualNotificationDenialAndSystemRecovery`: “Today still claims notifications are off after Allow Notifications was enabled and foreground refresh cleared the app Settings denial hint”. Summary, metadata and test log were retained with the `deny-recovery-` prefix. The queue lock was acquired at 2026-10-18T14:37:16Z and released at 14:39:19Z.
+
+### Run provenance and limits
+
+Allow/Not now/off: `.harness/runs/20261018T142447.109649Z-test-57c23c05`, 48/48 passed, zero failures/skips, exit 0 (47 engine tests plus the temporary native UI sequence). Summary and metadata were retained with the `allow-` prefix.
+
+Two scratch-navigation iterations reached native denial but did not establish recovery. Run `20261018T142950.215250Z-test-d882842c` could not find Notifications on the system Settings root; the retained UI tree established Apps navigation. Run `20261018T143450.620123Z-test-f7a0f956` reached Apps → HarnessShell → Notifications, but its row-centre tap did not change the physical switch; its screenshot and recorded tap coordinates were inspected. Each run reports 47/48 passed, one failed, zero skipped, exit 65. These were temporary test-driver failures, not passing acceptance runs or evidence of an app defect. The final sequence targeted the visible right-hand system switch, waited for its on state, and reached the app defect described above.
+
+The request configuration and removal were checked against iOS persistence, not only app metadata. Actual notification delivery at 08:00, Focus and Scheduled Summary behaviour were not tested. This simulator check does not claim physical-device coverage.

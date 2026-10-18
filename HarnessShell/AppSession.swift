@@ -401,6 +401,7 @@ final class AppSession {
         defer { finishReminderOperation() }
         let permission = await notifications.permission()
         reminderDenied = permission == .denied
+        if !reminderDenied { reminderInvitationDenied = false }
         do {
             if reminderPreference.enabled && permission == .allowed {
                 try await notifications.schedule()
