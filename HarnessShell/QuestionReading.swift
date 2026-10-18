@@ -376,7 +376,7 @@ extension ReadingEngine {
         let number = bytes.prefix(8).reduce(UInt64(0)) { ($0 << 8) | UInt64($1) }
         let reflection = library.questions.reflections[Int(number % UInt64(library.questions.reflections.count))]
         let content = library.questions.content(for: area)
-        let lens = area == .relationship
+        let lens = area == .relationship && person == nil
             ? library.questions.relationship.relationshipLenses.text(for: relationshipStatus, neutral: content.lens)
             : content.lens
         return QuestionReading(id: id, createdAt: createdAt, area: area, question: question, picks: picks,

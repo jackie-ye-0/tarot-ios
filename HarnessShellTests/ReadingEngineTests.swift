@@ -60,6 +60,31 @@ final class ReadingEngineTests: XCTestCase {
                                                       picks: picks, library: library))
     }
 
+    func testNamedPersonCompositionUsesNeutralRelationshipLensForEveryRelation() throws {
+        let library = try CardLibrary.load()
+        let picks = zip(ReadingType.namedPerson.positions, library.cards.prefix(3)).map {
+            SpreadPick(position: $0, card: $1, orientation: .upright)
+        }
+        let id = UUID()
+        let date = Date(timeIntervalSince1970: 123)
+        let colleague = NamedPerson(name: "Sam", relation: .colleague)
+        let partner = NamedPerson(name: "Sam", relation: .partner)
+        let colleagueReading = try ReadingEngine.compose(
+            id: id, createdAt: date, area: .relationship, question: "You and Sam",
+            picks: picks, library: library, relationshipStatus: .inRelationship, person: colleague
+        )
+        let partnerReading = try ReadingEngine.compose(
+            id: id, createdAt: date, area: .relationship, question: "You and Sam",
+            picks: picks, library: library, relationshipStatus: .inRelationship, person: partner
+        )
+
+        XCTAssertTrue(colleagueReading.connectingPassage.contains(library.questions.relationship.lens))
+        XCTAssertFalse(colleagueReading.connectingPassage.contains(library.questions.relationship.relationshipLenses.inRelationship))
+        var expectedPartnerReading = colleagueReading
+        expectedPartnerReading.person = partner
+        XCTAssertEqual(partnerReading, expectedPartnerReading)
+    }
+
     func testNamedPersonCrisisNoteAndQuestionBothBlockComposition() throws {
         let library = try CardLibrary.load()
         let picks = zip(ReadingType.namedPerson.positions, library.cards.prefix(3)).map {
