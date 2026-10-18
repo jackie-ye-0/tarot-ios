@@ -1,6 +1,6 @@
 # Ask about someone (#18)
 
-Status: final full check `20261017T205214.525756Z-check-1c7ea2ed` passed **96/96 iOS tests**, with zero failures, skips or expected failures, on clean `2d142eba19c400dcce73098c5a56ae677adfb965`, rebased onto Settings at `25c012b`. All **34 command-contract tests**, Swift frontend parsing and the design-role guard passed. Author image inspection and one independent comparison are complete. The reviewer returned a conditional pass with one must-fix capture and one wording improvement. Those corrections are implemented but await a new authorised simulator check; the 96/96 result describes the pre-correction revision only.
+Status: pre-review full check `20261017T205214.525756Z-check-1c7ea2ed` passed **96/96 iOS tests**, with zero failures, skips or expected failures, on clean `2d142eba19c400dcce73098c5a56ae677adfb965`, rebased onto Settings at `25c012b`. All **34 command-contract tests**, Swift frontend parsing and the design-role guard passed. Author image inspection and one independent comparison are complete. The reviewer returned a conditional pass with one must-fix capture and one wording improvement. Those corrections are implemented but await a new authorised simulator check; the 96/96 result describes the pre-correction revision only. The branch is now rebased onto History at `5d44a9e`, with the final combined check pending.
 
 The Relationship-only Ask entry opens the reference's name/relation/context form. Name and one of Partner, Crush, Ex, Family, Friend or Colleague are required, and relation starts unselected. The disabled action explains what is missing; the enabled action names the person. No birth details are collected.
 
@@ -9,7 +9,7 @@ The existing draft, pick and saved-reading path now carries optional person deta
 ## Verification coverage
 
 - Engine tests cover all six relations, whitespace-only names, missing-field labels, named-person positions, selection without replacement, dedicated meanings in both orientations, deterministic composition, name inclusion, Relationship tagging, immutable encoding, invalid inputs, older snapshots and crisis matches in either input.
-- `testNamedPersonFormDraftPickAndSavedReadingEvidence` exercises the actual app: area-specific entry, initial form, required values, saved context, background/relaunch, locked picks, completed reading, reopening after a library change and the latest Relationship reading.
+- `testNamedPersonFormDraftPickAndSavedReadingEvidence` exercises the actual app: area-specific entry, initial form, required values, saved context, background/relaunch, locked picks, completed reading, reopening after a library change, the latest Relationship reading, and reopening the unchanged named-person snapshot through the Relationship History filter.
 - `testNamedPersonDraftKeepsRelationshipWhenAreaIsHidden` preserves a partially picked named-person draft through hiding Relationship and relaunch, saves it with the correct Relationship tag, and finds it again after the area is shown.
 - `testNamedPersonCrisisNoteClearsDraftAndBackDiscardsDetails` exercises note-triggered support before a pick, failed draft removal followed by relaunch/retry, no saved reading, and clearing person details on Back to Ask.
 - `testNamedPersonLargestTextAndKeyboardEvidence` captures the form, keyboard, each relation, named-person pick, completed pick and full reading at the largest text size, with actions reachable. Pick captures disable motion using the existing Debug Reduce Motion option.
@@ -19,7 +19,7 @@ A separate macOS command-line smoke run exercised 72 named-person compositions a
 
 ## Visual evidence
 
-The form is governed by `07-about-someone`; Ask, pick and reading retain their existing references. Manifest §11f documents the named-person variants, large-text reflow, keyboard behaviour and draft states. The shared chip minimum also touches ordinary Ask/composer suggestions and reading feedback. The shared note field is checked in the existing reading-note editor.
+The form is governed by `07-about-someone`; Ask, pick and reading retain their existing references. Manifest §11g documents the named-person variants, large-text reflow, keyboard behaviour and draft states. The shared chip minimum also touches ordinary Ask/composer suggestions and reading feedback. The shared note field is checked in the existing reading-note editor.
 
 `./scripts/harness evidence --run .harness/runs/20261017T205214.525756Z-check-1c7ea2ed` was read and its `design-comparison.html` opened with `chrome-devtools-axi`. The final exported images were inspected against the references: Ask's named-person entry, empty/filled form and its bottom, both named pick states, the named reading's opening/position/lens/bottom stops, their largest-text variants, both form keyboards, and the shared composer and note-editor states. At largest text, the six relation labels remain whole, name and context are readable, and Draw, Read my spread, Done and Save note remain reachable. Scroll-boundary cropping is accompanied by overlapping stops; no internal text truncation was found in the inspected states.
 
@@ -27,9 +27,9 @@ The full run retains normal and largest-text captures for all affected screens, 
 
 The form (empty, filled and bottom) and both named pick audits reported no issues. Ask's off-screen context was deferred through the existing overlapping-stop coverage. Fully visible plain reading text received the existing measured-contrast treatment, with retained ratios **9.0610:1–9.0624:1**, above 4.5:1. Every audit category remains enabled, and every deferred element must become fully visible. No audit helper or lexical design guard was changed. `testBundledTypefacesDoNotFallBack` passed for the bundled fonts.
 
-### Accepted visible differences
+### Accepted visible differences in the pre-History review
 
-These are the author's dispositions for the independent reviewer and the eventual pull request; they are not an independent approval.
+These are the author's dispositions for the independently reviewed `1c7ea2ed` images. History has since landed: the next evidence will have three tabs and “Saved to History” metadata. The historical two-tab and phone-only wording rows below do not describe the rebased interface.
 
 | Difference from reference | Reason |
 | --- | --- |
@@ -61,7 +61,7 @@ A fresh agent session reviewed only the supplied manifest and images on 18 Octob
 | Finding | Disposition and validation status |
 | --- | --- |
 | **C-M1**, must fix: the ordinary empty composer's main and bottom screenshots both cut the last suggestion's lower rounded edge at the pinned footer | The standard empty-state test now deliberately scrolls to the content bottom, waits for the chip to settle, asserts its complete frame is visible and checks at least eight points of separation from the footer before retaining the bottom screenshot. The 48-point chip and existing footer/content spacing are unchanged. This capture-first correction awaits simulator execution and image inspection; only if it cannot expose the chip will layout clearance need changing. |
-| **P-S1**, should fix: “Choose your You card” is awkward | Changed all three prompts to “Choose a card for you”, “Choose a card for them” and “Choose a card for the connection”. UI tests assert each actual displayed instruction and retain the intermediate normal-size and all three largest-text prompt captures. Manifest §11f states the wording. Simulator assertions and image inspection are pending. |
+| **P-S1**, should fix: “Choose your You card” is awkward | Changed all three prompts to “Choose a card for you”, “Choose a card for them” and “Choose a card for the connection”. UI tests assert each actual displayed instruction and retain the intermediate normal-size and all three largest-text prompt captures. Manifest §11g states the wording. Simulator assertions and image inspection are pending. |
 
 All other reviewed differences were accepted with the manifest-based reasons in the review record. The reviewer found no must-fix form, named reading, completed-pick, largest-text or settled Reduce Motion issue. The supplied static images do not certify motion timing, actual accessibility semantics, or font/contrast measurements; those remain covered by their corresponding automated evidence and stated limits.
 

@@ -2354,7 +2354,7 @@ final class HarnessShellUITests: XCTestCase {
         try auditAndCapture(app, "08-three-card-pick-complete--named-person-reduce-motion", expecting: app.buttons["read-spread"])
         app.buttons["read-spread"].tap()
         XCTAssertTrue(app.staticTexts["reading-saved"].waitForExistence(timeout: 5))
-        XCTAssertEqual(app.staticTexts["reading-saved"].label, "Relationship · Saved on this phone")
+        XCTAssertEqual(app.staticTexts["reading-saved"].label, "Relationship · Saved to History")
         try auditAndCapture(app, "09-reading--named-person", expecting: app.staticTexts["reading-question"], app.buttons["reading-done"])
         var original: [String: String] = [:]
         for position in ["you", "them", "connection", "lens"] {
@@ -2374,6 +2374,18 @@ final class HarnessShellUITests: XCTestCase {
         XCTAssertEqual(app.staticTexts["reading-question"].label, "“You and Sam”")
         for (position, text) in original { XCTAssertEqual(app.staticTexts["reading-\(position)"].label, text) }
         app.buttons["reading-done"].tap()
+        app.buttons["tab-history"].tap()
+        scrollTo(app.buttons["history-filter-relationship"], in: app)
+        app.buttons["history-filter-relationship"].tap()
+        let archived = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'history-reading-'")).firstMatch
+        scrollTo(archived, in: app)
+        XCTAssertTrue(archived.label.contains("You and Sam"))
+        archived.tap()
+        XCTAssertTrue(app.staticTexts["reading-question"].waitForExistence(timeout: 5))
+        XCTAssertEqual(app.staticTexts["reading-question"].label, "“You and Sam”")
+        for (position, text) in original { XCTAssertEqual(app.staticTexts["reading-\(position)"].label, text) }
+        app.buttons["reading-done"].tap()
+        XCTAssertTrue(app.buttons["history-filter-relationship"].isSelected)
         app.buttons["tab-ask"].tap()
         scrollTo(app.buttons["latest-area-reading"], in: app)
         XCTAssertTrue(app.buttons["latest-area-reading"].label.contains("You and Sam"))
@@ -2412,7 +2424,7 @@ final class HarnessShellUITests: XCTestCase {
         for _ in 0..<2 { tapWhenSettled(app.buttons["draw-card-3"]) }
         app.buttons["read-spread"].tap()
         XCTAssertTrue(app.staticTexts["reading-saved"].waitForExistence(timeout: 5))
-        XCTAssertEqual(app.staticTexts["reading-saved"].label, "Relationship · Saved on this phone")
+        XCTAssertEqual(app.staticTexts["reading-saved"].label, "Relationship · Saved to History")
         app.buttons["reading-done"].tap()
         app.buttons["tab-ask"].tap()
         XCTAssertTrue(app.buttons["area-career"].isSelected)
