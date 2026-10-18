@@ -1107,7 +1107,7 @@ final class HarnessShellUITests: XCTestCase {
             }
             if page == 0 || page == 25 { try auditAndCapture(app, "card-faces--page-\(page + 1)") }
             else { capture(app, "card-faces--page-\(page + 1)") }
-            app.buttons["face-proof-next"].tap()
+            tapWhenSettled(app.buttons["face-proof-next"])
         }
         XCTAssertEqual(renderedFaces.count, 156)
         let wrapped = XCTNSPredicateExpectation(
