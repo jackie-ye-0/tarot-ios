@@ -3,6 +3,10 @@ import SwiftUI
 struct SettingsScreen: View {
     @Bindable var session: AppSession
     @State private var page: Page = .settings
+    @State private var export: ReadingExport?
+    @State private var exportFailed = false
+    @State private var confirmsDeletion = false
+    @State private var deletionFailed = false
 
     private enum Page: String {
         case settings = "Settings"
@@ -50,6 +54,30 @@ struct SettingsScreen: View {
             Button("OK", role: .cancel) { }
         } message: {
             Text("Your previous setting is unchanged. Check the free space on your phone, then try the switch or choice again.")
+        }
+        .sheet(item: $export, onDismiss: removeExport) { item in
+            ReadingExportSheet(export: item) { export = nil }
+        }
+        .alert("Your export could not be prepared", isPresented: $exportFailed) {
+            Button("Try again", action: prepareExport)
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("Your saved readings are unchanged. Check the free space on your phone, then try again.")
+        }
+        .alert("Delete all your data?", isPresented: $confirmsDeletion) {
+            Button("Cancel", role: .cancel) { }
+            Button("Delete all data", role: .destructive) {
+                do { try session.deleteAllData() }
+                catch { deletionFailed = true }
+            }
+            .disabled(session.reminderBusy)
+        } message: {
+            Text("This removes your readings, notes, drafts, preferences and daily-card identity, and cancels your reminder. It cannot be undone. Copies already saved elsewhere remain.")
+        }
+        .alert("Your data could not be deleted", isPresented: $deletionFailed) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("Your saved data is unchanged. Check the free space on your phone, then try Delete all my data again.")
         }
     }
 
@@ -102,6 +130,15 @@ struct SettingsScreen: View {
                     SettingsDivider()
                     SettingsLink(title: "Privacy") { page = .privacy }
                         .accessibilityIdentifier("settings-privacy")
+                    SettingsDivider()
+                    SettingsLink(title: "Export my readings", showsChevron: false, action: prepareExport)
+                        .accessibilityIdentifier("settings-export")
+                    SettingsDivider()
+                    SettingsLink(title: "Delete all my data", showsChevron: false, role: .destructive) {
+                        confirmsDeletion = true
+                    }
+                    .accessibilityIdentifier("settings-delete-all")
+                    .disabled(session.reminderBusy)
                 }
             }
         }
@@ -132,5 +169,15 @@ struct SettingsScreen: View {
 
     private func sectionTitle(_ title: String) -> some View {
         Text(title).typeRole(.metadata).foregroundStyle(Design.Palette.secondary)
+    }
+
+    private func prepareExport() {
+        do { export = try session.exportReadings() }
+        catch { exportFailed = true }
+    }
+
+    private func removeExport() {
+        // Cleanup is retried on next export, deletion and launch if the OS temporarily refuses it.
+        try? ReadingExport.removeTemporaryCopy()
     }
 }

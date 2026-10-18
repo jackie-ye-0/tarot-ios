@@ -1679,22 +1679,27 @@ struct SettingsDivider: View {
 struct SettingsLink: View {
     let title: String
     var value: String? = nil
+    var showsChevron = true
+    var role: ButtonRole? = nil
     let action: () -> Void
     @Environment(\.dynamicTypeSize) private var textSize
 
     var body: some View {
-        Button(action: action) {
+        Button(role: role, action: action) {
             HStack(spacing: Design.Space.related) {
                 let layout = textSize.isAccessibilitySize
                     ? AnyLayout(VStackLayout(alignment: .leading, spacing: Design.Space.small))
                     : AnyLayout(HStackLayout(spacing: Design.Space.related))
                 layout {
                     Text(title).typeRole(.body)
+                        .foregroundStyle(role == .destructive ? Design.Palette.error : Design.Palette.ink)
                         .frame(maxWidth: .infinity, alignment: .leading)
                     if let value { Text(value).typeRole(.secondary).foregroundStyle(Design.Palette.secondary) }
                 }
-                Image(systemName: "chevron.right").typeRole(.label).dynamicTypeSize(.large)
-                    .accessibilityHidden(true)
+                if showsChevron {
+                    Image(systemName: "chevron.right").typeRole(.label).dynamicTypeSize(.large)
+                        .accessibilityHidden(true)
+                }
             }
             .fixedSize(horizontal: false, vertical: true)
             .multilineTextAlignment(.leading)

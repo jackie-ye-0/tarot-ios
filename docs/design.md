@@ -38,7 +38,7 @@ Used once a card is face up: reveal, Today, Ask, composer, reading, History.
 | Control track | `#ead6cd` | Segmented control background |
 | Control border | `#e0c9bf` | Unselected chips and outlined pills |
 | Disabled | `#dcc6bc` fill, `#5f4740` text | Disabled primary button |
-| Error / destructive | `#a3331f` | Character-limit feedback; delete only inside a menu |
+| Error / destructive | `#a3331f` | Character-limit feedback; delete inside a menu or the Settings data row |
 
 ### Night (dark) screens
 
@@ -118,7 +118,7 @@ Sizes are the default-size reference in points. In SwiftUI map each role to a Dy
 - **Empty slot.** Night-ground fill, dashed outline in the card shape and a gold number. The explicit fill keeps the numeral's background consistent over the ritual disc. The slot being filled has a gold outline and a slow pulse.
 - **Score strip.** The three area scores sit in one row: area label, numeral, and a 6 point rounded bar in the area's accent on a neutral track. Numbers are always shown as text; the bar never carries the value alone.
 - **List rows.** 60 to 76 high inside a surface group, hairline between rows, chevron at the right when the row navigates.
-- **Destructive actions** live inside a More menu, never beside Share or Done.
+- **Destructive actions** live inside a More menu, never beside Share or Done. Settings has the reference's destructive “Delete all my data” row, followed by a confirmation.
 
 ### Full-deck face grammar (#12)
 
@@ -229,7 +229,7 @@ Submitting a question that matches the bundled placeholder crisis patterns opens
 The only primary action is “Back to Today”, pinned at ordinary text sizes and inline after the resources at accessibility sizes through the shared reading-screen layout. It clears the question and both kinds of draft; any picks already made before editing the question are discarded, and no reading is created. If draft removal fails, support stays visible with a short body paragraph explaining the failed removal and a quiet “Try removing again” action; Back to Today is disabled until removal succeeds. This message does not claim the question was removed. Restoring a matching saved draft after interruption opens support and retries removal, never the pick. A local-day change updates the daily destination without dismissing support. The support copy, resource region and pattern list live in the bundled content library and are explicitly placeholder material pending Jackie's sign-off before real-user release.
 ## 11e. Settings (#20)
 
-Today has a 44-point gear button at the top right, labelled “Settings”. Settings opens full-screen with a back chevron, the screen title, and the reference's surface groups: “Areas on your Today screen”, “About you” and “Good to know”. Each area row has its accent dot and an ink-tinted native switch. The last visible area's switch stays on and is disabled; the helper says “Keep at least one area on so Today and Ask have an area to show.” The usual helper says “Hidden areas keep their past readings.” Rows grow to fit text. At accessibility sizes each area label takes the full row width and its native switch sits below it, so “Relationship” stays whole; a full-width 44-point button hit area surrounds that switch without enlarging its artwork, and keeps the native switch's accessibility representation. The relationship-status value also moves below its label. Settings has no tab bar. Export and delete (#22) remain a separate ticket and their rows are omitted until functional. Morning reminder is described below.
+Today has a 44-point gear button at the top right, labelled “Settings”. Settings opens full-screen with a back chevron, the screen title, and the reference's surface groups: “Areas on your Today screen”, “About you” and “Good to know”. Each area row has its accent dot and an ink-tinted native switch. The last visible area's switch stays on and is disabled; the helper says “Keep at least one area on so Today and Ask have an area to show.” The usual helper says “Hidden areas keep their past readings.” Rows grow to fit text. At accessibility sizes each area label takes the full row width and its native switch sits below it, so “Relationship” stays whole; a full-width 44-point button hit area surrounds that switch without enlarging its artwork, and keeps the native switch's accessibility representation. The relationship-status value also moves below its label. Settings has no tab bar. Export and delete are described in §11i. Morning reminder is described below.
 
 Hidden areas are omitted from Today's scores and lines and from the Ask and composer selectors. Remaining segments share the available width, keeping the existing stacked layout at accessibility sizes. If the selected area is hidden, selection moves to the first visible area in Career, Relationship, Social order; a draft keeps its question and picked cards. Visibility never filters stored readings or the future History filters, and never changes the daily snapshot.
 
@@ -261,7 +261,13 @@ The footer previews “You · Them · The Connection”. Its primary action says
 
 Named-person pick and reading use the existing `08-three-card-pick` and `09-reading` layouts with the title “You and <name>” and positions You, Them and The Connection. The pick instructions are “Choose a card for you”, “Choose a card for them” and “Choose a card for the connection”. Their screenshots are named-person variants of those references. The reading uses the dedicated position meanings and names the person in its connecting passage; its metadata remains Relationship. Every named-person relation uses the neutral Relationship lens rather than the user's saved romantic relationship status; relation-specific content is not added. Optional context is saved with person details, distinct from a later “Your note” annotation. A crisis match in that context follows §11d without displaying the supplied words. No additional motion is introduced.
 
-## 11i. Not yet designed
+## 11i. Export and delete (#22)
+
+The Good to know surface group ends with “Export my readings” and “Delete all my data”, separated by the existing hairlines. These action rows have no chevron; Delete uses the destructive colour. They grow and scroll at accessibility text sizes. Export prepares one UTF-8 text file containing every saved daily card and question reading, including original text, dates, positions, orientations, responses and notes, then opens the native system share sheet. The app makes no network request. The file is temporary until the user chooses a destination; dismissing the sheet returns to Settings. An empty archive is a valid file that says there are no saved readings.
+
+Delete opens a native alert titled “Delete all your data?” with Cancel and destructive “Delete all data”. Its message names readings, notes, drafts, preferences and the daily-card identity, says the reminder will be cancelled and explains that this cannot be undone. The delete row and confirmation action are disabled while reminder setup is busy, so an in-flight setup cannot restore data after deletion. Successful deletion returns to the unchanged Welcome screen. Existing exports and phone backups are outside the app's control; the confirmation says copies already saved elsewhere remain. A failed delete leaves stored data and Settings intact and offers a native error alert; dismissing it permits another confirmed attempt. An export failure also keeps data unchanged and offers a retry. Native alerts and the share sheet retain system styling. Capture these states as `11-settings--export-sheet`, `11-settings--delete-confirmation`, `11-settings--export-error`, `11-settings--delete-error` and largest-text variants; capture the returned Welcome as `01-welcome--after-delete`.
+
+## 11j. Not yet designed
 
 A birth-details entry form (not in the first build; Settings does not link to one), the paywall, and all empty, loading and error states. Tab icons are placeholders. When designing these, reuse the roles and components above rather than adding new ones; if a new one is truly needed, add it here in the same change.
 
