@@ -39,6 +39,7 @@ Add future research to `docs/research/`, using descriptive, lower-case hyphenate
 - [Sharing verification](share-verification.md): issue #23 local image sharing, retained payloads and design comparison. The [independent sharing comparison](share-design-review.md) records its image-only findings and accepted differences.
 - [Crisis support verification](crisis-support-verification.md): issue #17 detection, draft removal, support states and design evidence.
 - [Settings verification](settings-verification.md): issue #20 preferences, retention, screenshots and design comparison.
+- [History verification](history-verification.md): issue #19 combined archive, calendar, snapshots, scrolling and design evidence.
 - [Harness principles](harness.md)
 
 Add a link here when adding a document. Keep each document's status clear and record approved scope changes in [decisions](decisions.md).

@@ -350,7 +350,8 @@ final class HarnessShellUITests: XCTestCase {
             if !covered.isEmpty { print("Audit fully visible: \(covered.sorted())") }
             guard let key = deferred.keys.sorted().first(where: { !covered.contains($0) }) else { break }
             let target = deferred[key]!
-            XCTAssertTrue(target.exists, "Deferred audit element disappeared: \(key)")
+            XCTAssertTrue(target.waitForExistence(timeout: 10),
+                          "Deferred audit element did not return after Dynamic Type restoration: \(key)")
             if today {
                 positionTodayAuditBelowCard(app, revealing: target)
                 continue
@@ -424,7 +425,7 @@ final class HarnessShellUITests: XCTestCase {
             defer { previous = frames }
             return !frames.isEmpty && frames.allSatisfy { !$0.isEmpty } && frames == previous
         }, object: nil)
-        XCTAssertEqual(XCTWaiter.wait(for: [settled], timeout: 5), .completed, "Visible frames must settle")
+        XCTAssertEqual(XCTWaiter.wait(for: [settled], timeout: 15), .completed, "Visible frames must settle")
     }
 
     private func waitForSettled(_ elements: [XCUIElement], file: StaticString = #filePath, line: UInt = #line) {
@@ -469,11 +470,17 @@ final class HarnessShellUITests: XCTestCase {
         var bottom = abovePinnedFooter && footer.exists ? min(viewport.maxY, footer.frame.minY) : viewport.maxY
         let keyboard = app.keyboards.firstMatch
         if keyboard.exists { bottom = min(bottom, keyboard.frame.minY) }
-        let tabs = app.otherElements["resting-tabs"]
-        if tabs.exists && tabs.buttons["tab-today"].isHittable {
+        if let tabs = visibleTabs(in: app) {
             bottom = min(bottom, tabs.frame.minY)
         }
         return CGRect(x: viewport.minX, y: viewport.minY, width: viewport.width, height: bottom - viewport.minY)
+    }
+
+    private func visibleTabs(in app: XCUIApplication) -> XCUIElement? {
+        // An archive cover can retain the underlying History bar in the tree.
+        app.otherElements.matching(identifier: "resting-tabs").allElementsBoundByIndex.first {
+            $0.buttons["tab-today"].isHittable
+        }
     }
 
     private func isNotFullyVisible(_ frame: CGRect, in viewport: CGRect) -> Bool {
@@ -857,7 +864,11 @@ final class HarnessShellUITests: XCTestCase {
             app.buttons["face-proof-next"].tap()
         }
         XCTAssertEqual(renderedFaces.count, 156)
-        XCTAssertEqual(app.staticTexts["face-proof-title"].label, "Card faces 1–3 of 78")
+        let wrapped = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "label == %@", "Card faces 1–3 of 78"),
+            object: app.staticTexts["face-proof-title"])
+        XCTAssertEqual(XCTWaiter.wait(for: [wrapped], timeout: 5), .completed,
+                       "The single Start again tap must return to the first page")
     }
 
     func testFaceSizesAndLargestTextProof() throws {
@@ -1197,6 +1208,8 @@ final class HarnessShellUITests: XCTestCase {
         let largest = self.app(extra: ["--test-earlier-snapshot", "--test-largest-text"])
         capture(largest, "04-today--earlier-snapshot-largest-text")
         captureReadingOpening(in: largest, named: "04-today--earlier-snapshot-largest-text-opening")
+        captureOverlappingContent(largest, through: largest.staticTexts["This earlier draw has no saved extras or area readings."],
+                                  named: "04-today--earlier-snapshot-largest-text-bridge")
         scrollTo(largest.staticTexts["This earlier draw has no saved extras or area readings."], in: largest)
         dragContent(largest, up: true)
         assertVisible(largest.staticTexts["This earlier draw has no saved extras or area readings."], in: largest)
@@ -1447,6 +1460,29 @@ final class HarnessShellUITests: XCTestCase {
         capture(app, name)
     }
 
+    private func captureOverlappingContent(_ app: XCUIApplication, through last: XCUIElement, named name: String) {
+        // Drags of at most half a viewport, held before release, preserve overlap.
+        // This records long paragraphs as well as complete rows; it does not change audit rules.
+        XCTAssertTrue(last.exists)
+        for index in 0..<40 {
+            let viewport = scrollViewport(in: app)
+            let frame = last.frame
+            if viewport.contains(frame) { break }
+            // Near-full-height rows cannot leave 24 points clear. Aim within the
+            // available space while retaining enough movement to start a drag.
+            let settlingDistance = min(24, 12 + max(0, viewport.height - frame.height) / 2)
+            let delta = frame.maxY > viewport.maxY
+                ? min(viewport.height / 2, frame.maxY - viewport.maxY + settlingDistance)
+                : -min(viewport.height / 2, viewport.minY - frame.minY + settlingDistance)
+            let origin = app.coordinate(withNormalizedOffset: .zero)
+            let start = origin.withOffset(CGVector(dx: viewport.midX, dy: viewport.midY + delta / 2))
+            let end = origin.withOffset(CGVector(dx: viewport.midX, dy: viewport.midY - delta / 2))
+            start.press(forDuration: 0.1, thenDragTo: end, withVelocity: .slow, thenHoldForDuration: 0.2)
+            capture(app, "\(name)-\(index)")
+        }
+        assertVisible(last, in: app)
+    }
+
     func testLargestTextAndReduceMotion() throws {
         let app = app(extra: ["--test-largest-text", "--test-reduce-motion"], animations: true)
         scrollTo(app.staticTexts["draw-title"], in: app)
@@ -1458,6 +1494,11 @@ final class HarnessShellUITests: XCTestCase {
         capture(app, "02-draw--largest-text-bottom")
         scrollTo(app.buttons["draw-card-3"], in: app)
         tapWhenSettled(app.buttons["draw-card-3"])
+        scrollTo(app.buttons["draw-history"], in: app)
+        dragContent(app, up: false)
+        assertVisible(app.staticTexts["Sunday 11 October"], in: app)
+        assertVisible(app.buttons["draw-history"], in: app)
+        capture(app, "02-draw-card-chosen--largest-text-top")
         scrollTo(app.staticTexts["draw-title"], in: app)
         capture(app, "02-draw-card-chosen--largest-text")
         scrollTo(app.buttons["turn-over"], in: app)
@@ -1570,6 +1611,414 @@ final class HarnessShellUITests: XCTestCase {
             XCTAssertEqual(measured?.ratio ?? 0, expected, accuracy: 0.25)
             if expected == 3 { XCTAssertLessThan(measured?.ratio ?? .infinity, 4.5) }
         }
+    }
+
+    private func openHistory(_ app: XCUIApplication) {
+        let tab = app.buttons["tab-history"]
+        if tab.exists { tab.tap() } else { app.buttons["draw-history"].tap() }
+        XCTAssertTrue(app.staticTexts["history-title"].waitForExistence(timeout: 5))
+    }
+
+    func testHistoryCalendarFiltersAndDesignEvidence() throws {
+        let app = app(extra: ["--test-history-days", "10"], audit: true)
+        openHistory(app)
+        XCTAssertTrue(app.buttons["tab-history"].isSelected)
+        XCTAssertLessThan(app.buttons["tab-today"].frame.midX, app.buttons["tab-ask"].frame.midX)
+        XCTAssertLessThan(app.buttons["tab-ask"].frame.midX, app.buttons["tab-history"].frame.midX)
+        XCTAssertEqual(app.staticTexts["history-month"].label, "October 2026")
+        XCTAssertEqual(app.staticTexts["history-month-count"].label, "10 cards drawn")
+        let today = app.staticTexts["history-day-2026-10-11"]
+        XCTAssertTrue(today.label.contains("Today, Card drawn"))
+        XCTAssertTrue(app.descendants(matching: .any)["history-day-2026-10-12"].firstMatch.label.contains("Future day"))
+        XCTAssertFalse(app.descendants(matching: .any)["history-day-2026-10-01"].firstMatch.label.contains("Card drawn"))
+        try auditAndCapture(app, "10-history", expecting: app.staticTexts["history-title"], app.staticTexts["history-month"])
+        scrollTo(app.buttons["history-filter-all"], in: app)
+        for area in ["all", "career", "relationship", "social"] {
+            let filter = app.buttons["history-filter-\(area)"]
+            // Frame subtraction can represent an exact 44 points as 43.99999999999994.
+            XCTAssertGreaterThanOrEqual(filter.frame.height + 0.000_001, 44)
+            XCTAssertGreaterThanOrEqual(filter.frame.width + 0.000_001, 44)
+        }
+        for (index, area) in ["career", "relationship", "social"].enumerated() {
+            scrollTo(app.buttons["history-filter-\(area)"], in: app)
+            app.buttons["history-filter-\(area)"].tap()
+            let row = app.buttons["history-reading-00000000-0000-0000-0000-00000000000\(index + 1)"]
+            scrollTo(row, in: app)
+            XCTAssertTrue(row.label.contains("\(area.capitalized) question"))
+            XCTAssertEqual(app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'history-daily-'")).count, 0)
+            XCTAssertEqual(app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'history-reading-'")).count, 1)
+        }
+        try auditAndCapture(app, "10-history--filtered", expecting: app.buttons["history-filter-social"])
+        scrollTo(app.buttons["history-filter-all"], in: app)
+        app.buttons["history-filter-all"].tap()
+        let firstReading = app.buttons["history-reading-00000000-0000-0000-0000-000000000001"]
+        scrollTo(firstReading, in: app)
+        let daily = app.buttons["history-daily-2026-10-11"]
+        XCTAssertLessThan(firstReading.frame.minY, daily.frame.minY)
+        XCTAssertEqual(app.buttons["history-filter-all"].label, "All")
+        XCTAssertTrue(firstReading.label.contains("Career question · Today"))
+        XCTAssertEqual(daily.label, "The Star, upright, Daily card · Today")
+        scrollTo(app.buttons["history-daily-2026-10-06"], in: app)
+        capture(app, "10-history--list")
+        let hierarchy = XCTAttachment(string: app.debugDescription)
+        hierarchy.name = "history-accessibility-hierarchy"
+        hierarchy.lifetime = .keepAlways
+        add(hierarchy)
+        // The oldest reading is beyond the ten daily cards, proving the month does not limit the list.
+        let oldest = app.buttons["history-reading-00000000-0000-0000-0000-000000000003"]
+        for _ in 0..<8 {
+            if oldest.exists && oldest.isHittable { break }
+            activeScrollView(in: app).swipeUp(velocity: .slow)
+        }
+        scrollTo(oldest, in: app)
+        try auditAndCapture(app, "10-history--bottom", expecting: oldest)
+        scrollTo(app.staticTexts["history-title"], in: app)
+        app.buttons["history-previous-month"].tap()
+        XCTAssertEqual(app.staticTexts["history-month"].label, "September 2026")
+        XCTAssertEqual(app.staticTexts["history-month-count"].label, "0 cards drawn")
+        app.buttons["history-next-month"].tap()
+        app.buttons["history-next-month"].tap()
+        XCTAssertEqual(app.staticTexts["history-month"].label, "November 2026")
+        XCTAssertTrue(app.descendants(matching: .any)["history-day-2026-11-01"].firstMatch.label.contains("Future day"))
+
+        // The prior day's Strength is visibly distinct from the live Star fixture.
+        scrollTo(app.buttons["history-daily-2026-10-10"], in: app)
+        app.buttons["history-daily-2026-10-10"].tap()
+        XCTAssertEqual(app.staticTexts["today-title"].label, "Saturday 10 October 2026")
+        XCTAssertTrue(try XCTUnwrap(visibleTabs(in: app)).buttons["tab-history"].isSelected)
+        app.buttons["today-card"].tap()
+        XCTAssertEqual(app.buttons["back-to-today"].label, "Back to daily card")
+        let archiveRevealName = activeScrollView(in: app).staticTexts["card-name"]
+        XCTAssertEqual(archiveRevealName.label, "Strength")
+        XCTAssertNil(visibleTabs(in: app), "Reveal keeps the resting tabs hidden")
+        try auditAndCapture(app, "03-reveal--history", expecting: app.buttons["back-to-today"], archiveRevealName)
+        app.buttons["back-to-today"].tap()
+        XCTAssertEqual(app.staticTexts["today-title"].label, "Saturday 10 October 2026")
+        try XCTUnwrap(visibleTabs(in: app)).buttons["tab-ask"].tap()
+        XCTAssertTrue(app.buttons["ask-question-entry"].waitForExistence(timeout: 5))
+        openHistory(app)
+        scrollTo(app.buttons["history-daily-2026-10-10"], in: app)
+        app.buttons["history-daily-2026-10-10"].tap()
+        try XCTUnwrap(visibleTabs(in: app)).buttons["tab-today"].tap()
+        XCTAssertEqual(app.staticTexts["today-title"].label, "Sunday 11 October")
+        XCTAssertFalse(app.buttons["back-to-history"].exists)
+        app.terminate()
+
+        let reduced = self.app(extra: ["--test-history-days", "2", "--test-reduce-motion"], animations: true)
+        openHistory(reduced)
+        scrollTo(reduced.buttons["history-daily-2026-10-10"], in: reduced)
+        reduced.buttons["history-daily-2026-10-10"].tap()
+        reduced.buttons["today-card"].tap()
+        XCTAssertEqual(reduced.buttons["back-to-today"].label, "Back to daily card")
+        XCTAssertEqual(activeScrollView(in: reduced).staticTexts["card-name"].label, "Strength")
+        XCTAssertEqual(reduced.descendants(matching: .any)["revealed-card"].value as? String, "settled")
+        capture(reduced, "03-reveal--history-reduce-motion")
+        reduced.buttons["back-to-today"].tap()
+        XCTAssertEqual(reduced.staticTexts["today-title"].label, "Saturday 10 October 2026")
+    }
+
+    func testHistoryAppearsImmediatelyAndSnapshotsSurviveRelaunch() throws {
+        let app = app(extra: ["--test-store-id", UUID().uuidString] + fixedSpread, memory: false, audit: true)
+        openHistory(app)
+        XCTAssertEqual(app.staticTexts["history-message"].label, "Your story starts here")
+        app.buttons["tab-today"].tap()
+        reveal(app)
+        let name = app.staticTexts["card-name"].label
+        let details = app.staticTexts["card-details"].label
+        app.buttons["see-meaning"].tap()
+        let interpretation = app.staticTexts["core-interpretation"].label
+        openHistory(app)
+        let daily = app.buttons["history-daily-2026-10-11"]
+        scrollTo(daily, in: app)
+        daily.tap()
+        XCTAssertEqual(app.staticTexts["card-name"].label, name)
+        XCTAssertEqual(app.staticTexts["card-details"].label, details)
+        XCTAssertEqual(app.staticTexts["core-interpretation"].label, interpretation)
+        assertTodayContent(app)
+        XCTAssertTrue(try XCTUnwrap(visibleTabs(in: app)).buttons["tab-history"].isSelected)
+        try auditAndCapture(app, "04-today--history", today: true, expecting: app.buttons["back-to-history"], app.buttons["today-card"])
+        positionTodayAuditBelowCard(app, revealing: app.staticTexts["line-social"])
+        try auditAndCapture(app, "04-today--history-bottom", today: true, expecting: app.staticTexts["line-social"])
+        XCTAssertFalse(app.buttons["today-ask"].exists)
+        XCTAssertFalse(app.staticTexts["next-card-arrival"].exists)
+        scrollTo(app.buttons["back-to-history"], in: app)
+        app.buttons["back-to-history"].tap()
+        app.buttons["tab-ask"].tap()
+        app.buttons["ask-question-entry"].tap()
+        app.buttons["suggestion-0"].tap()
+        app.buttons["submit-question"].tap()
+        chooseSpread(app)
+        app.buttons["read-spread"].tap()
+        var saved: [String: String] = [:]
+        for id in ["reading-question", "reading-situation", "reading-action", "reading-outcome", "reading-lens", "reflection-question"] {
+            saved[id] = app.staticTexts[id].label
+        }
+        app.buttons["reading-done"].tap()
+        openHistory(app)
+        scrollTo(app.buttons["history-filter-relationship"], in: app)
+        app.buttons["history-filter-relationship"].tap()
+        let reading = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'history-reading-'")).firstMatch
+        scrollTo(reading, in: app)
+        let readingID = reading.identifier
+        reading.tap()
+        XCTAssertNil(visibleTabs(in: app), "Archived readings keep the resting tabs hidden")
+        try auditAndCapture(app, "09-reading--history", expecting: app.staticTexts["reading-question"])
+        for (id, value) in saved { XCTAssertEqual(app.staticTexts[id].label, value) }
+        scrollTo(app.staticTexts["Something to sit with"], in: app, abovePinnedFooter: true)
+        dragContent(app, up: true, abovePinnedFooter: true)
+        assertVisible(app.staticTexts["reflection-question"], in: app, abovePinnedFooter: true)
+        assertVisible(app.staticTexts["Something to sit with"], in: app, abovePinnedFooter: true)
+        assertVisible(app.buttons["reading-done"], in: app)
+        capture(app, "09-reading--history-bottom")
+        app.buttons["reading-done"].tap()
+        XCTAssertTrue(app.buttons["history-filter-relationship"].isSelected)
+        app.terminate()
+        app.launchArguments += ["--test-revised-content"]
+        let dateIndex = app.launchArguments.firstIndex(of: "--test-date")!
+        app.launchArguments[dateIndex + 1] = "2026-10-12T00:00:00Z"
+        app.launch()
+        reveal(app)
+        XCTAssertTrue(app.staticTexts["card-name"].label.hasPrefix("Revised "))
+        app.buttons["see-meaning"].tap()
+        openHistory(app)
+        for _ in 0..<3 {
+            if app.buttons["history-daily-2026-10-11"].exists { break }
+            activeScrollView(in: app).swipeUp(velocity: .slow)
+        }
+        scrollTo(app.buttons["history-daily-2026-10-11"], in: app)
+        app.buttons["history-daily-2026-10-11"].tap()
+        XCTAssertEqual(app.staticTexts["today-title"].label, "Sunday 11 October 2026")
+        XCTAssertEqual(app.staticTexts["card-name"].label, name)
+        XCTAssertEqual(app.staticTexts["core-interpretation"].label, interpretation)
+        assertTodayContent(app)
+        app.buttons["back-to-history"].tap()
+        scrollTo(app.buttons[readingID], in: app)
+        app.buttons[readingID].tap()
+        for (id, value) in saved { XCTAssertEqual(app.staticTexts[id].label, value) }
+        app.buttons["reading-done"].tap()
+        XCTAssertTrue(app.staticTexts["history-title"].exists)
+        XCTAssertTrue(app.buttons["history-daily-2026-10-11"].exists)
+    }
+
+    func testHistoryRefreshesAfterReadingEditAndUserDeletion() {
+        let app = app(extra: ["--test-history-days", "1"])
+        openHistory(app)
+        let reading = app.buttons["history-reading-00000000-0000-0000-0000-000000000001"]
+        scrollTo(reading, in: app)
+        reading.tap()
+        scrollTo(app.buttons["reading-response-somewhat"], in: app)
+        app.buttons["reading-response-somewhat"].tap()
+        XCTAssertTrue(app.buttons["reading-response-somewhat"].isSelected)
+        app.buttons["reading-done"].tap()
+        scrollTo(reading, in: app)
+        reading.tap()
+        XCTAssertTrue(app.buttons["reading-response-somewhat"].isSelected)
+        scrollTo(app.buttons["reading-more"], in: app)
+        app.buttons["reading-more"].tap()
+        app.buttons["reading-delete"].tap()
+        let confirmation = app.alerts["Delete this reading?"]
+        XCTAssertTrue(confirmation.waitForExistence(timeout: 5))
+        confirmation.buttons["Delete"].tap()
+        XCTAssertTrue(app.staticTexts["history-title"].waitForExistence(timeout: 5))
+        XCTAssertFalse(reading.exists, "Deleting an archived reading must update the open History list")
+        XCTAssertTrue(app.buttons["history-daily-2026-10-11"].exists)
+    }
+
+    func testHistoryEmptyErrorAndLargestTextEvidence() throws {
+        let empty = app(audit: true)
+        openHistory(empty)
+        scrollTo(empty.staticTexts["history-message"], in: empty)
+        try auditAndCapture(empty, "10-history--empty", expecting: empty.staticTexts["history-message"])
+        scrollTo(empty.buttons["history-filter-career"], in: empty)
+        empty.buttons["history-filter-career"].tap()
+        XCTAssertEqual(empty.staticTexts["history-message"].label, "No career readings yet")
+        capture(empty, "10-history--empty-area")
+        empty.terminate()
+        let failure = app(extra: ["--test-history-read-failure"], audit: true)
+        openHistory(failure)
+        try auditAndCapture(failure, "10-history--read-error", expecting: failure.buttons["history-retry"])
+        failure.buttons["history-retry"].tap()
+        XCTAssertTrue(failure.staticTexts["history-month"].waitForExistence(timeout: 5))
+        failure.terminate()
+        let emptyLarge = app(extra: ["--test-largest-text", "--test-history-read-failure"])
+        openHistory(emptyLarge)
+        capture(emptyLarge, "10-history--read-error-largest-text")
+        scrollTo(emptyLarge.buttons["history-retry"], in: emptyLarge)
+        capture(emptyLarge, "10-history--read-error-largest-text-bottom")
+        emptyLarge.buttons["history-retry"].tap()
+        scrollTo(emptyLarge.staticTexts["history-message"], in: emptyLarge)
+        capture(emptyLarge, "10-history--empty-largest-text")
+        scrollTo(emptyLarge.staticTexts["history-message-body"], in: emptyLarge)
+        capture(emptyLarge, "10-history--empty-largest-text-bottom")
+        scrollTo(emptyLarge.buttons["history-filter-career"], in: emptyLarge)
+        emptyLarge.buttons["history-filter-career"].tap()
+        XCTAssertTrue(emptyLarge.buttons["history-filter-career"].isSelected)
+        capture(emptyLarge, "10-history--empty-area-largest-text-filter")
+        captureOverlappingContent(emptyLarge, through: emptyLarge.staticTexts["history-message"],
+                                  named: "10-history--empty-area-largest-text-heading")
+        XCTAssertEqual(emptyLarge.staticTexts["history-message"].label, "No career readings yet")
+        capture(emptyLarge, "10-history--empty-area-largest-text")
+        captureOverlappingContent(emptyLarge, through: emptyLarge.staticTexts["history-message-body"],
+                                  named: "10-history--empty-area-largest-text-scroll")
+        capture(emptyLarge, "10-history--empty-area-largest-text-bottom")
+        emptyLarge.terminate()
+        let large = app(extra: ["--test-history-days", "2", "--test-largest-text"], audit: true)
+        openHistory(large)
+        capture(large, "10-history--largest-text")
+        let today = large.staticTexts["history-day-2026-10-11"]
+        captureOverlappingContent(large, through: today, named: "10-history--largest-text-calendar-start")
+        XCTAssertTrue(today.label.contains("Today, Card drawn"))
+        capture(large, "10-history--largest-text-today")
+        captureOverlappingContent(large, through: large.buttons["history-filter-all"],
+                                  named: "10-history--largest-text-calendar-end")
+        capture(large, "10-history--largest-text-filters")
+        for area in ["all", "career", "relationship", "social"] {
+            scrollTo(large.buttons["history-filter-\(area)"], in: large)
+            XCTAssertGreaterThanOrEqual(large.buttons["history-filter-\(area)"].frame.height + 0.000_001, 44)
+            capture(large, "10-history--largest-text-filter-\(area)")
+        }
+        let reading = large.buttons["history-reading-00000000-0000-0000-0000-000000000001"]
+        captureOverlappingContent(large, through: reading, named: "10-history--largest-text-list-start")
+        capture(large, "10-history--largest-text-first-entry")
+        let relationship = large.buttons["history-reading-00000000-0000-0000-0000-000000000002"]
+        captureOverlappingContent(large, through: relationship, named: "10-history--largest-text-list")
+        capture(large, "10-history--largest-text-relationship-entry")
+        let oldest = large.buttons["history-reading-00000000-0000-0000-0000-000000000003"]
+        captureOverlappingContent(large, through: oldest, named: "10-history--largest-text-list-end")
+        // The 608-point row fits, but not together with the bottom padding.
+        // Keep its complete bounds and the absolute scroll end as separate stops.
+        assertVisible(oldest, in: large)
+        capture(large, "10-history--largest-text-last-entry")
+        dragContent(large, up: true)
+        assertVisible(large.staticTexts["history-entry-detail-reading-00000000-0000-0000-0000-000000000003"], in: large)
+        capture(large, "10-history--largest-text-bottom")
+        scrollTo(large.buttons["history-filter-social"], in: large)
+        large.buttons["history-filter-social"].tap()
+        XCTAssertTrue(large.buttons["history-filter-social"].isSelected)
+        capture(large, "10-history--filtered-largest-text")
+        captureOverlappingContent(large, through: oldest, named: "10-history--filtered-largest-text-scroll")
+        XCTAssertEqual(large.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'history-daily-'")).count, 0)
+        XCTAssertEqual(large.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'history-reading-'")).count, 1)
+        capture(large, "10-history--filtered-largest-text-result")
+        scrollTo(large.buttons["history-filter-all"], in: large)
+        large.buttons["history-filter-all"].tap()
+        let daily = large.buttons["history-daily-2026-10-10"]
+        scrollTo(daily, in: large)
+        daily.tap()
+        XCTAssertEqual(large.staticTexts["today-title"].label, "Saturday 10 October 2026")
+        XCTAssertEqual(large.staticTexts["card-name"].label, "Strength")
+        XCTAssertTrue(try XCTUnwrap(visibleTabs(in: large)).buttons["tab-history"].isSelected)
+        capture(large, "04-today--history-largest-text")
+        captureOverlappingContent(large, through: large.staticTexts["line-social"],
+                                  named: "04-today--history-largest-text-scroll")
+        dragContent(large, up: true)
+        assertVisible(large.staticTexts["line-social"], in: large)
+        capture(large, "04-today--history-largest-text-bottom")
+        scrollTo(large.buttons["today-card"], in: large)
+        large.buttons["today-card"].tap()
+        XCTAssertEqual(large.buttons["back-to-today"].label, "Back to daily card")
+        XCTAssertNil(visibleTabs(in: large))
+        capture(large, "03-reveal--history-largest-text")
+        captureOverlappingContent(large, through: large.staticTexts["reveal-disclaimer"],
+                                  named: "03-reveal--history-largest-text-scroll")
+        assertVisible(large.buttons["see-meaning"], in: large)
+        capture(large, "03-reveal--history-largest-text-bottom")
+        scrollTo(large.buttons["back-to-today"], in: large)
+        large.buttons["back-to-today"].tap()
+        XCTAssertEqual(large.staticTexts["today-title"].label, "Saturday 10 October 2026")
+        XCTAssertEqual(large.staticTexts["card-name"].label, "Strength")
+        try XCTUnwrap(visibleTabs(in: large)).buttons["tab-history"].tap()
+        XCTAssertTrue(large.buttons["history-filter-all"].isSelected)
+        // This return only needs to open the row; its complete bounds were captured above.
+        for _ in 0..<40 {
+            if reading.isHittable { break }
+            let viewport = scrollViewport(in: large)
+            let frame = reading.frame
+            let settlingDistance = min(24, 12 + max(0, viewport.height - frame.height) / 2)
+            let delta = frame.maxY > viewport.maxY
+                ? min(viewport.height / 2, frame.maxY - viewport.maxY + settlingDistance)
+                : -min(viewport.height / 2, viewport.minY - frame.minY + settlingDistance)
+            let origin = large.coordinate(withNormalizedOffset: .zero)
+            let start = origin.withOffset(CGVector(dx: viewport.midX, dy: viewport.midY + delta / 2))
+            let end = origin.withOffset(CGVector(dx: viewport.midX, dy: viewport.midY - delta / 2))
+            start.press(forDuration: 0.1, thenDragTo: end, withVelocity: .slow, thenHoldForDuration: 0.2)
+        }
+        XCTAssertTrue(reading.isHittable)
+        reading.tap()
+        XCTAssertNil(visibleTabs(in: large))
+        capture(large, "09-reading--history-largest-text")
+        captureOverlappingContent(large, through: large.staticTexts["reading-disclaimer"],
+                                  named: "09-reading--history-largest-text-scroll")
+        scrollTo(large.staticTexts["reading-disclaimer"], in: large)
+        assertVisible(large.buttons["reading-done"], in: large)
+        capture(large, "09-reading--history-largest-text-bottom")
+        large.buttons["reading-done"].tap()
+        XCTAssertTrue(large.staticTexts["history-title"].exists)
+    }
+
+    func testHistoryYearOfEntriesScrollPerformance() throws {
+        let app = app(extra: ["--test-history-days", "365"])
+        openHistory(app)
+        scrollTo(app.buttons["history-filter-all"], in: app)
+        let rows = app.buttons.matching(NSPredicate(format:
+            "identifier BEGINSWITH 'history-daily-' OR identifier BEGINSWITH 'history-reading-'"))
+        XCTAssertEqual(rows.count, 368)
+        let options = XCTMeasureOptions()
+        options.iterationCount = 2
+        var metrics: [any XCTMetric] = [XCTOSSignpostMetric.scrollingAndDecelerationMetric]
+        #if compiler(>=6.2)
+        if #available(iOS 26.0, *) { metrics.append(XCTHitchMetric(application: app)) }
+        #endif
+        measure(metrics: metrics, options: options) {
+            for _ in 0..<5 { app.swipeUp(velocity: .fast) }
+        }
+        XCTAssertTrue(app.buttons["tab-history"].isHittable)
+        let visible = app.buttons[try captureHistoryYear(app, "10-history--year-scroll")]
+        XCTAssertTrue(visible.isHittable)
+        visible.tap()
+        XCTAssertTrue(app.buttons["back-to-history"].waitForExistence(timeout: 5))
+        _ = try captureHistoryYear(app, "04-today--history-year-entry", requiring: "back-to-history")
+        app.buttons["back-to-history"].tap()
+        XCTAssertTrue(app.buttons["tab-history"].isHittable)
+        XCTAssertTrue(visible.isHittable)
+    }
+
+    private func captureHistoryYear(_ app: XCUIApplication, _ name: String,
+                                    requiring requiredIdentifier: String? = nil) throws -> String {
+        let viewport = visibleFrame(in: app)
+        var previous: [String: CGRect]?
+        var visibleTarget: String?
+        // Read the retained tree once per sample. Resolving every off-screen element
+        // individually is slow even while an archive detail covers the 365-day list.
+        let settled = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            guard let snapshot = try? app.snapshot() else { return false }
+            var frames: [String: CGRect] = [:]
+            visibleTarget = nil
+            func collect(_ node: any XCUIElementSnapshot) {
+                if !node.identifier.isEmpty, !node.frame.isEmpty, node.frame.intersects(viewport) {
+                    frames[node.identifier] = node.frame
+                    let matchesTarget = requiredIdentifier.map { node.identifier == $0 }
+                        ?? node.identifier.hasPrefix("history-daily-")
+                    if visibleTarget == nil, node.elementType == .button,
+                       matchesTarget, viewport.contains(node.frame) {
+                        visibleTarget = node.identifier
+                    }
+                }
+                for child in node.children { collect(child) }
+            }
+            collect(snapshot)
+            let unchanged = previous == frames
+            previous = frames
+            return !frames.isEmpty && visibleTarget != nil && unchanged
+        }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [settled], timeout: 15), .completed, "Visible History frames must settle")
+        let identifier = try XCTUnwrap(visibleTarget)
+        Thread.sleep(forTimeInterval: 0.3)
+        let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
+        return identifier
     }
 
     private let fixedSpread = ["--test-random-indices", "0,0,0,1,0,0"]
@@ -1768,7 +2217,7 @@ final class HarnessShellUITests: XCTestCase {
         scrollTo(app.buttons["suggestion-2"], in: app)
         capture(app, "05-ask--status-skipped-no-reading-bottom")
         app.buttons["tab-today"].tap()
-        XCTAssertTrue(app.staticTexts["today-title"].exists)
+        XCTAssertTrue(app.staticTexts["today-title"].waitForExistence(timeout: 5))
         app.buttons["tab-ask"].tap()
         scrollTo(app.buttons["ask-question-entry"], in: app)
         app.buttons["ask-question-entry"].tap()
@@ -1808,7 +2257,7 @@ final class HarnessShellUITests: XCTestCase {
         try auditAndCapture(app, "08-three-card-pick-complete", expecting: app.staticTexts["spread-complete-title"], app.buttons["read-spread"])
         app.buttons["read-spread"].tap()
         XCTAssertTrue(app.staticTexts["reading-saved"].waitForExistence(timeout: 5))
-        XCTAssertEqual(app.staticTexts["reading-saved"].label, "Relationship · Saved on this phone")
+        XCTAssertEqual(app.staticTexts["reading-saved"].label, "Relationship · Saved to History")
         XCTAssertFalse(app.buttons["tab-ask"].exists)
         try auditAndCapture(app, "09-reading", expecting: app.staticTexts["reading-saved"], app.staticTexts["reading-situation"], app.buttons["reading-done"])
         for identifier in ["reading-situation", "reading-action", "reading-outcome", "reading-lens"] {
@@ -1963,6 +2412,21 @@ final class HarnessShellUITests: XCTestCase {
         let field = app.textViews["note-field"]
         XCTAssertTrue((field.value as? String ?? "").isEmpty)
         field.tap()
+        let keyboard = app.keyboards.firstMatch
+        if !keyboard.waitForExistence(timeout: 3) {
+            // Test artefact workaround for the known missed-tap-after-audit pattern.
+            XCTContext.runActivity(named: "Re-tap note field once after missed post-audit tap") { activity in
+                let evidence = XCTAttachment(screenshot: app.screenshot())
+                evidence.name = "note-focus-missed-tap"
+                evidence.lifetime = .keepAlways
+                activity.add(evidence)
+                field.tap()
+            }
+            guard keyboard.waitForExistence(timeout: 3) else {
+                XCTFail("Note field did not acquire keyboard focus after the initial tap and one re-tap")
+                return
+            }
+        }
         field.typeText("I can take a small step.\nThere is time.")
         captureNoteKeyboard(app)
         finishNoteEditing(app)
@@ -2170,7 +2634,7 @@ final class HarnessShellUITests: XCTestCase {
         app.buttons["submit-question"].tap()
         chooseSpread(app)
         app.buttons["read-spread"].tap()
-        XCTAssertEqual(app.staticTexts["reading-saved"].label, "Social · Saved on this phone")
+        XCTAssertEqual(app.staticTexts["reading-saved"].label, "Social · Saved to History")
         XCTAssertTrue(app.staticTexts["reading-lens"].label.contains("belonging"))
     }
 

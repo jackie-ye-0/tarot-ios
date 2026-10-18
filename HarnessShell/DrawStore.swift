@@ -1,5 +1,6 @@
 import Foundation
 import SwiftData
+import Observation
 
 @Model
 final class InstallIdentity {
@@ -25,13 +26,14 @@ final class StoredDailyDraw {
     }
 }
 
-@MainActor
+@MainActor @Observable
 final class DrawStore {
     enum StoreError: Error {
         case read(any Error)
         case save(any Error)
     }
 
+    private(set) var historyRevision = 0
     private let container: ModelContainer
     private var context: ModelContext { container.mainContext }
     #if DEBUG
@@ -101,6 +103,7 @@ final class DrawStore {
         do {
             context.insert(try StoredDailyDraw(draw))
             try context.save()
+            historyRevision += 1
             return draw
         } catch {
             context.rollback()
@@ -125,6 +128,7 @@ final class DrawStore {
             for draft in try context.fetch(FetchDescriptor<StoredSpreadDraft>()) { context.delete(draft) }
             for draft in try context.fetch(FetchDescriptor<StoredQuestionDraft>()) { context.delete(draft) }
             try context.save()
+            if existing == nil { historyRevision += 1 }
             return saved
         } catch {
             context.rollback()
@@ -160,6 +164,14 @@ final class DrawStore {
         }
     }
 
+    func history(timeZone: TimeZone) throws -> [HistoryEntry] {
+        do {
+            let readings = try context.fetch(FetchDescriptor<StoredQuestionReading>())
+                .map { try JSONDecoder().decode(QuestionReading.self, from: $0.snapshot) }
+            return try ReadingEngine.history(draws: draws(from: ""), readings: readings, timeZone: timeZone)
+        } catch { throw StoreError.read(error) }
+    }
+
     func latestReading() throws -> QuestionReading? {
         var request = FetchDescriptor<StoredQuestionReading>(sortBy: [SortDescriptor(\.createdAt, order: .reverse)])
         request.fetchLimit = 1
@@ -180,6 +192,7 @@ final class DrawStore {
             }
             #endif
             try context.save()
+            historyRevision += 1
             return reading
         } catch {
             context.rollback()
@@ -199,6 +212,7 @@ final class DrawStore {
             }
             #endif
             try context.save()
+            historyRevision += 1
             return remaining
         } catch {
             context.rollback()

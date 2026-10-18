@@ -481,6 +481,7 @@ struct QuietAction: View {
 
 struct BackToTodayAction: View {
     let progress: Double
+    var label = "Back to Today"
     let action: () -> Void
     var body: some View {
         Button(action: action) {
@@ -491,7 +492,7 @@ struct BackToTodayAction: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(ActionPressStyle())
-        .accessibilityLabel("Back to Today")
+        .accessibilityLabel(label)
         .accessibilityIdentifier("back-to-today")
     }
 }
@@ -1278,7 +1279,7 @@ struct ReadingSavedMetadata: View {
                     .frame(width: Design.Space.small, height: Design.Space.small)
                     .accessibilityHidden(true)
             }
-            Text("\(area.label) · Saved on this phone")
+            Text("\(area.label) · Saved to History")
                 .typeRole(.secondary).foregroundStyle(Design.Palette.secondary)
                 .accessibilityIdentifier("reading-saved")
         }
@@ -1484,14 +1485,16 @@ struct NavigationAction: View {
 }
 
 struct RestingTabBar: View {
-    let askSelected: Bool
+    let selection: String
     let today: () -> Void
     let ask: () -> Void
+    let history: () -> Void
 
     var body: some View {
         HStack {
-            tab("Today", symbol: "rectangle.portrait", selected: !askSelected, action: today)
-            tab("Ask", symbol: "bubble.left", selected: askSelected, action: ask)
+            tab("Today", symbol: "rectangle.portrait", selected: selection == "Today", action: today)
+            tab("Ask", symbol: "bubble.left", selected: selection == "Ask", action: ask)
+            tab("History", symbol: "calendar", selected: selection == "History", action: history)
         }
         .padding(.top, Design.Space.small)
         .padding(.bottom, Design.Space.small)
@@ -1704,5 +1707,167 @@ struct SettingsChoice: View {
         }
         .buttonStyle(ActionPressStyle())
         .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+}
+
+struct HistoryListSurface: ViewModifier {
+    func body(content: Content) -> some View {
+        content.background(Design.Palette.surface, in: RoundedRectangle(cornerRadius: 22))
+    }
+}
+
+// Keep the same controls when text grows; replacing fit candidates loses their accessibility identity.
+private struct HistoryFilterLayout: Layout {
+    private func frames(width: CGFloat?, subviews: Subviews) -> [CGRect] {
+        let ideal = subviews.map { $0.sizeThatFits(.unspecified) }
+        let total = ideal.reduce(0) { $0 + $1.width } + CGFloat(max(0, ideal.count - 1)) * Design.Space.small
+        let horizontal = total <= (width ?? .infinity)
+        let sizes = horizontal ? ideal : subviews.map { $0.sizeThatFits(ProposedViewSize(width: width, height: nil)) }
+        var offset: CGFloat = 0
+        return sizes.map { size in
+            defer { offset += (horizontal ? size.width : size.height) + Design.Space.small }
+            return CGRect(x: horizontal ? offset : 0, y: horizontal ? 0 : offset,
+                          width: size.width, height: size.height)
+        }
+    }
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let frames = frames(width: proposal.width, subviews: subviews)
+        return CGSize(width: frames.map(\.maxX).max() ?? 0, height: frames.map(\.maxY).max() ?? 0)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        for (view, frame) in zip(subviews, frames(width: bounds.width, subviews: subviews)) {
+            view.place(at: CGPoint(x: bounds.minX + frame.minX, y: bounds.minY + frame.minY),
+                       anchor: .topLeading, proposal: ProposedViewSize(frame.size))
+        }
+    }
+}
+
+struct HistoryFilters: View {
+    @Binding var selection: ReadingArea?
+    @Environment(\.dynamicTypeSize) private var textSize
+
+    var body: some View {
+        HistoryFilterLayout {
+            filter(nil)
+            ForEach(ReadingArea.allCases) { filter($0) }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Filter History")
+    }
+
+    private func filter(_ area: ReadingArea?) -> some View {
+        let shape = RoundedRectangle(cornerRadius: textSize.isAccessibilitySize ? 22 : 1000)
+        return Button { selection = area } label: {
+            Text(area?.label ?? "All").typeRole(.metadata)
+                .fixedSize(horizontal: false, vertical: true)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, Design.Space.related)
+                .padding(.vertical, 4)
+                .frame(minWidth: Design.Space.target, maxWidth: .infinity,
+                       minHeight: Design.Space.target)
+                .foregroundStyle(selection == area ? Design.Palette.surface : Design.Palette.ink)
+                .background(selection == area ? Design.Palette.ink : Design.Palette.surface, in: shape)
+                .overlay { shape.strokeBorder(selection == area ? Design.Palette.ink : Design.Palette.controlBorder) }
+                .contentShape(shape)
+        }
+        .buttonStyle(ActionPressStyle())
+        .accessibilityAddTraits(selection == area ? .isSelected : [])
+        .accessibilityIdentifier("history-filter-\(area?.rawValue ?? "all")")
+    }
+}
+
+struct HistoryMonthAction: View {
+    let forward: Bool
+    let action: () -> Void
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: forward ? "chevron.right" : "chevron.left")
+                .resizable().scaledToFit().frame(width: 10, height: 18)
+                .frame(width: Design.Space.target, height: Design.Space.target)
+                .contentShape(Rectangle())
+        }
+        .foregroundStyle(Design.Palette.ink)
+        .buttonStyle(ActionPressStyle())
+        .accessibilityLabel(forward ? "Next month" : "Previous month")
+        .accessibilityIdentifier(forward ? "history-next-month" : "history-previous-month")
+    }
+}
+
+struct HistoryCalendarDay: View {
+    let key: String
+    let today: String
+    let drawn: Bool
+    var expanded = false
+
+    var body: some View {
+        let isToday = key == today
+        let layout = expanded ? AnyLayout(HStackLayout(spacing: Design.Space.small))
+            : AnyLayout(VStackLayout(spacing: 4))
+        layout {
+            Text(expanded ? HistoryMonth.label(for: key, format: "EEEE d") : String(Int(key.suffix(2))!))
+                .typeRole(.label)
+                .fixedSize(horizontal: false, vertical: true)
+                .foregroundStyle(isToday ? Design.Palette.surface : key > today ? Design.Palette.secondary : Design.Palette.ink)
+                .accessibilityLabel([HistoryMonth.label(for: key), isToday ? "Today" : nil,
+                                     drawn ? "Card drawn" : nil, key > today ? "Future day" : nil]
+                    .compactMap { $0 }.joined(separator: ", "))
+                .accessibilityIdentifier("history-day-\(key)")
+            if drawn {
+                RoundedRectangle(cornerRadius: 1).fill(Design.Palette.ochre)
+                    .frame(width: 8, height: 12).accessibilityHidden(true)
+            } else if !expanded { Spacer(minLength: 0).frame(height: 12) }
+        }
+        .padding(.vertical, 4)
+        .padding(.horizontal, expanded ? Design.Space.group : 0)
+        .frame(maxWidth: .infinity, minHeight: Design.Space.target, alignment: expanded ? .leading : .center)
+        .background(isToday ? Design.Palette.ink : drawn ? Design.Palette.surface : .clear,
+                    in: RoundedRectangle(cornerRadius: 12))
+
+    }
+}
+
+struct HistoryRow: View {
+    let entry: HistoryEntry
+    let dateLabel: String
+    let action: () -> Void
+
+    private var title: String {
+        switch entry {
+        case .daily(let draw): "\(draw.card.name), \(draw.orientation.label.lowercased())"
+        case .reading(let reading): "“\(reading.question)”"
+        }
+    }
+    private var subtitle: String {
+        "\(entry.area.map { "\($0.label) question" } ?? "Daily card") · \(dateLabel)"
+    }
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: Design.Space.group) {
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(entry.area.map { Design.Palette.accent(for: $0) } ?? Design.Palette.ochre)
+                    .frame(width: 30, height: 48).accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title).typeRole(.metadata).foregroundStyle(Design.Palette.ink)
+                        .accessibilityIdentifier("history-entry-title-\(entry.id)")
+                    Text(subtitle).typeRole(.secondary).foregroundStyle(Design.Palette.secondary)
+                        .accessibilityIdentifier("history-entry-detail-\(entry.id)")
+                }
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                Image(systemName: "chevron.right").resizable().scaledToFit()
+                    .frame(width: 7, height: 12).foregroundStyle(Design.Palette.secondary).accessibilityHidden(true)
+            }
+            .padding(.horizontal, Design.Space.group)
+            .padding(.vertical, Design.Space.related)
+            .frame(minHeight: 76)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(ActionPressStyle())
+        .accessibilityLabel("\(title), \(subtitle)")
+        .accessibilityIdentifier("history-\(entry.id)")
     }
 }

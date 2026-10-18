@@ -295,14 +295,21 @@ private struct SpreadPickFan: View {
 }
 
 struct QuestionReadingScreen: View {
-    let reading: QuestionReading
     let session: AppSession
+    let done: () -> Void
+    @State private var reading: QuestionReading
     @Environment(\.dynamicTypeSize) private var textSize
     @State private var editingNote = false
     @State private var noteDraft = ""
     @State private var confirmingDelete = false
     @State private var operationFailed = false
     @FocusState private var noteFocused: Bool
+
+    init(reading: QuestionReading, session: AppSession, done: @escaping () -> Void) {
+        _reading = State(initialValue: reading)
+        self.session = session
+        self.done = done
+    }
 
     var body: some View {
         Group {
@@ -312,7 +319,10 @@ struct QuestionReadingScreen: View {
         .alert("Delete this reading?", isPresented: $confirmingDelete) {
             Button("Cancel", role: .cancel) { }
             Button("Delete", role: .destructive) {
-                do { try session.deleteReading(id: reading.id) }
+                do {
+                    try session.deleteReading(id: reading.id)
+                    done()
+                }
                 catch { operationFailed = true }
             }
         } message: {
@@ -329,7 +339,7 @@ struct QuestionReadingScreen: View {
         ReadingScreenLayout {
             VStack(alignment: .leading, spacing: Design.Space.section) {
                 HStack {
-                    NavigationAction(close: true, action: session.goToToday)
+                    NavigationAction(close: true, action: done)
                     Spacer()
                     ShareImageButton(content: .reading(reading))
                     ReadingMoreMenu(hasNote: reading.note != nil) {
@@ -366,7 +376,7 @@ struct QuestionReadingScreen: View {
             .padding(.bottom, Design.Space.section)
         } footer: {
             VStack(spacing: Design.Space.small) {
-                PrimaryAction(title: "Done", action: session.goToToday).accessibilityIdentifier("reading-done")
+                PrimaryAction(title: "Done", action: done).accessibilityIdentifier("reading-done")
                 Text("For entertainment and reflection, not a prediction")
                     .typeRole(Design.TypeRole.caption).foregroundStyle(Design.Palette.secondary)
                     .multilineTextAlignment(.center)
@@ -385,7 +395,7 @@ struct QuestionReadingScreen: View {
                 ForEach(ReadingResponse.allCases) { response in
                     QuestionChip(title: response.label, fillsWidth: !textSize.isAccessibilitySize,
                                  centresTitle: !textSize.isAccessibilitySize, selected: reading.response == response) {
-                        do { try session.setReadingResponse(reading.response == response ? nil : response, id: reading.id) }
+                        do { reading = try session.setReadingResponse(reading.response == response ? nil : response, id: reading.id) }
                         catch { operationFailed = true }
                     }
                     .accessibilityIdentifier("reading-response-\(response.rawValue)")
@@ -414,7 +424,7 @@ struct QuestionReadingScreen: View {
             } footer: {
                 PrimaryAction(title: "Save note") {
                     do {
-                        try session.saveReadingNote(noteDraft, id: reading.id)
+                        reading = try session.saveReadingNote(noteDraft, id: reading.id)
                         noteFocused = false
                         editingNote = false
                     } catch { operationFailed = true }
