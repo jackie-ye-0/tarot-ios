@@ -10,6 +10,36 @@ struct CardMeaning: Codable, Equatable {
     var questionPositions: QuestionPositionMeanings? = nil
     // Older saved snapshots remain readable without named-person content.
     var namedPersonPositions: NamedPersonPositionMeanings? = nil
+
+    var isComplete: Bool {
+        let sentences = interpretation.components(separatedBy: CharacterSet(charactersIn: ".!?"))
+            .filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        return (3...4).contains(keywords.count) && keywords.allSatisfy(ContentWording.isFilled)
+            && (2...3).contains(sentences.count) && daily?.isComplete == true
+            && questionPositions?.isComplete == true && namedPersonPositions?.isComplete == true
+            && authoredText.allSatisfy(ContentWording.hasNoLuckyWording)
+    }
+
+    private var authoredText: [String] {
+        keywords + [interpretation] + (daily.map { daily in
+            [daily.colourName, daily.object, daily.bestHour] + ReadingArea.allCases.map { daily.reading(for: $0).line }
+        } ?? []) + (questionPositions.map { meanings in
+            ReadingType.question.positions.map { meanings.text(for: $0) }
+        } ?? []) + (namedPersonPositions.map { meanings in
+            ReadingType.namedPerson.positions.map { meanings.text(for: $0) }
+        } ?? [])
+    }
+}
+
+// Structural and lexical checks are not a substitute for the draft's editorial review.
+enum ContentWording {
+    static func isFilled(_ text: String) -> Bool {
+        !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    static func hasNoLuckyWording(_ text: String) -> Bool {
+        !CrisisContent.normalised(text).split(separator: " ").contains("lucky")
+    }
 }
 
 struct AreaReading: Codable, Equatable {
@@ -45,7 +75,8 @@ struct DailyColour: Codable, Equatable {
     }
 
     private static func parse(_ hex: String) -> UInt32? {
-        guard hex.count == 7, hex.first == "#" else { return nil }
+        guard hex.count == 7, hex.first == "#",
+              hex.dropFirst().allSatisfy({ "0123456789abcdefABCDEF".contains($0) }) else { return nil }
         return UInt32(hex.dropFirst(), radix: 16)
     }
 }
@@ -129,15 +160,12 @@ struct CardLibrary: Codable {
 
     static func decode(_ data: Data) throws -> CardLibrary {
         let library = try JSONDecoder().decode(CardLibrary.self, from: data)
-        guard library.version > 0, library.cards.count >= 6,
+        guard library.version > 0, ContentWording.isFilled(library.editorialStatus), library.cards.count >= 6,
               Set(library.cards.map(\.id)).count == library.cards.count,
               library.cards.allSatisfy({ card in
-                  !card.name.isEmpty && !card.arcana.isEmpty &&
-                  [card.upright, card.reversed].allSatisfy {
-                      (3...4).contains($0.keywords.count) && !$0.interpretation.isEmpty &&
-                      $0.daily?.isComplete == true &&
-                      $0.questionPositions?.isComplete == true && $0.namedPersonPositions?.isComplete == true
-                  }
+                  [card.id, card.name, card.arcana].allSatisfy(ContentWording.isFilled) &&
+                  [card.name, card.arcana].allSatisfy(ContentWording.hasNoLuckyWording) &&
+                  [card.upright, card.reversed].allSatisfy(\.isComplete)
               }), library.questions.isComplete, library.crisis.isComplete else { throw CocoaError(.coderReadCorrupt) }
         return library
     }

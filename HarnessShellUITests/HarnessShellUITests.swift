@@ -243,7 +243,7 @@ final class HarnessShellUITests: XCTestCase {
         return normalised(lines.sorted { $0.y < $1.y }.map(\.text).joined(separator: " "))
     }
 
-    private func app(extra: [String] = [], memory: Bool = true, seed: String = "reference-1", date: String = "2026-10-11T00:00:00Z", animations: Bool = false, audit: Bool = false, welcome: Bool = false, reminderInvitation: Bool = false) -> XCUIApplication {
+    private func app(extra: [String] = [], memory: Bool = true, seed: String = "major-reference-2003", date: String = "2026-10-11T00:00:00Z", animations: Bool = false, audit: Bool = false, welcome: Bool = false, reminderInvitation: Bool = false) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = ["--test-mode", "--test-date", date,
                                "--test-time-zone", "Australia/Sydney", "--test-seed", seed]
@@ -1983,8 +1983,114 @@ final class HarnessShellUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["today-title"].waitForExistence(timeout: 5))
     }
 
+
+    func testExpandedMajorDailyContentAndLongestNameAtBothTextSizes() throws {
+        for largest in [false, true] {
+            let app = app(extra: largest ? ["--test-largest-text"] : [], seed: "major-priestess-4", audit: true)
+            let suffix = largest ? "major-content-largest-text" : "major-content"
+            scrollTo(app.buttons["draw-card-3"], in: app)
+            tapWhenSettled(app.buttons["draw-card-3"])
+            scrollTo(app.buttons["turn-over"], in: app)
+            app.buttons["turn-over"].tap()
+            XCTAssertTrue(app.staticTexts["card-name"].waitForExistence(timeout: 5))
+            XCTAssertEqual(app.staticTexts["card-name"].label, "The High Priestess")
+            XCTAssertEqual(app.staticTexts["card-details"].label, "Reversed · Major Arcana II")
+            if largest {
+                capture(app, "03-reveal--\(suffix)")
+                captureOverlappingContent(app, through: app.staticTexts["reveal-disclaimer"], named: "03-reveal--\(suffix)-scroll")
+                assertVisible(app.buttons["see-meaning"], in: app)
+                capture(app, "03-reveal--\(suffix)-bottom")
+            } else {
+                try auditAndCapture(app, "03-reveal--\(suffix)", expecting: app.staticTexts["card-name"])
+            }
+            scrollTo(app.buttons["see-meaning"], in: app)
+            app.buttons["see-meaning"].tap()
+            XCTAssertTrue(app.staticTexts["today-title"].waitForExistence(timeout: 5))
+            XCTAssertEqual(app.staticTexts["core-interpretation"].label,
+                           "Other people's opinions may be crowding your own response. Pause to distinguish a useful observation from a story you have repeated to yourself.")
+            XCTAssertEqual(app.descendants(matching: .any)["daily-colour"].firstMatch.label, "Colour, Slate")
+            XCTAssertEqual(app.descendants(matching: .any)["score-career"].firstMatch.label, "Career, 52 out of 100")
+            if largest {
+                capture(app, "04-today--\(suffix)")
+                captureOverlappingContent(app, through: app.staticTexts["line-social"], named: "04-today--\(suffix)-scroll")
+                scrollTo(app.buttons["today-ask"], in: app)
+                assertVisible(app.buttons["today-ask"], in: app)
+                capture(app, "04-today--\(suffix)-bottom")
+            } else {
+                try auditAndCapture(app, "04-today--\(suffix)", today: true, expecting: app.staticTexts["core-interpretation"])
+                positionTodayAuditBelowCard(app, revealing: app.staticTexts["line-social"])
+                try auditAndCapture(app, "04-today--\(suffix)-bottom", today: true)
+            }
+            XCTAssertEqual(app.staticTexts["line-relationship"].label, "Name a question you have been trying to answer by guessing.")
+            app.terminate()
+        }
+    }
+
+    func testExpandedMajorContentReachesQuestionAndNamedPersonReadings() throws {
+        for (named, largest) in [(false, false), (true, false), (false, true), (true, true)] {
+            // Priestess upright, Death reversed, World upright from the shrinking deck.
+            let app = app(extra: ["--test-random-indices", "6,0,14,1,19,0"] + (largest ? ["--test-largest-text"] : []), audit: true)
+            reachAsk(app, largest: largest)
+            scrollTo(app.buttons["area-relationship"], in: app)
+            app.buttons["area-relationship"].tap()
+            if named {
+                scrollTo(app.buttons["ask-person-entry"], in: app)
+                app.buttons["ask-person-entry"].tap()
+                enterPerson(app)
+                scrollTo(app.buttons["submit-person"], in: app)
+                app.buttons["submit-person"].tap()
+                for _ in 0..<3 {
+                    scrollTo(app.buttons["draw-card-3"], in: app)
+                    tapWhenSettled(app.buttons["draw-card-3"])
+                }
+            } else {
+                scrollTo(app.buttons["suggestion-0"], in: app)
+                app.buttons["suggestion-0"].tap()
+                scrollTo(app.buttons["submit-question"], in: app)
+                app.buttons["submit-question"].tap()
+                chooseSpread(app, largest: largest)
+            }
+            scrollTo(app.buttons["read-spread"], in: app)
+            app.buttons["read-spread"].tap()
+            XCTAssertTrue(app.staticTexts["reading-saved"].waitForExistence(timeout: 5))
+            let expected = named ? [
+                "you": "Notice which feelings you have kept private and which you want to put into words.",
+                "them": "Let the other person explain their readiness in their own terms without pressing for your pace.",
+                "connection": "Consider what you value in the whole connection, including the space for separate lives."
+            ] : [
+                "situation": "You may be holding a question that needs attention more than an immediate answer.",
+                "action": "Choose one small adjustment without requiring yourself to settle the whole transition today.",
+                "outcome": "Reflect on what a satisfying sense of completion means without expecting perfection."
+            ]
+            let suffix = (named ? "major-content-named-person" : "major-content-question") + (largest ? "-largest-text" : "")
+            if largest { capture(app, "09-reading--\(suffix)") }
+            else { try auditAndCapture(app, "09-reading--\(suffix)", expecting: app.staticTexts["reading-saved"]) }
+            for position in named ? ["you", "them", "connection"] : ["situation", "action", "outcome"] {
+                let passage = app.staticTexts["reading-\(position)"]
+                XCTAssertEqual(passage.label, expected[position])
+                if !largest {
+                    scrollTo(passage, in: app)
+                    try auditAndCapture(app, "09-reading--\(suffix)-\(position)", expecting: passage)
+                }
+            }
+            if named { XCTAssertTrue(app.staticTexts["reading-lens"].label.contains("Sam")) }
+            XCTAssertTrue(app.staticTexts["reflection-question"].label.hasSuffix("?"))
+            if largest {
+                captureOverlappingContent(app, through: app.staticTexts["reading-disclaimer"], named: "09-reading--\(suffix)-scroll")
+                assertVisible(app.buttons["reading-done"], in: app)
+                capture(app, "09-reading--\(suffix)-bottom")
+            } else {
+                scrollTo(app.staticTexts["reflection-question"], in: app)
+                try auditAndCapture(app, "09-reading--\(suffix)-bottom", expecting: app.staticTexts["reflection-question"])
+            }
+            app.buttons["reading-done"].tap()
+            XCTAssertTrue(app.staticTexts["today-title"].waitForExistence(timeout: 5))
+            app.terminate()
+        }
+    }
+
     func testReversedCardUsesItsOwnMeaning() throws {
-        let app = app(seed: "reference-4", audit: true)
+        let app = app(seed: "major-reversed-19", audit: true)
         reveal(app)
         XCTAssertEqual(app.staticTexts["card-name"].label, "The Star")
         XCTAssertEqual(app.staticTexts["card-details"].label, "Reversed · Major Arcana XVII")
@@ -3165,11 +3271,11 @@ final class HarnessShellUITests: XCTestCase {
         try auditAndCapture(app, "06-composer--bottom", expecting: finalSuggestion)
         scrollTo(app.buttons["suggestion-0"], in: app)
         app.buttons["suggestion-0"].tap()
-        waitForDestination("composer filled with Where is this going?") {
-            app.descendants(matching: .any)["question-field"].firstMatch.value as? String == "Where is this going?"
+        waitForDestination("composer filled with What matters to me here?") {
+            app.descendants(matching: .any)["question-field"].firstMatch.value as? String == "What matters to me here?"
         }
         XCTAssertTrue(app.buttons["submit-question"].isEnabled)
-        XCTAssertEqual(app.descendants(matching: .any)["question-field"].firstMatch.value as? String, "Where is this going?")
+        XCTAssertEqual(app.descendants(matching: .any)["question-field"].firstMatch.value as? String, "What matters to me here?")
         showNavigationTop(app)
         try auditAndCapture(app, "06-composer-question-entered", expecting: app.staticTexts["composer-title"], app.buttons["submit-question"])
         scrollTo(app.buttons["suggestion-2"], in: app)
@@ -3178,7 +3284,7 @@ final class HarnessShellUITests: XCTestCase {
         waitForDestination("three-card pick") {
             app.staticTexts["spread-question"].exists
         }
-        XCTAssertEqual(app.staticTexts["spread-question"].label, "“Where is this going?”")
+        XCTAssertEqual(app.staticTexts["spread-question"].label, "“What matters to me here?”")
         XCTAssertFalse(app.buttons["tab-ask"].exists)
         for position in ["situation", "action", "outcome"] {
             XCTAssertTrue(app.descendants(matching: .any)["spread-slot-\(position)"].firstMatch.label.contains("empty"))
@@ -3799,17 +3905,17 @@ final class HarnessShellUITests: XCTestCase {
             }
             XCUIDevice.shared.press(.home)
             app.activate()
-            XCTAssertEqual(app.staticTexts["spread-question"].label, "“Where is this going?”")
+            XCTAssertEqual(app.staticTexts["spread-question"].label, "“What matters to me here?”")
             app.terminate()
             app.launch()
             XCTAssertTrue(app.staticTexts["today-title"].waitForExistence(timeout: 5))
             app.buttons["tab-ask"].tap()
-            XCTAssertEqual(app.staticTexts["spread-question"].label, "“Where is this going?”")
+            XCTAssertEqual(app.staticTexts["spread-question"].label, "“What matters to me here?”")
             XCTAssertEqual(slots, ["situation", "action", "outcome"].map {
                 app.descendants(matching: .any)["spread-slot-\($0)"].firstMatch.label
             })
             app.buttons["go-back"].tap()
-            XCTAssertEqual(app.descendants(matching: .any)["question-field"].firstMatch.value as? String, "Where is this going?")
+            XCTAssertEqual(app.descendants(matching: .any)["question-field"].firstMatch.value as? String, "What matters to me here?")
             app.buttons["submit-question"].tap()
             XCTAssertEqual(slots, ["situation", "action", "outcome"].map {
                 app.descendants(matching: .any)["spread-slot-\($0)"].firstMatch.label

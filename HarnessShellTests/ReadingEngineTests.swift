@@ -343,7 +343,7 @@ final class ReadingEngineTests: XCTestCase {
 
     func testKnownStableHashVector() throws {
         let draw = ReadingEngine.dailyDraw(seed: "reference-1", dateKey: "2026-10-11", position: 3, library: try CardLibrary.load())
-        XCTAssertEqual(draw.card.id, "star")
+        XCTAssertEqual(draw.card.id, "emperor")
         XCTAssertEqual(draw.orientation, .upright)
     }
 
@@ -383,7 +383,7 @@ final class ReadingEngineTests: XCTestCase {
         }
     }
 
-    // The six-card starter cannot exercise a fourteen-day non-repeat run. Interpretations expand in #24–#26.
+    // A complete synthetic deck isolates the repeat rule from the expanding bundled library.
     private func syntheticDeck() throws -> CardLibrary {
         let source = try CardLibrary.load()
         let template = source.cards[0]
@@ -418,10 +418,10 @@ final class ReadingEngineTests: XCTestCase {
         let honolulu = try XCTUnwrap(TimeZone(identifier: "Pacific/Honolulu"))
         let sydneyKey = ReadingEngine.dateKey(for: instant, timeZone: sydney)
         let honoluluKey = ReadingEngine.dateKey(for: instant, timeZone: honolulu)
-        let laterDraw = ReadingEngine.dailyDraw(seed: "travel-2", dateKey: sydneyKey, position: 2, library: library)
-        let unfilteredEarlierDraw = ReadingEngine.dailyDraw(seed: "travel-2", dateKey: honoluluKey,
+        let laterDraw = ReadingEngine.dailyDraw(seed: "major-travel-18", dateKey: sydneyKey, position: 2, library: library)
+        let unfilteredEarlierDraw = ReadingEngine.dailyDraw(seed: "major-travel-18", dateKey: honoluluKey,
                                                            position: 5, library: library)
-        let earlierDraw = ReadingEngine.dailyDraw(seed: "travel-2", dateKey: honoluluKey, position: 5,
+        let earlierDraw = ReadingEngine.dailyDraw(seed: "major-travel-18", dateKey: honoluluKey, position: 5,
                                                   library: library, previousDraws: [laterDraw])
 
         XCTAssertEqual(sydneyKey, "2026-10-11")
@@ -464,9 +464,9 @@ final class ReadingEngineTests: XCTestCase {
         }
     }
 
-    func testStarterLibraryHasBothCompleteOrientationsAndDistinctIDs() throws {
+    func testBundledLibraryHasBothCompleteOrientationsAndDistinctIDs() throws {
         let library = try CardLibrary.load()
-        XCTAssertGreaterThanOrEqual(library.cards.count, 6)
+        XCTAssertGreaterThanOrEqual(library.cards.count, 22)
         XCTAssertEqual(Set(library.cards.map(\.id)).count, library.cards.count)
         XCTAssertTrue(library.editorialStatus.contains("first-draft"))
         for card in library.cards {
@@ -476,7 +476,7 @@ final class ReadingEngineTests: XCTestCase {
             for meaning in [card.upright, card.reversed] {
                 XCTAssertTrue((3...4).contains(meaning.keywords.count))
                 XCTAssertTrue(meaning.keywords.allSatisfy { !$0.isEmpty })
-                XCTAssertGreaterThanOrEqual(meaning.interpretation.split(separator: ".").count, 2)
+                XCTAssertTrue(meaning.isComplete)
                 let daily = try XCTUnwrap(meaning.daily)
                 XCTAssertTrue(daily.isComplete)
                 let lines = ReadingArea.allCases.map { daily.reading(for: $0).line }
@@ -487,6 +487,158 @@ final class ReadingEngineTests: XCTestCase {
                 XCTAssertNotNil(daily.colourHex.range(of: "^#[0-9a-fA-F]{6}$", options: .regularExpression))
             }
         }
+    }
+
+
+    func testAllTwentyTwoMajorArcanaMatchTheCatalogueAndComposeEveryPosition() throws {
+        let library = try CardLibrary.load()
+        let majors = library.cards.filter { $0.suit == nil }
+        XCTAssertEqual(majors.count, 22)
+        XCTAssertEqual(Set(majors.map(\.id)), Set(CardIdentity.deck.filter { $0.suit == nil }.map(\.id)))
+        XCTAssertEqual(Set(majors.map(\.rank)), Set(0...21))
+        XCTAssertTrue(library.editorialStatus.contains("Jackie's editorial review"))
+        for card in majors {
+            for orientation in [Orientation.upright, .reversed] {
+                for type in [ReadingType.question, .namedPerson] {
+                    let companions = library.cards.filter { $0.id != card.id }.prefix(2)
+                    let spread = [card] + Array(companions)
+                    for offset in spread.indices {
+                        let picks = type.positions.enumerated().map {
+                            SpreadPick(position: $0.element, card: spread[($0.offset + offset) % 3], orientation: orientation)
+                        }
+                        let person = type == .namedPerson ? NamedPerson(name: "Sam", relation: .friend) : nil
+                        let reading = try ReadingEngine.compose(id: UUID(), createdAt: Date(timeIntervalSince1970: 0),
+                            area: .relationship, question: "What matters to me here?", picks: picks, library: library, person: person)
+                        XCTAssertEqual(reading.sections.map(\.text), picks.map {
+                            let meaning = $0.card.meaning($0.orientation)
+                            return type == .question ? meaning.questionPositions!.text(for: $0.position)
+                                : meaning.namedPersonPositions!.text(for: $0.position)
+                        })
+                    }
+                }
+            }
+        }
+    }
+
+    func testEveryCardOrientationRejectsIncompleteContentAndLuckyWording() throws {
+        let original = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(CardLibrary.load())) as? [String: Any])
+        let sourceCards = try XCTUnwrap(original["cards"] as? [[String: Any]])
+        for index in sourceCards.indices {
+            for orientation in ["upright", "reversed"] {
+                let source = try XCTUnwrap(sourceCards[index][orientation] as? [String: Any])
+                func reject(_ meaning: [String: Any], _ reason: String) throws {
+                    var library = original
+                    var cards = sourceCards
+                    cards[index][orientation] = meaning
+                    library["cards"] = cards
+                    XCTAssertThrowsError(try CardLibrary.decode(JSONSerialization.data(withJSONObject: library)),
+                                         "\(sourceCards[index]["id"]!) \(orientation): \(reason)")
+                }
+                for key in ["keywords", "interpretation", "daily", "questionPositions", "namedPersonPositions"] {
+                    var meaning = source
+                    meaning.removeValue(forKey: key)
+                    try reject(meaning, "missing \(key)")
+                }
+                for keywords in [["one", "two"], ["one", "two", "three", "four", "five"], ["one", " ", "three"], ["one", "lucky", "three"]] {
+                    var meaning = source
+                    meaning["keywords"] = keywords
+                    try reject(meaning, "invalid keywords")
+                }
+                for text in [" ", "Only one sentence.", "One. Two. Three. Four.", "Your lucky number is seven. Notice it today."] {
+                    var meaning = source
+                    meaning["interpretation"] = text
+                    try reject(meaning, "invalid interpretation")
+                }
+                for (group, fields) in [
+                    ("daily", ["colourName", "object", "bestHour"]),
+                    ("questionPositions", ["situation", "action", "outcome"]),
+                    ("namedPersonPositions", ["you", "them", "connection"])
+                ] {
+                    for field in fields {
+                        for invalid in [" \n", "Your LUCKY-number is 7."] {
+                            var meaning = source
+                            var values = try XCTUnwrap(source[group] as? [String: Any])
+                            values[field] = invalid
+                            meaning[group] = values
+                            try reject(meaning, "invalid \(group).\(field)")
+                        }
+                    }
+                }
+                for hex in ["#12345G", "#+12345", "#12345", "123456", "#123456\n"] {
+                    var meaning = source
+                    var daily = try XCTUnwrap(source["daily"] as? [String: Any])
+                    daily["colourHex"] = hex
+                    meaning["daily"] = daily
+                    try reject(meaning, "invalid hex")
+                }
+                let invalidReadings: [[String: Any]] = [
+                    ["score": -1, "line": "A line."], ["score": 101, "line": "A line."],
+                    ["score": 50.5, "line": "A line."], ["score": 50, "line": " "], ["score": 50, "line": "Seven is lucky."]
+                ]
+                for area in ReadingArea.allCases {
+                    for invalid in invalidReadings {
+                        var meaning = source
+                        var daily = try XCTUnwrap(source["daily"] as? [String: Any])
+                        daily[area.rawValue] = invalid
+                        meaning["daily"] = daily
+                        try reject(meaning, "invalid \(area.rawValue)")
+                    }
+                }
+                var meaning = source
+                var daily = try XCTUnwrap(source["daily"] as? [String: Any])
+                let career = try XCTUnwrap(daily["career"] as? [String: Any])
+                daily["social"] = ["score": 50, "line": "  " + (career["line"] as! String).uppercased() + "\n"]
+                meaning["daily"] = daily
+                try reject(meaning, "duplicate area line")
+            }
+        }
+    }
+
+    func testSharedQuestionsRejectDuplicatesBlankLensesAndLuckyWording() throws {
+        let original = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(CardLibrary.load())) as? [String: Any])
+        let source = try XCTUnwrap(original["questions"] as? [String: Any])
+        func reject(_ questions: [String: Any]) throws {
+            var library = original
+            library["questions"] = questions
+            XCTAssertThrowsError(try CardLibrary.decode(JSONSerialization.data(withJSONObject: library)))
+        }
+        for area in ReadingArea.allCases {
+            for field in ["lens", "suggestions"] {
+                var questions = source
+                var content = try XCTUnwrap(source[area.rawValue] as? [String: Any])
+                if field == "lens" { content[field] = "  " }
+                else { content[field] = ["What is my lucky number?", "What matters?", "What can I notice?"] }
+                questions[area.rawValue] = content
+                try reject(questions)
+                content["lens"] = "Seven is your lucky number."
+                questions[area.rawValue] = content
+                try reject(questions)
+            }
+        }
+        for variant in ["single", "inRelationship", "complicated"] {
+            for invalid in [" ", "Your lucky number is 7."] {
+                var questions = source
+                var relationship = try XCTUnwrap(source["relationship"] as? [String: Any])
+                var lenses = try XCTUnwrap(relationship["relationshipLenses"] as? [String: Any])
+                lenses[variant] = invalid
+                relationship["relationshipLenses"] = lenses
+                questions["relationship"] = relationship
+                try reject(questions)
+            }
+        }
+        var questions = source
+        var social = try XCTUnwrap(source["social"] as? [String: Any])
+        let career = try XCTUnwrap(source["career"] as? [String: Any])
+        var suggestions = try XCTUnwrap(social["suggestions"] as? [String])
+        suggestions[0] = "  " + (try XCTUnwrap(career["suggestions"] as? [String]))[0].uppercased()
+        social["suggestions"] = suggestions
+        questions["social"] = social
+        try reject(questions)
+        questions = source
+        questions["reflections"] = ["Which lucky number belongs to you?"]
+        try reject(questions)
+        questions["reflections"] = [" ?"]
+        try reject(questions)
     }
 
     func testFullDeckIdentityHasTwentyTwoMajorsAndFourCompleteSuits() throws {
@@ -515,7 +667,7 @@ final class ReadingEngineTests: XCTestCase {
 
     func testSnapshotRoundTripKeepsOriginalContent() throws {
         let library = try CardLibrary.load()
-        let draw = ReadingEngine.dailyDraw(seed: "reference-1", dateKey: "2026-10-11", position: 5, library: library)
+        let draw = ReadingEngine.dailyDraw(seed: "major-reference-2003", dateKey: "2026-10-11", position: 5, library: library)
         let snapshot = try JSONEncoder().encode(draw)
         let revised = try amendedLibrary { daily in
             daily["colourName"] = "Clay"
@@ -524,7 +676,7 @@ final class ReadingEngineTests: XCTestCase {
             daily["bestHour"] = "After 6 pm"
             daily["career"] = ["score": 10, "line": "A revised work line."]
         }
-        let next = ReadingEngine.dailyDraw(seed: "reference-1", dateKey: "2026-10-11", position: 5,
+        let next = ReadingEngine.dailyDraw(seed: "major-reference-2003", dateKey: "2026-10-11", position: 5,
                                           library: try CardLibrary.decode(revised))
         XCTAssertNotEqual(next.meaning.daily, draw.meaning.daily)
         XCTAssertEqual(try JSONDecoder().decode(DailyDraw.self, from: snapshot), draw)

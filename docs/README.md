@@ -43,6 +43,7 @@ Add future research to `docs/research/`, using descriptive, lower-case hyphenate
 - [Data ownership verification](data-ownership-verification.md): issue #22 export contents, transactional deletion, recovery and design evidence.
 - [History verification](history-verification.md): issue #19 combined archive, calendar, snapshots, scrolling and design evidence.
 - [Ask about someone verification](ask-about-someone-verification.md): issue #18 person details, named-position content, tests and design evidence. The [independent design comparison](ask-about-someone-design-review.md) records its image-only verdict and findings.
+- [Major Arcana verification](major-arcana-verification.md): issue #24 content coverage, wording review, validation and design evidence.
 - [Harness principles](harness.md)
 
 Add a link here when adding a document. Keep each document's status clear and record approved scope changes in [decisions](decisions.md).
