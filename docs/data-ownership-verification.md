@@ -1,6 +1,6 @@
 # Export and delete all data (#22)
 
-Status: implementation and the full verification check passed, including integration with merged Ask about someone. The full scheme is unchanged. Firstmate's fresh-session independent comparison is pending.
+Status: the implementation passed the full check below. Independent review requested two evidence additions; their focused verification passed and the required full rerun is pending. The full scheme remains the committed configuration.
 
 On 19 October 2026 (Sydney), focused run `20261018T222624.975839Z-test-6a017dbc` passed **55/55 tests**, with zero failures or skips: all engine tests plus all three data-ownership UI tests. The actual-largest-system-text run `20261018T222431.409434Z-test-4df8b386` separately passed **53/53**, also with zero failures or skips. The focused scheme was temporary and is not committed. These focused passes are supplementary to the full check below.
 
@@ -52,3 +52,39 @@ The final packet contains the full-run comparison, references and images, the cu
 Firstmate confirmed on 19 October 2026 (Sydney), inbox 003, that native alerts follow the existing platform boundary used for image sharing and reminders: keep native confirmation/error alerts, retain every strict app-owned audit, and verify native alerts with actual largest-system-text captures plus full-text and reachable-action assertions. Only the new native-alert audit calls/helper were removed; no finding is filtered and the existing Settings/Welcome audit helper is unchanged. The failed exploratory runs `20261018T192933.285319Z-test-a0765f44` and `20261018T193417.523909Z-test-7e78b046` reported “Dynamic Type font sizes are partially unsupported” on UIKit alert text, including after all alert elements settled and every category ran in manifest order. They are not passing verification. The final native system-size run `20261018T222431.409434Z-test-4df8b386` passed all 53 tests with no failures or skips. Its retained category is `UICTContentSizeCategoryAccessibilityXXXL`; host `simctl ui` readbacks confirmed the setting before the run and restoration to `large` afterwards. All eight exported images were inspected, including the first and final scroll positions of each alert, the share sheet and returned Welcome. Exact full message text is asserted; the final line must be reachable inside the native text viewport, and every action must remain within the window and hittable. The prior iterations exposed XCTest's 128-character identifier-query limit and an incorrect expectation that a long scrolling paragraph fit wholly in the window; the final assertions use an exact-label predicate and check the real text viewport after scrolling.
 
 Accepted native differences: at the largest system size, alert wording scrolls and the edges show partial lines while moving between the first and final positions; actions remain fixed and reachable. The native share sheet truncates its secondary document-type/size metadata and uses a horizontal app-destination shelf, while the complete filename, Copy, Save to Files and Close remain available. These controls and fonts belong to iOS, consistent with the approved native boundary. Returned Welcome uses its existing scrolling accessibility layout, with its primary action fully visible in the retained capture. The full check above passed; independent comparison remains pending.
+
+## Independent comparison and dispositions
+
+A fresh reviewer who did not write the change inspected the manifest, both in-scope references and all 560 supplied images on 19 October 2026. It reviewed 42 touched-state captures in detail and the others only for obvious regression/crop problems. Its verdict was **“pass after the two listed must-fix evidence items, DC-01 and EX-02”**; it found no product/layout defect and recommended no redesign. Firstmate requested the two capture additions and a recheck. Both additions passed focused verification and author inspection; the required full rerun and independent recheck remain pending, so this is not yet an unconditional independent pass.
+
+| Finding | Disposition and reason |
+| --- | --- |
+| ST-01 | Accepted: real status indicators and the heavier/inset native Back chevron follow the native-chrome rule; no fake status bar. |
+| ST-02 | Accepted: lower title/groups, larger gaps and taller rows scroll within the shorter native viewport. The bottom sequence exposes every action; rows follow the manifest's 60–76-point range. |
+| ST-03 | Accepted: headings/helpers share the 20-point dawn page guide, preserving consistent alignment. |
+| ST-04 | Accepted: native switch proportions and brighter knobs are required; reminder on/off differences are fixture state. |
+| ST-05 | Accepted: Not set is a supported relationship value, rather than the reference's selected value. |
+| ST-06 | Accepted: the reminder label wraps and its added schedule helper follows §11g; rows grow without truncating text. |
+| ST-07 | Accepted: About and Privacy navigate and therefore have chevrons; export/delete are actions and explicitly omit them. |
+| ST-08 | Accepted: deterministic grain and minor native glyph/weight/rasterisation differences retain the named dawn/surface/ink/secondary/destructive roles. |
+| EX-01 | Accepted: system material, typography, icons and actions follow §11i's native-sheet requirement. Preview file-size differences reflect fixture content. |
+| EX-02 | Fixed in the capture test: `11-settings--export-sheet-largest-system-text-destinations.png` shows the complete More icon and label after horizontal scrolling; the opening image is retained. Author inspection confirms both destinations can be read across the pair. No custom share sheet. Independent recheck pending. |
+| EX-03 | Accepted with explicit limitation: the largest-system sheet ellipsises secondary file-size metadata. Document name/type and primary actions remain readable; no claim of literally zero truncation is made. |
+| EE-01 | Accepted: the native export error correctly reports unchanged saved readings and provides Cancel/Try again. |
+| EE-02 | Accepted: separate actual-system opening/end images cover the complete scrolling error message and stacked actions. App-only large text is not counted as native scaling proof. |
+| DC-01 | Fixed in the capture test: `11-settings--delete-confirmation-largest-system-text-middle.png` shows the whole daily-card identity/reminder-cancellation clause. It overlaps the opening at “preferences” and the end at “It cannot be”. A slow held drag preserves this intermediate stop; the endpoints are retained. Author inspection confirms continuous wording coverage. Independent recheck pending. |
+| DC-02 | Accepted: the ordinary confirmation contains the required scope, irreversibility and external-copy warning with separate Cancel/Delete actions. |
+| DC-03 | Accepted: the native destructive red, wrapped label and stacked action order follow the required system alert; actions remain clear and readable. |
+| DE-01 | Accepted: the native deletion error keeps Settings behind it, explains unchanged data and offers OK before another confirmed attempt. |
+| DE-02 | Accepted: opening/end images overlap and collectively expose the full actual-largest-system deletion-error text and reachable OK; partial lines at a scroll boundary are covered at another stop. |
+| WE-01 | Accepted: real status indicators and the slightly wider 24-point night guide follow the manifest. |
+| WE-02 | Accepted: small upward composition shifts accommodate native safe areas while retaining the card's dominance, hierarchy and complete ordinary footer. |
+| WE-03 | Accepted: small inner-frame/ray/shadow/grain differences retain the tilted tall card, gold double frame, half-sun/horizon and single disc grammar. |
+| WE-04 | Accepted: native glyph rendering and largest-text reflow grow the headline, promise and action without shrinking text. |
+| WE-05 | Accepted using the complete reused-Welcome top/promise/bottom sequence: the large-text footer is inline and scrollable, and all copy/actions appear across that sequence. |
+
+The reviewer found the required settled Reduce Motion states in the regression images but made no motion-sequence verdict from stills. It did not certify persistence, network absence, font loading, measured contrast, actual system settings or VoiceOver order from screenshots; the applicable automated results and remaining manual limitations are recorded separately above.
+
+### Capture additions after review
+
+Focused run `20261019T024657.032359Z-test-7428ad80` passed **59/59 tests**, zero failures or skips. It retained ten images at actual `UICTContentSizeCategoryAccessibilityXXXL`, including DC-01's middle-warning capture and EX-02's horizontally scrolled destination strip. The opening/end warning and opening share-sheet captures remain. Those four warning/sheet images were inspected together: the entire missing warning clause and the full More icon/label are visible. Host readbacks confirm the actual largest system size before the run and restoration to `large` afterwards. This changes only UI evidence collection and documentation; app behaviour/layout is unchanged. The full rerun required for test-code changes is pending.

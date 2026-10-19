@@ -997,7 +997,8 @@ final class HarnessShellUITests: XCTestCase {
         for button in buttons { XCTAssertTrue(button.isHittable) }
     }
 
-    private func captureNativeDataAlert(_ app: XCUIApplication, title: String, message: String, name: String) {
+    private func captureNativeDataAlert(_ app: XCUIApplication, title: String, message: String, name: String,
+                                        captureMiddle: Bool = false) {
         keepSystemScreenshot(name)
         guard UIApplication.shared.preferredContentSizeCategory == .accessibilityExtraExtraExtraLarge else { return }
         let alert = app.alerts[title]
@@ -1005,6 +1006,14 @@ final class HarnessShellUITests: XCTestCase {
         XCTAssertTrue(content.exists, "Long native alert text must remain scrollable at the largest system size")
         guard content.exists else { return }
         let body = alert.staticTexts.matching(NSPredicate(format: "label == %@", message)).firstMatch
+        if captureMiddle {
+            // Hold before release so the missing middle clause is not skipped by scroll momentum.
+            let start = content.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.9))
+            let end = content.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.1))
+            start.press(forDuration: 0.1, thenDragTo: end, withVelocity: .slow, thenHoldForDuration: 0.2)
+            waitForSettled([body] + alert.buttons.allElementsBoundByIndex)
+            keepSystemScreenshot("\(name)-middle")
+        }
         for stop in 1...6 {
             if body.frame.maxY <= content.frame.maxY { break }
             content.swipeUp()
@@ -1047,6 +1056,27 @@ final class HarnessShellUITests: XCTestCase {
         XCTAssertTrue(close.waitForExistence(timeout: 5))
         waitForSettled([close])
         keepSystemScreenshot("11-settings--export-sheet-\(suffix)")
+        if category == .accessibilityExtraExtraExtraLarge {
+            let hierarchy = XCTAttachment(string: app.debugDescription)
+            hierarchy.name = "11-settings--export-destinations-largest-system-text-hierarchy"
+            hierarchy.lifetime = .keepAlways
+            add(hierarchy)
+            let more = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "More")).firstMatch
+            XCTAssertTrue(more.waitForExistence(timeout: 5))
+            let window = app.windows.firstMatch
+            for _ in 0..<3 {
+                let frame = window.frame
+                let origin = window.coordinate(withNormalizedOffset: .zero)
+                let start = origin.withOffset(CGVector(dx: frame.width * 0.85, dy: more.frame.midY - frame.minY))
+                let end = origin.withOffset(CGVector(dx: frame.width * 0.2, dy: more.frame.midY - frame.minY))
+                start.press(forDuration: 0.1, thenDragTo: end, withVelocity: .slow, thenHoldForDuration: 0.2)
+                waitForSettled([more, close])
+                if window.frame.contains(more.frame) && more.isHittable { break }
+            }
+            keepSystemScreenshot("11-settings--export-sheet-\(suffix)-destinations")
+            XCTAssertTrue(window.frame.contains(more.frame))
+            XCTAssertTrue(more.isHittable)
+        }
         let copy = app.cells["Copy"]
         let files = app.cells["Save to Files"]
         var copyReachable = copy.isHittable
@@ -1069,7 +1099,7 @@ final class HarnessShellUITests: XCTestCase {
                               actions: ["Cancel", "Delete all data"])
         captureNativeDataAlert(app, title: "Delete all your data?",
                                message: "This removes your readings, notes, drafts, preferences and daily-card identity, and cancels your reminder. It cannot be undone. Copies already saved elsewhere remain.",
-                               name: "11-settings--delete-confirmation-\(suffix)")
+                               name: "11-settings--delete-confirmation-\(suffix)", captureMiddle: true)
         confirmation.buttons["Delete all data"].tap()
         let deleteError = app.alerts["Your data could not be deleted"]
         assertNativeDataAlert(app, title: "Your data could not be deleted",
