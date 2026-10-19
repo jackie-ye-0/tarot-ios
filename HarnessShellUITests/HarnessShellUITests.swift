@@ -259,6 +259,7 @@ final class HarnessShellUITests: XCTestCase {
 
     // Capture the requested stop, then audit overlapping stops until every deferred element is covered.
     private func auditAndCapture(_ app: XCUIApplication, _ name: String, today: Bool = false,
+                                 revealDeferred: ((XCUIElement) -> Void)? = nil,
                                  expecting elements: XCUIElement...) throws {
         XCTAssertTrue(app.launchArguments.contains("--test-reduce-motion"), "Audit fixtures must disable animations")
         if !elements.isEmpty { waitForSettled(elements) }
@@ -360,6 +361,10 @@ final class HarnessShellUITests: XCTestCase {
             let target = deferred[key]!
             XCTAssertTrue(target.waitForExistence(timeout: 10),
                           "Deferred audit element did not return after Dynamic Type restoration: \(key)")
+            if let revealDeferred {
+                revealDeferred(target)
+                continue
+            }
             if today {
                 positionTodayAuditBelowCard(app, revealing: target)
                 continue
@@ -2129,7 +2134,20 @@ final class HarnessShellUITests: XCTestCase {
         for tab in ["today", "ask", "history"] {
             XCTAssertTrue(safeArea.contains(tabs.buttons["tab-\(tab)"].frame))
         }
-        try auditAndCapture(app, name, today: true, expecting: lastHeading, lastRow, ask, midnight)
+        try auditAndCapture(app, name, today: true, revealDeferred: { target in
+            let reading = app.staticTexts["core-interpretation"]
+            if target.frame.minY < reading.frame.minY {
+                // Header text sits beside the illustration at this size. Bring
+                // both fully onscreen before auditing this separate scroll stop.
+                let card = app.buttons["today-card"]
+                self.scrollTo(app.staticTexts["today-title"], in: app)
+                self.waitForSettled([card, target])
+                self.assertVisible(card, in: app)
+                self.assertVisible(target, in: app)
+            } else {
+                self.positionTodayAuditBelowCard(app, revealing: target)
+            }
+        }, expecting: lastHeading, lastRow, ask, midnight)
     }
 
     func testStorageOpenFailureRecoveryAndDesignEvidence() throws {
