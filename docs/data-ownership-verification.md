@@ -1,6 +1,6 @@
 # Export and delete all data (#22)
 
-Status: implementation and focused verification passed after rebasing onto Morning reminder. The full scheme is restored. The full `./scripts/harness check` and firstmate's fresh-session independent comparison remain pending.
+Status: implementation and focused verification passed before the latest rebase; integration with merged Ask about someone is awaiting the full check. The full scheme is restored. The full `./scripts/harness check` and firstmate's fresh-session independent comparison remain pending.
 
 On 19 October 2026 (Sydney), focused run `20261018T222624.975839Z-test-6a017dbc` passed **55/55 tests**, with zero failures or skips: all engine tests plus all three data-ownership UI tests. The actual-largest-system-text run `20261018T222431.409434Z-test-4df8b386` separately passed **53/53**, also with zero failures or skips. The focused scheme was temporary and is not committed. These focused passes do not stand in for the pending full check.
 
@@ -8,7 +8,7 @@ The flow run verifies repeated export after dismissal, native Copy of three draw
 
 ## Behaviour and boundaries
 
-Settings' Good to know group ends with Export my readings and the destructive Delete all my data row. Export produces one UTF-8 `Daybreak-readings.txt` from the saved History snapshots, independent of hidden areas. It includes each daily date and recorded timestamp, card identity, orientation, picked position, original interpretation, keywords, colour, object, hour, all area scores and lines; each question reading includes timestamp, ID, area, question, all three cards/orientations/positions, original sections, connecting passage, reflection, optional response and notes. Old daily snapshots without a timestamp say “Time not recorded”. An empty archive exports a readable empty-state sentence.
+Settings' Good to know group ends with Export my readings and the destructive Delete all my data row. Export produces one UTF-8 `Daybreak-readings.txt` from the saved History snapshots, independent of hidden areas. It includes each daily date and recorded timestamp, card identity, orientation, picked position, original interpretation, keywords, colour, object, hour, all area scores and lines; each question reading includes timestamp, ID, area, question, all three cards/orientations/positions, original sections, connecting passage, reflection, optional response and notes. Named-person readings also include the saved name, relation and original context note, separately from the later reflection note. Old daily snapshots without a timestamp say “Time not recorded”. An empty archive exports a readable empty-state sentence.
 
 The native share sheet receives a local file URL. Copy reads that same file as text. No account, network request, remote metadata lookup, dependency or service is added. The temporary export is removed on dismissal, before another export or deletion, and on launch after interruption. The user controls any destination chosen in the system share sheet.
 
@@ -18,24 +18,24 @@ The integrated Morning reminder preference is included in the same deletion tran
 
 ## Verification map
 
-- Engine export checks cover every daily field, all areas, original reading passages, Unicode and multi-line notes, all positions/orientations, deterministic output, old dates and an empty archive.
-- A persisted deletion regression populates every current model, forces a failure after all deletions are staged, checks rollback, retries successfully, checks zero rows of every type, reopens the disk store and checks zero rows again. Session assertions check the empty in-memory state and a fresh replacement seed.
+- Engine export checks cover every daily field, all areas, original reading passages, Unicode and multi-line notes, named-person name/relation/context and all six position labels, orientations, deterministic output, old dates and an empty archive.
+- A persisted deletion regression populates every current model, forces a failure after all deletions are staged, checks rollback, retries successfully, checks zero rows of every type, reopens the disk store and checks zero rows again. Session assertions check the empty in-memory state (including the named person), both named-person draft types, rollback preserving their context, and a fresh replacement seed.
 - Real-app UI tests export three daily draws and three area readings through the native Copy activity and retain the resulting text. They check hidden-area inclusion, cancellation preserving data, confirmed deletion returning to Welcome, relaunch retaining Welcome, empty History and default preferences, and drawing again after reset.
 - Error injection covers failed export/retry and failed delete/retry at ordinary and largest app text sizes. These flags are parsed only in Debug test mode.
 - Existing Settings captures retain `11-settings` and its bottom and largest-text variants; this change adds data-action, share-sheet, confirmation and error variants. Returned Welcome uses `01-welcome--after-delete` and its largest-text variant. The existing font-loading and lexical design guard remain unchanged.
 
 ## Design comparison
 
-Compare `11-settings` and all data-action variants against `docs/design-reference/11-settings.jpg` and manifest §11h. The integrated morning-reminder section remains between About you and Good to know, as in the reference. Relationship status reflects the synthetic fixture rather than the reference's selected value. Native confirmation/error alerts and the share sheet have no reference images and use system styling, as recorded in the manifest. Welcome is reused without visual changes.
+Compare `11-settings` and all data-action variants against `docs/design-reference/11-settings.jpg` and manifest §11i. The integrated morning-reminder section remains between About you and Good to know, as in the reference. Relationship status reflects the synthetic fixture rather than the reference's selected value. Native confirmation/error alerts and the share sheet have no reference images and use system styling, as recorded in the manifest. Welcome is reused without visual changes.
 
 The focused comparison page was opened in Chrome and the Settings data-action, normal alert/share-sheet and returned Welcome captures were inspected against the references and manifest. Largest-app-text data-action/Welcome captures and all eight actual-largest-system-text images were also inspected. The primary controls remain whole and reachable.
 
 Accepted differences to carry into the pull request:
 
-- Settings uses native status-bar/safe-area space, font metrics, growing row heights and scrolling, so the full page is taller than the web reference. The reference's group and action order, colours, labels and surface roles are retained. Unset relationship status and reminder on/off values are synthetic fixture state. The existing reminder helper explains its schedule; About and Privacy chevrons identify navigation, while export/delete have none, as §11e/§11g/§11h specify.
+- Settings uses native status-bar/safe-area space, font metrics, growing row heights and scrolling, so the full page is taller than the web reference. The reference's group and action order, colours, labels and surface roles are retained. Unset relationship status and reminder on/off values are synthetic fixture state. The existing reminder helper explains its schedule; About and Privacy chevrons identify navigation, while export/delete have none, as §11e/§11g/§11i specify.
 - At largest text, action labels wrap and the page scrolls; the complete Export and Delete rows remain visible. This follows the existing uncapped accessibility layout rather than shrinking text to fit the reference.
 - Returned Welcome reuses the established screen: real status indicators, native font/safe-area spacing, deterministic grain and minor code-drawn card-back geometry differ from the web rendering. These retain the manifest roles and existing foundation treatment. At accessibility sizes the primary action follows the scrolling content, as required.
-- Confirmation/error alerts and the system share sheet have no separate reference. They use iOS typography, controls and destructive tint, as §11h requires. Actual-largest-system-text differences are recorded below.
+- Confirmation/error alerts and the system share sheet have no separate reference. They use iOS typography, controls and destructive tint, as §11i requires. Actual-largest-system-text differences are recorded below.
 
 The final full-run comparison and independent findings remain pending.
 

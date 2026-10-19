@@ -669,6 +669,7 @@ final class AppSession {
         hasDraft = false
         hasSpreadDraft = false
         question = ""
+        person = nil
         area = .relationship
         picks = []
         pendingReading = nil

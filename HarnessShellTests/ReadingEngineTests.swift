@@ -1091,7 +1091,7 @@ struct DataOwnershipTests {
         let today = ReadingEngine.dailyDraw(seed: "export", dateKey: "2026-10-11", position: 2,
                                             library: library, createdAt: Date(timeIntervalSince1970: 0))
         let readings = try ReadingArea.allCases.map { area in
-            let picks = zip(QuestionPosition.allCases, library.cards.prefix(3)).map {
+            let picks = zip(ReadingType.question.positions, library.cards.prefix(3)).map {
                 SpreadPick(position: $0.0, card: $0.1, orientation: $0.0 == .action ? .reversed : .upright)
             }
             var reading = try ReadingEngine.compose(id: UUID(), createdAt: Date(timeIntervalSince1970: 100), area: area,
@@ -1131,6 +1131,29 @@ struct DataOwnershipTests {
                 #expect(text.contains("\(pick.position.label): \(pick.card.name) (\(pick.card.id)) · \(pick.orientation.label)"))
             }
         }
+    }
+
+    @Test
+    func exportIncludesNamedPersonContextAndEveryNamedPosition() throws {
+        let library = try CardLibrary.load()
+        let person = NamedPerson(name: "Alex café", relation: .colleague, note: "A shared project.\nA second context line.")
+        let picks = zip(ReadingType.namedPerson.positions, library.cards.prefix(3)).map {
+            SpreadPick(position: $0.0, card: $0.1, orientation: .reversed)
+        }
+        var reading = try ReadingEngine.compose(id: UUID(), createdAt: Date(timeIntervalSince1970: 100),
+                                                area: .relationship, question: "You and Alex café", picks: picks,
+                                                library: library, person: person)
+        reading.note = "A later reflection, separate from the original context."
+        let text = ReadingEngine.exportText(entries: [.reading(reading)])
+        for value in ["Person: Alex café", "Relation: Colleague", "Context note:\n" + person.note,
+                      reading.question, reading.connectingPassage, reading.reflectionQuestion,
+                      "Notes:\n" + (try #require(reading.note))] {
+            #expect(text.contains(value))
+        }
+        for pick in picks {
+            #expect(text.contains("\(pick.position.label): \(pick.card.name) (\(pick.card.id)) · Reversed"))
+        }
+        for section in reading.sections { #expect(text.contains(section.text)) }
     }
 
     @MainActor @Test
@@ -1181,16 +1204,17 @@ struct DataOwnershipTests {
             try store.completeWelcome()
             let draw = ReadingEngine.dailyDraw(seed: seed, dateKey: "2026-10-11", position: 3, library: library)
             _ = try store.save(draw)
-            let picks = zip(QuestionPosition.allCases, library.cards.prefix(3)).map {
+            let person = NamedPerson(name: "Alex", relation: .friend, note: "Private original context.")
+            let picks = zip(ReadingType.namedPerson.positions, library.cards.prefix(3)).map {
                 SpreadPick(position: $0.0, card: $0.1, orientation: .reversed)
             }
-            let reading = try ReadingEngine.compose(id: UUID(), createdAt: Date(), area: .career,
-                                                    question: "What could I try?", picks: picks, library: library)
+            let reading = try ReadingEngine.compose(id: UUID(), createdAt: Date(), area: .relationship,
+                                                    question: "You and Alex", picks: picks, library: library, person: person)
             _ = try store.save(reading)
             try store.saveRelationshipStatus(.single)
             try store.saveHiddenAreas([.social])
-            try store.saveSpreadDraft(SpreadDraft(area: .career, question: "A spread draft", picks: [picks[0]], isPicking: true))
-            try store.saveDraft(QuestionDraft(area: .social, question: "A question draft"))
+            try store.saveSpreadDraft(SpreadDraft(area: .relationship, question: "You and Alex", picks: [picks[0]], isPicking: true, person: person))
+            try store.saveDraft(QuestionDraft(area: .relationship, question: "You and Alex", person: person))
             #expect(try store.storedRecordCounts() == [1, 1, 1, 1, 1, 1, 1, 1])
             let session = try AppSession(clock: SessionClock(configuration: LaunchConfiguration()), seed: seed,
                                          store: store, library: library, randomIndex: { _ in 0 })
@@ -1201,11 +1225,15 @@ struct DataOwnershipTests {
             #expect(try store.draw(for: draw.dateKey) == draw)
             #expect(try store.latestReading() == reading)
             #expect(session.showsSettings)
+            #expect(session.person == person)
+            #expect(try store.spreadDraft()?.person == person)
+            #expect(try store.questionDraft()?.person == person)
             try session.deleteAllData()
             #expect(try store.storedRecordCounts() == [0, 0, 0, 0, 0, 0, 0, 0])
             #expect(!session.showsSettings)
             guard case .welcome = session.screen else { Issue.record("Deletion must return to Welcome"); return }
             #expect(session.question.isEmpty && session.picks.isEmpty && !session.hasDraft)
+            #expect(session.person == nil && session.readingType == .question)
             #expect(session.latestReading == nil && session.todayCardName == nil)
             #expect(session.hiddenAreas.isEmpty && session.relationshipStatus == nil && !session.relationshipStatusAsked)
             session.refreshDay()

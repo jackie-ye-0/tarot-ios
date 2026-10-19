@@ -33,6 +33,10 @@ extension ReadingEngine {
                 lines += ["Question reading · \(dates.string(from: reading.createdAt))",
                           "ID: \(reading.id.uuidString)", "Area: \(reading.area.label)",
                           "Content version: \(reading.contentVersion)", "Question:", reading.question, ""]
+                if let person = reading.person {
+                    lines += ["Person: \(person.name)", "Relation: \(person.relation?.label ?? "Not set")",
+                              "Context note:", person.note.isEmpty ? "No context note" : person.note, ""]
+                }
                 for pick in reading.picks {
                     lines += ["\(pick.position.label): \(pick.card.name) (\(pick.card.id)) · \(pick.orientation.label)"]
                 }
