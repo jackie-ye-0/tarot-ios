@@ -909,8 +909,8 @@ struct CrisisRulesTests {
 
     @Test func suggestionsPassAndIncompleteSafetyContentIsRejected() throws {
         let library = try CardLibrary.load()
-        #expect(library.crisis.editorialStatus.contains("PLACEHOLDER"))
-        #expect(library.crisis.editorialStatus.contains("Jackie's sign-off"))
+        #expect(library.crisis.editorialStatus.contains("APPROVED"))
+        #expect(library.crisis.editorialStatus.contains("patterns, support wording and Australian service region approved by Jackie on 19 October 2026"))
         for area in ReadingArea.allCases {
             for question in library.questions.content(for: area).suggestions {
                 #expect(!ReadingEngine.requiresSupport(question: question, content: library.crisis))

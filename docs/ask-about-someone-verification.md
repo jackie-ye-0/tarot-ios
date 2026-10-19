@@ -76,4 +76,4 @@ All other reviewed differences were accepted with the manifest-based reasons in 
 
 ## Limits
 
-The six-card content remains original draft writing for editorial review. Crisis detection is the existing finite phrase list, with its existing provisional support resources; it is not semantic assessment. Real-device behaviour and VoiceOver reading order still require a manual pass.
+The six-card content remains original draft writing for editorial review. Crisis detection is the existing finite phrase list, with its approved Australian support resources; it is not semantic assessment. Real-device behaviour and VoiceOver reading order still require a manual pass.
