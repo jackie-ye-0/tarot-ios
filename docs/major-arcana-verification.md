@@ -2,6 +2,8 @@
 
 Issue #24. First draft, 19 October 2026. Jackie's editorial review is required before any real-user release. Automated checks do not establish that readings are helpful, kind or safe.
 
+Current verification: the rebased full check failed with four UI failures. Both missing Today ending images are now captured and author-inspected; their independent recheck and the verification failures remain open. The earlier passing run below is historical evidence.
+
 ## Content and wording review
 
 `HarnessShell/Resources/starter-cards.json` is the single bundled library, now version 6. It contains the 22 Major Arcana, ranks 0–21, in both orientations. Each has three or four keywords, two sentences of daily interpretation, three distinct area lines and integer scores, a named hex colour, object, best hour and all six position meanings. Existing identities and the first six cards' order stay intact; the other sixteen are appended. Expanding the pool necessarily changes future unsaved draws. Saved daily and reading snapshots retain their original content and version.
@@ -30,11 +32,11 @@ No layout, typography, colour role, component or motion code changed. The indepe
 
 ## Independent findings and dispositions
 
-The author accepts the review's 53 acceptable findings for the reasons below. T04-E1 is being corrected in the UI evidence tests: keep the intermediate area captures under `--area-readings`, scroll to the midnight caption, verify the final row/action/caption/tabs, then run the existing strict audit and retain the actual `--bottom`. The code is prepared and parses; new captures await firstmate's simulator hold being cleared. No product change is required by this review. The complete independent report is retained in the task evidence as `independent-design-review.md`.
+The author accepts the review's 53 acceptable findings for the reasons below. T04-E1 now has the requested images: the UI evidence tests keep intermediate area captures under `--area-readings`, scroll to the midnight caption, verify the final row/action/caption/tabs, retain the actual `--bottom`, and run the existing strict audit. Both images were exported and author-inspected; the independent recheck is pending. The subsequent audit navigation failed, as detailed below, so neither capture is presented as a passing audit. No product change is required by the image review. The complete independent report is retained in the task evidence as `independent-design-review.md`.
 
 | Finding | Disposition and reason |
 | --- | --- |
-| T04-E1 | Pending evidence correction: add the actual standard-size endings for reversed High Priestess and reversed Star; the previous area-group images do not establish their final actions/footer. |
+| T04-E1 | Images corrected; independent recheck pending. `04-today--major-content-bottom.png` and `04-today--reversed-bottom.png` show the complete Social row, Ask entry, midnight caption and tab bar. Their subsequent strict audits failed during navigation to offscreen keywords. |
 | R03-1 | Accepted: selected card identities, artwork, orientation and keywords vary; High Priestess's two-line name remains clear. |
 | R03-2 | Accepted: native safe areas, viewport and scrolling explain the lower header/face, higher footer and modest vertical-spacing differences. |
 | R03-3 | Accepted: the code-drawn Star retains the manifest's geometric grammar despite different contours, grain and glow/shadow rendering. |
@@ -97,4 +99,21 @@ A fresh full check on clean `a183885` ran in `.harness/runs/20261019T093349.5600
 
 Firstmate identified the gallery failure as the known dropped-tap-after-audit issue and is arranging its test-wait fix separately. At firstmate's instruction the harness received SIGINT to release the simulator for another review. It exited 130, explicitly reporting an incomplete run, and released the lock at 10:26:05 UTC on 19 October. Its xcodebuild child also exited. The interrupted result bundle lacks `Info.plist`, so `xcresulttool` cannot export its attachments; the raw test log, metadata and failed summary are retained. No failed-run screenshots are claimed. The failure and interruption prevent this run establishing verification.
 
-No tests or audit categories were filtered. The capture correction above was prepared after this run had built and is not claimed to be tested by it. No new simulator run will start until firstmate clears the hold; that run must include the corrected final Today captures.
+No tests or audit categories were filtered. The capture correction above was prepared after this run had built and is not claimed to be tested by it. Firstmate subsequently cleared the simulator hold and requested the rebased check below.
+
+## Rebased full check and ending-capture recheck
+
+Rebased onto `8ff8795` without conflicts, then ran `./scripts/harness doctor` successfully and one full `./scripts/harness check` on clean `3330b55`. Run `.harness/runs/20261019T112043.995460Z-check-0562063b` finished with exit 65: **125/129 tests passed, four failed, zero skipped or expected failures**, with no recorded runtime warnings. All engine tests, 34 command-contract tests and the design-role guard passed. The previously failing 78-card gallery passed, as did the expanded Major Arcana question/named-person reading test at both text sizes.
+
+The four UI failures are retained without retries or filtering:
+
+- Ask's design flow immediately asserted the relationship prompt was gone after a raw Skip tap following an audit. It was still present. The dedicated skipped-status persistence test passed; the evidence supports an interaction/timing issue but does not distinguish a dropped tap from an early assertion.
+- The reversed High Priestess ending was captured, then its audit tried to reveal the offscreen keywords while requiring the adjacent illustration to remain entirely above the viewport. That navigation requirement cannot reveal both side-by-side elements. This failed before the largest-text loop started.
+- The reversed Star ending hit the same audit-navigation conflict after its screenshot was retained. Both keyword visibility failures are at `positionTodayAuditBelowCard`'s final assertion, rather than a failed contrast measurement.
+- History's bottom audit returned Apple's `accessibilityAudit Code=-56`, “Audit failed to complete in time”. This is an external verification blocker. Xcode also timed out after 600 seconds collecting simulator diagnostics, then returned the failed result bundle normally. No simulator or machine workaround was applied.
+
+The harness exported 533 screenshots and a comparison page. Ten of fifteen reference states have main captures; the Ask failure prevented the standard composer, filled composer, both pick states and reading main captures. The incomplete coverage remains visible in the comparison page rather than being filled from an older run. The simulator lock was released at 13:56:31 UTC on 19 October.
+
+Opened this run's comparison page with `chrome-devtools-axi` and inspected both corrected ending images alongside the Today reference. Each shows the full Social heading and line, the complete Ask entry, midnight caption and all three tabs with clear gaps and no clipping. Existing accepted differences T04-1 through T04-8 still apply: distinct reflective content, native scrolling, darker accessible labels/tabs, static area rows and the manifest's shorter Ask entry. This inspection addresses the missing image evidence only; it does not resolve the failed audits or make the full check green.
+
+The refreshed task `final-evidence` contains this run's manifest copy, references, all built screenshots, comparison page, summaries, logs, failure notes and the independent report. The initial passing packet remains separately retained as `initial-reviewed-evidence`. Firstmate's requested independent recheck is limited to T04-E1; a green committed-head verification remains required before completion.
