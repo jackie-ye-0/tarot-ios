@@ -2019,7 +2019,8 @@ final class HarnessShellUITests: XCTestCase {
             } else {
                 try auditAndCapture(app, "04-today--\(suffix)", today: true, expecting: app.staticTexts["core-interpretation"])
                 positionTodayAuditBelowCard(app, revealing: app.staticTexts["line-social"])
-                try auditAndCapture(app, "04-today--\(suffix)-bottom", today: true)
+                try auditAndCapture(app, "04-today--\(suffix)-area-readings", today: true)
+                try captureTodayEnd(app, named: "04-today--\(suffix)-bottom")
             }
             XCTAssertEqual(app.staticTexts["line-relationship"].label, "Name a question you have been trying to answer by guessing.")
             app.terminate()
@@ -2111,7 +2112,24 @@ final class HarnessShellUITests: XCTestCase {
             assertVisible(app.staticTexts["area-label-\(area)"], in: app)
             assertVisible(app.staticTexts["line-\(area)"], in: app)
         }
-        capture(app, "04-today--reversed-bottom")
+        capture(app, "04-today--reversed-area-readings")
+        try captureTodayEnd(app, named: "04-today--reversed-bottom")
+    }
+
+    private func captureTodayEnd(_ app: XCUIApplication, named name: String) throws {
+        let lastHeading = app.staticTexts["area-label-social"]
+        let lastRow = app.staticTexts["line-social"]
+        let ask = app.buttons["today-ask"]
+        let midnight = app.staticTexts["next-card-arrival"]
+        scrollTo(midnight, in: app)
+        waitForSettled([lastHeading, lastRow, ask, midnight])
+        for element in [lastHeading, lastRow, ask, midnight] { assertVisible(element, in: app) }
+        let tabs = try XCTUnwrap(visibleTabs(in: app))
+        let safeArea = app.otherElements["test-safe-viewport"].frame
+        for tab in ["today", "ask", "history"] {
+            XCTAssertTrue(safeArea.contains(tabs.buttons["tab-\(tab)"].frame))
+        }
+        try auditAndCapture(app, name, today: true, expecting: lastHeading, lastRow, ask, midnight)
     }
 
     func testStorageOpenFailureRecoveryAndDesignEvidence() throws {

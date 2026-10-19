@@ -24,18 +24,73 @@ UI tests use the app's existing Debug launch configuration. The main reference f
 
 Opened the run's `design-comparison.html` in Chrome through `chrome-devtools-axi`. Author inspection covered all 65 `major-content` captures, including every overlapping largest-text stop; main reference pairs for Reveal, Today, Ask, the filled composer, both pick states and reading; representative Ask/composer/pick largest-text and Reduce Motion captures; Today's final action; and the full shared-reading image. This does not claim manual inspection of all 565 images. The High Priestess name wraps without horizontal clipping, the new reading passages remain readable, and the primary actions remain reachable at the largest text size. The existing all-category accessibility audits, font checks and guard passed without any policy changes.
 
-Independent image comparison remains pending firstmate's fresh-session review. Jackie's editorial review and real-device/VoiceOver checks remain release limitations.
+The fresh-session independent comparison returned on 19 October: **pass after one evidence-only correction, T04-E1**. It inspected 415 built images and ten reference images, found no image-proven implementation defect, and rated every other finding acceptable. Jackie's editorial review and real-device/VoiceOver checks remain release limitations.
 
-No layout, typography, colour role, component or motion code changed. The author comparison records these visible differences for independent assessment:
+No layout, typography, colour role, component or motion code changed. The independent reviewer noted that the standard-size reversed Star and reversed High Priestess captures labelled `--bottom` stopped at the area readings. The upright Star and largest-text variants showed their endings, but could not substitute for those two missing states.
 
-| Screen | Difference and disposition |
+## Independent findings and dispositions
+
+The author accepts the review's 53 acceptable findings for the reasons below. T04-E1 is being corrected in the UI evidence tests: keep the intermediate area captures under `--area-readings`, scroll to the midnight caption, verify the final row/action/caption/tabs, then run the existing strict audit and retain the actual `--bottom`. The code is prepared and parses; new captures await firstmate's simulator hold being cleared. No product change is required by this review. The complete independent report is retained in the task evidence as `independent-design-review.md`.
+
+| Finding | Disposition and reason |
 | --- | --- |
-| Reveal | The added High Priestess example has different artwork, a two-line name, orientation and keywords. Accepted: these are the selected card's authored identity and content. The Star main capture retains its existing composition; native status-bar/safe-area placement, glyphs, grain and code-drawn face contours differ from the web reference as documented in foundation verification. |
-| Today | The new card changes its interpretation, colour/object/hour, scores and area lines. Accepted: card-specific content is the purpose of #24. Long text wraps and scrolls; the largest-text layout stacks the header, extras and scores. The reference's full-page image requires multiple native viewport captures. Existing differences remain: correct Sunday date for the fixture, Settings gear, named colour without a wear instruction, static area rows without chevrons, shorter Ask entry and high-contrast selected tabs. These follow the existing manifest and Today implementation, with the full action visible in the midnight capture. |
-| Ask | “What matters to me here?” replaces the future-directed first suggestion. Accepted: reflective wording required by #24. Existing differences remain: card-name context heading and saved daily line rather than the reference's separate prose, full question chips, stacked status options, native tabs and omission of a recent-reading row in an empty fixture. |
-| Composer | The selected question and its counter read “What matters to me here?” and 24/300. Accepted: they reflect the actual replacement question. Native line wrapping, safe-area spacing and the existing enlarged chips/preview remain; the primary action is fully reachable at standard and largest text. |
-| Three-card pick | The question differs, and the completed reference fixture contains Star/Sun/Fool rather than the reference's example cards. Accepted: deterministic fixtures select actual bundled content. Existing explicit orientation labels, code-drawn artwork, fan/disc placement and native safe-area spacing remain unchanged. |
-| Reading, both types | Card labels, all position passages, connecting lens and reflection differ from the illustrative reference. Accepted: original reflective writing, including the new three-card examples, is required here. Longer headings wrap; at largest text the card summary stacks and Done moves inline. The named-person reading names Sam and uses You/Them/The Connection. Existing pinned standard-size Done, native header controls and audited darker area headings follow the manifest. |
-| Shared reading | The new Outcome wording appears in the complete image, with all three sections, lens, reflection and disclaimer visible. Accepted: sharing uses the saved reading text. No image layout changed. |
+| T04-E1 | Pending evidence correction: add the actual standard-size endings for reversed High Priestess and reversed Star; the previous area-group images do not establish their final actions/footer. |
+| R03-1 | Accepted: selected card identities, artwork, orientation and keywords vary; High Priestess's two-line name remains clear. |
+| R03-2 | Accepted: native safe areas, viewport and scrolling explain the lower header/face, higher footer and modest vertical-spacing differences. |
+| R03-3 | Accepted: the code-drawn Star retains the manifest's geometric grammar despite different contours, grain and glow/shadow rendering. |
+| R03-4 | Accepted: native Share/arrow glyphs, pill width and text metrics preserve the labelled action and hierarchy. |
+| R03-5 | Accepted: reopened/archive back navigation and largest-text header rows are specified variants. |
+| R03-6 | Accepted: accessibility sizes place the action/disclaimer after scrolling content; all text appears across the captured stops. |
+| T04-1 | Accepted: the correct fixture date, selected card and reflective content replace illustrative reference values; colour remains clearly named. |
+| T04-2 | Accepted: a native viewport needs multiple captures; the long name wraps alongside the 120-point thumbnail without shrinking content. |
+| T04-3 | Accepted: the gear, darker selected tabs and placeholder icon substitutions are explicit manifest choices. |
+| T04-4 | Accepted: darker area labels support contrast; static area rows deliberately omit navigation chevrons and grow with their text. |
+| T04-5 | Accepted: the manifest specifies the shorter Ask entry; the composer supplies the three-card explanation. |
+| T04-6 | Accepted: invitation placement, stacked large-text choices and native permission/save feedback follow the existing states. |
+| T04-7 | Accepted: archives retain History selection and omit live-day actions; old snapshots and hidden areas use their specified notices/subsets. |
+| T04-8 | Accepted: the largest-text header, extras and scores stack; complete area text and the final action are visible across stops. |
+| A05-1 | Accepted: the context panel deliberately uses the saved card name, daily line and score rather than a second interpretation. |
+| A05-2 | Accepted: all suggestions are complete reflective questions; changed widths follow the new wording. |
+| A05-3 | Accepted: full-width relationship choices, Skip and the conditional recent-reading row are specified states. |
+| A05-4 | Accepted: scrolling and stacked controls expose the full content order at larger text sizes. |
+| A05-5 | Accepted: native safe areas, grain, typography and the approved dark tab treatment retain the hierarchy. |
+| C06-1 | Accepted: the first suggestion matches the reflective question on Ask. |
+| C06-2 | Accepted: native title wrapping, chevron weight and spacing preserve field, guidance and count hierarchy. |
+| C06-3 | Accepted: preview geometry and footer wrapping retain the three-card explanation and disabled action above the safe-area inset. |
+| C06-4 | Accepted: large-text Back/selector/field/footer reflow and hidden-area omissions follow the manifest. |
+| CE06-1 | Accepted: the selected question and 24/300 counter reflect the replacement question consistently through the flow. |
+| CE06-2 | Accepted: keyboard fixtures scroll the question into view and expose the full action after dismissal. |
+| CE06-3 | Accepted: synthetic limit text and the error-role counter demonstrate the specified 300-character limit state. |
+| P08-1 | Accepted: the new question and named-person prompts match their composer and position types. |
+| P08-2 | Accepted: native spacing, fan angles and disc extent retain the centred progress, three slots and five-card fan. |
+| P08-3 | Accepted: night-ground slot interiors and the stronger active edge are explicit component requirements. |
+| P08-4 | Accepted: filled slots show real faces, names and orientations without obscuring the next prompt. |
+| P08-5 | Accepted: native footer placement, punctuation and large-text vertical stacking preserve Shuffle and its explanation. |
+| PC08-1 | Accepted: deterministic fixtures use different example cards; every rotated face agrees with its explicit orientation label. |
+| PC08-2 | Accepted: orientation lines add height while preserving card/position associations and the single Read my spread action. |
+| PC08-3 | Accepted: retaining the disc and stacking the completed content at largest text are specified layouts. |
+| Q09-1 | Accepted: the selected question remains complete and leading, even when it wraps or uses a longer fixture. |
+| Q09-2 | Accepted: new card identities and separate orientations follow the face grammar; the long Priestess name stays within its column. |
+| Q09-3 | Accepted: original distinct reflective position meanings replace illustrative reference passages in the same order. |
+| Q09-4 | Accepted: the longer neutral lens and new reflection remain fully readable and precede optional feedback and Done. |
+| Q09-5 | Accepted: audited darker headings and native metrics/glyphs preserve readable sections and distinct header controls. |
+| Q09-6 | Accepted: Done/disclaimer are pinned at ordinary size and inline at largest text, as the shared layout specifies. |
+| Q09-7 | Accepted: feedback, notes and native menu/confirmation/error states follow the existing reading variants and keep deletion separate. |
+| N09-1 | Accepted: You and Sam and You/Them/The Connection are the designed named-person labels. |
+| N09-2 | Accepted: dedicated named-position text fits each card/orientation and does not claim certainty about the other person. |
+| N09-3 | Accepted: the named introduction and neutral Relationship lens are explicitly shared across all named-person relations. |
+| N09-4 | Accepted: extra scroll length exposes every passage, lens and reflection, then feedback, Done and disclaimer. |
+| H10-1 | Accepted: questions, cards, dates and marks reflect different saved-state fixtures; image comparison does not prove persistence. |
+| H10-2 | Accepted: the gear, dark tab, omitted missed-day commentary and legible future days follow the manifest. |
+| H10-3 | Accepted: native wrapping plus large-text date rows, filters and multiline entries preserve readable history navigation. |
+| H10-4 | Accepted: archive navigation and omission of live Today actions are specified; archived reading controls remain readable. |
+| SH-1 | Accepted: card exports contain only the face, name, orientation and disclaimer, with no app controls. |
+| SH-2 | Accepted: reading exports retain all original reading sections and disclaimer while deliberately excluding controls, notes and responses. |
+| SH-3 | Accepted: a 390-point document at double resolution uses natural height and ordinary type, independently of screen text size. |
+| SH-4 | Accepted: native share-sheet styling and descriptive payload previews are specified platform behaviour. |
 
-The independent review's findings and dispositions will be appended before the first completed-work handoff.
+The image review does not prove numeric contrast, font loading, VoiceOver behaviour, tap targets, persistence or animation timing; those remain separate automated/manual checks. Its still-image Reduce Motion check found complete settled states.
+
+## Committed-head recheck
+
+A fresh full check on clean `a183885` is running in `.harness/runs/20261019T093349.560097Z-check-775993fd`. It has reported a failure in the unchanged 78-face gallery's Next navigation (title remained 67–69 instead of 70–72). Firstmate identified this as the known dropped-tap-after-audit failure and is arranging its test-wait fix separately. The reported failure prevents this run establishing verification; final totals and retained evidence are pending. No tests or audit categories are filtered. The capture correction above was prepared after this run had built and is not claimed to be tested by it. No new simulator run will start until firstmate clears the hold.
