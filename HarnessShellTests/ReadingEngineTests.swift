@@ -1081,3 +1081,167 @@ struct MorningReminderRuleTests {
         #expect(MorningReminderRule.time.day == nil)
     }
 }
+
+struct DataOwnershipTests {
+    @Test
+    func exportKeepsAllSavedTextAndMetadataIncludingHiddenAreasAndOldDraws() throws {
+        let library = try CardLibrary.load()
+        let old = DailyDraw(dateKey: "2026-10-09", position: 5, orientation: .reversed,
+                            card: library.cards[0], contentVersion: 1)
+        let today = ReadingEngine.dailyDraw(seed: "export", dateKey: "2026-10-11", position: 2,
+                                            library: library, createdAt: Date(timeIntervalSince1970: 0))
+        let readings = try ReadingArea.allCases.map { area in
+            let picks = zip(ReadingType.question.positions, library.cards.prefix(3)).map {
+                SpreadPick(position: $0.0, card: $0.1, orientation: $0.0 == .action ? .reversed : .upright)
+            }
+            var reading = try ReadingEngine.compose(id: UUID(), createdAt: Date(timeIntervalSince1970: 100), area: area,
+                                                    question: "What might I notice in \(area.label)?\nA second line.",
+                                                    picks: picks, library: library)
+            reading.note = "A personal note: café & ‘quiet’.\nKeep this line too."
+            reading.response = .somewhat
+            return reading
+        }
+        let entries = ReadingEngine.history(draws: [today, old], readings: readings, timeZone: TimeZone(secondsFromGMT: 0)!)
+        let text = ReadingEngine.exportText(entries: entries)
+        #expect(text == ReadingEngine.exportText(entries: entries))
+        for draw in [today, old] {
+            #expect(text.contains(draw.dateKey))
+            #expect(text.contains("Picked position: \(draw.position) of 5"))
+            #expect(text.contains(draw.card.name))
+            #expect(text.contains(draw.orientation.label))
+            #expect(text.contains(draw.meaning.interpretation))
+            for keyword in draw.meaning.keywords { #expect(text.contains(keyword)) }
+            let daily = try #require(draw.meaning.daily)
+            for value in [daily.colourName, daily.colourHex, daily.object, daily.bestHour] { #expect(text.contains(value)) }
+            for area in ReadingArea.allCases {
+                let value = daily.reading(for: area)
+                #expect(text.contains("\(area.label): \(value.score) / 100"))
+                #expect(text.contains(value.line))
+            }
+        }
+        #expect(text.contains("Time not recorded"))
+        #expect(text.contains("1970-01-01T00:00:00Z"))
+        for reading in readings {
+            for value in [reading.id.uuidString, reading.area.label, reading.question, reading.connectingPassage,
+                          reading.reflectionQuestion, try #require(reading.note), "Did this land? Somewhat"] {
+                #expect(text.contains(value))
+            }
+            for section in reading.sections { #expect(text.contains(section.text)) }
+            for pick in reading.picks {
+                #expect(text.contains("\(pick.position.label): \(pick.card.name) (\(pick.card.id)) · \(pick.orientation.label)"))
+            }
+        }
+    }
+
+    @Test
+    func exportIncludesNamedPersonContextAndEveryNamedPosition() throws {
+        let library = try CardLibrary.load()
+        let person = NamedPerson(name: "Alex café", relation: .colleague, note: "A shared project.\nA second context line.")
+        let picks = zip(ReadingType.namedPerson.positions, library.cards.prefix(3)).map {
+            SpreadPick(position: $0.0, card: $0.1, orientation: .reversed)
+        }
+        var reading = try ReadingEngine.compose(id: UUID(), createdAt: Date(timeIntervalSince1970: 100),
+                                                area: .relationship, question: "You and Alex café", picks: picks,
+                                                library: library, person: person)
+        reading.note = "A later reflection, separate from the original context."
+        let text = ReadingEngine.exportText(entries: [.reading(reading)])
+        for value in ["Person: Alex café", "Relation: Colleague", "Context note:\n" + person.note,
+                      reading.question, reading.connectingPassage, reading.reflectionQuestion,
+                      "Notes:\n" + (try #require(reading.note))] {
+            #expect(text.contains(value))
+        }
+        for pick in picks {
+            #expect(text.contains("\(pick.position.label): \(pick.card.name) (\(pick.card.id)) · Reversed"))
+        }
+        for section in reading.sections { #expect(text.contains(section.text)) }
+    }
+
+    @MainActor @Test
+    func deleteCancelsReminderAndForegroundCannotRestoreIt() async throws {
+        let store = try DrawStore(configuration: ModelConfiguration(isStoredInMemoryOnly: true, cloudKitDatabase: .none))
+        let seed = try store.installSeed { "old-reminder-install" }
+        try store.completeWelcome()
+        let notifications = ReminderNotifications(fixture: "allowed")
+        let session = try AppSession(clock: SessionClock(configuration: LaunchConfiguration()), seed: seed,
+                                     store: store, library: CardLibrary.load(), randomIndex: { _ in 0 },
+                                     notifications: notifications, createSeed: { "new-reminder-install" })
+        session.turnOver(position: 3)
+        await session.setReminderEnabled(true)
+        #expect(session.reminderEnabled)
+        #expect(notifications.testState.contains("pending=morning-reminder"))
+        store.failsNextDeleteAll = true
+        #expect(throws: (any Error).self) { try session.deleteAllData() }
+        #expect(session.reminderEnabled)
+        #expect(notifications.testState.contains("pending=morning-reminder"))
+        try session.deleteAllData()
+        await session.refreshReminder()
+        #expect(!session.reminderEnabled && !session.showsReminderInvitation)
+        #expect(session.reminderPreference == ReminderPreference())
+        #expect(notifications.testState.contains("pending=none"))
+        #expect(try store.storedRecordCounts() == [0, 0, 0, 0, 0, 0, 0, 0])
+        try session.completeWelcome()
+        #expect(try store.installSeed { "unexpected" } == "new-reminder-install")
+        session.turnOver(position: 3)
+        #expect(session.showsReminderInvitation)
+        #expect(!session.reminderEnabled)
+    }
+
+    @Test
+    func emptyExportIsAnHonestReadableFile() {
+        #expect(ReadingEngine.exportText(entries: []).contains("No saved daily cards or question readings."))
+    }
+
+    @MainActor @Test
+    func deletionRemovesEveryModelAndSeedSurvivesReopenAndRollsBackFailure() throws {
+        let directory = URL.temporaryDirectory.appending(path: UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let configuration = ModelConfiguration(url: directory.appending(path: "delete.store"), cloudKitDatabase: .none)
+        let library = try CardLibrary.load()
+        try autoreleasepool {
+            let store = try DrawStore(configuration: configuration)
+            let seed = try store.installSeed { "old-install-seed" }
+            try store.completeWelcome()
+            let draw = ReadingEngine.dailyDraw(seed: seed, dateKey: "2026-10-11", position: 3, library: library)
+            _ = try store.save(draw)
+            let person = NamedPerson(name: "Alex", relation: .friend, note: "Private original context.")
+            let picks = zip(ReadingType.namedPerson.positions, library.cards.prefix(3)).map {
+                SpreadPick(position: $0.0, card: $0.1, orientation: .reversed)
+            }
+            let reading = try ReadingEngine.compose(id: UUID(), createdAt: Date(), area: .relationship,
+                                                    question: "You and Alex", picks: picks, library: library, person: person)
+            _ = try store.save(reading)
+            try store.saveRelationshipStatus(.single)
+            try store.saveHiddenAreas([.social])
+            try store.saveSpreadDraft(SpreadDraft(area: .relationship, question: "You and Alex", picks: [picks[0]], isPicking: true, person: person))
+            try store.saveDraft(QuestionDraft(area: .relationship, question: "You and Alex", person: person))
+            #expect(try store.storedRecordCounts() == [1, 1, 1, 1, 1, 1, 1, 1])
+            let session = try AppSession(clock: SessionClock(configuration: LaunchConfiguration()), seed: seed,
+                                         store: store, library: library, randomIndex: { _ in 0 })
+            session.showsSettings = true
+            store.failsNextDeleteAll = true
+            #expect(throws: (any Error).self) { try session.deleteAllData() }
+            #expect(try store.storedRecordCounts() == [1, 1, 1, 1, 1, 1, 1, 1])
+            #expect(try store.draw(for: draw.dateKey) == draw)
+            #expect(try store.latestReading() == reading)
+            #expect(session.showsSettings)
+            #expect(session.person == person)
+            #expect(try store.spreadDraft()?.person == person)
+            #expect(try store.questionDraft()?.person == person)
+            try session.deleteAllData()
+            #expect(try store.storedRecordCounts() == [0, 0, 0, 0, 0, 0, 0, 0])
+            #expect(!session.showsSettings)
+            guard case .welcome = session.screen else { Issue.record("Deletion must return to Welcome"); return }
+            #expect(session.question.isEmpty && session.picks.isEmpty && !session.hasDraft)
+            #expect(session.person == nil && session.readingType == .question)
+            #expect(session.latestReading == nil && session.todayCardName == nil)
+            #expect(session.hiddenAreas.isEmpty && session.relationshipStatus == nil && !session.relationshipStatusAsked)
+            session.refreshDay()
+            #expect(try store.storedRecordCounts() == [0, 0, 0, 0, 0, 0, 0, 0])
+        }
+        let reopened = try DrawStore(configuration: configuration)
+        #expect(try reopened.storedRecordCounts() == [0, 0, 0, 0, 0, 0, 0, 0])
+        #expect(try !reopened.hasCompletedWelcome())
+        #expect(try reopened.installSeed { "fresh-install-seed" } == "fresh-install-seed")
+    }
+}

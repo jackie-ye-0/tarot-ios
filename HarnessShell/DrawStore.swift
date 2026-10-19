@@ -46,6 +46,7 @@ final class DrawStore {
     var failsNextReadingDelete = false
     var failsNextSettingsSave = false
     var failsNextReminderSave = false
+    var failsNextDeleteAll = false
     #endif
 
     init(configuration: ModelConfiguration) throws {
@@ -361,6 +362,43 @@ final class DrawStore {
         }
         #endif
     }
+
+    func deleteAllData() throws {
+        do {
+            for row in try context.fetch(FetchDescriptor<InstallIdentity>()) { context.delete(row) }
+            for row in try context.fetch(FetchDescriptor<StoredDailyDraw>()) { context.delete(row) }
+            for row in try context.fetch(FetchDescriptor<StoredQuestionReading>()) { context.delete(row) }
+            for row in try context.fetch(FetchDescriptor<StoredSpreadDraft>()) { context.delete(row) }
+            for row in try context.fetch(FetchDescriptor<StoredQuestionDraft>()) { context.delete(row) }
+            for row in try context.fetch(FetchDescriptor<StoredRelationshipPreference>()) { context.delete(row) }
+            for row in try context.fetch(FetchDescriptor<StoredAreaPreference>()) { context.delete(row) }
+            for row in try context.fetch(FetchDescriptor<StoredReminderPreference>()) { context.delete(row) }
+            #if DEBUG
+            if failsNextDeleteAll {
+                failsNextDeleteAll = false
+                throw CocoaError(.fileWriteOutOfSpace)
+            }
+            #endif
+            try context.save()
+            historyRevision += 1
+        } catch {
+            context.rollback()
+            throw error
+        }
+    }
+
+    #if DEBUG
+    func storedRecordCounts() throws -> [Int] {
+        try [context.fetchCount(FetchDescriptor<InstallIdentity>()),
+             context.fetchCount(FetchDescriptor<StoredDailyDraw>()),
+             context.fetchCount(FetchDescriptor<StoredQuestionReading>()),
+             context.fetchCount(FetchDescriptor<StoredSpreadDraft>()),
+             context.fetchCount(FetchDescriptor<StoredQuestionDraft>()),
+             context.fetchCount(FetchDescriptor<StoredRelationshipPreference>()),
+             context.fetchCount(FetchDescriptor<StoredAreaPreference>()),
+             context.fetchCount(FetchDescriptor<StoredReminderPreference>())]
+    }
+    #endif
 }
 
 @Model

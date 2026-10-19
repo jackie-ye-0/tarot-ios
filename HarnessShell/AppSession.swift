@@ -33,6 +33,8 @@ struct LaunchConfiguration {
     var reminderInvitationAnswered = false
     var reminderSaveFailure = false
     var notificationFixture: String?
+    var deleteAllFailure = false
+    var exportFailure = false
 
     static func current() -> LaunchConfiguration {
         var result = LaunchConfiguration()
@@ -74,6 +76,8 @@ struct LaunchConfiguration {
         result.reminderSaveFailure = arguments.contains("--test-reminder-save-failure")
         result.notificationFixture = arguments.contains("--test-real-notifications") ? nil
             : (value("--test-notification-permission") ?? "allow")
+        result.deleteAllFailure = arguments.contains("--test-delete-all-failure")
+        result.exportFailure = arguments.contains("--test-export-failure")
         #endif
         return result
     }
@@ -154,13 +158,15 @@ final class AppSession {
     private(set) var timeZone: TimeZone
     private(set) var dateKey: String
     let clock: SessionClock
-    private let seed: String
+    private var seed: String?
     private let store: DrawStore
     private let library: CardLibrary
     private let randomIndex: (Int) -> Int
+    private let createSeed: () -> String
 
     init(clock: SessionClock, seed: String, store: DrawStore, library: CardLibrary,
-         randomIndex: @escaping (Int) -> Int, notifications: ReminderNotifications? = nil) throws {
+         randomIndex: @escaping (Int) -> Int, notifications: ReminderNotifications? = nil,
+         createSeed: @escaping () -> String = { UUID().uuidString }) throws {
         self.clock = clock
         let now = clock.now
         let zone = clock.timeZone
@@ -171,6 +177,7 @@ final class AppSession {
         self.store = store
         self.library = library
         self.randomIndex = randomIndex
+        self.createSeed = createSeed
         self.notifications = notifications ?? ReminderNotifications()
         reminderPreference = try store.reminderPreference()
         let originalPreference = reminderPreference
@@ -231,7 +238,11 @@ final class AppSession {
 
     /// A read failure throws for the caller's storage-failure screen; Welcome is saved by then, so its retry routes past it.
     func completeWelcome() throws {
-        do { try store.completeWelcome() }
+        do {
+            // A deletion leaves no identity until the user starts again.
+            if seed == nil { seed = try store.installSeed(create: createSeed) }
+            try store.completeWelcome()
+        }
         catch DrawStore.StoreError.save(_) {
             welcomeSaveFailed = true
             return
@@ -241,6 +252,7 @@ final class AppSession {
     }
 
     func turnOver(position: Int) {
+        guard let seed else { return }
         let draw: DailyDraw
         do {
             // A tap at midnight must not carry yesterday's selection into the new day.
@@ -628,8 +640,62 @@ final class AppSession {
         picks = []
     }
 
+    func exportReadings() throws -> ReadingExport {
+        #if DEBUG
+        if failExport {
+            failExport = false
+            throw CocoaError(.fileWriteOutOfSpace)
+        }
+        #endif
+        return try ReadingExport.prepare(text: ReadingEngine.exportText(entries: store.history(timeZone: clock.timeZone)))
+    }
+
+    func deleteAllData() throws {
+        // An in-flight permission/scheduling operation must finish before its saved state can be removed.
+        guard !reminderBusy else { throw CocoaError(.userCancelled) }
+        try ReadingExport.removeTemporaryCopy()
+        try store.deleteAllData()
+        notifications.cancelForDataDeletion()
+        reminderPreference = ReminderPreference()
+        reminderScheduled = false
+        reminderDenied = false
+        reminderInvitationDenied = false
+        reminderSaveFailed = false
+        reminderFailureMessage = ""
+        #if DEBUG
+        reminderTestState = notifications.testState
+        #endif
+        // Disable draft observers before clearing their values, so deletion cannot recreate a draft.
+        hasDraft = false
+        hasSpreadDraft = false
+        question = ""
+        person = nil
+        area = .relationship
+        picks = []
+        pendingReading = nil
+        today = nil
+        latestReadings = [:]
+        relationshipStatus = nil
+        relationshipStatusAsked = false
+        hiddenAreas = []
+        seed = nil
+        failedDraftSaveOperation = nil
+        draftIsPicking = true
+        saveFailed = false
+        dayRefreshFailed = false
+        readingSaveFailed = false
+        welcomeSaveFailed = false
+        draftSaveFailed = false
+        relationshipSaveFailed = false
+        crisisRemovalFailed = false
+        settingsSaveFailed = false
+        showsSettings = false
+        screen = .welcome
+    }
+
     #if DEBUG
     var failHistoryRead = false
+    var failExport = false
 
     func openSavedReadingForTest() throws {
         if let reading = try store.latestReading() { screen = .reading(reading) }
@@ -641,6 +707,8 @@ final class AppSession {
 @MainActor
 enum AppLaunch {
     static func makeSession(configuration: LaunchConfiguration) throws -> AppSession {
+        // Also remove an export left behind if the process was interrupted during sharing.
+        try ReadingExport.removeTemporaryCopy()
         #if DEBUG
         if configuration.forceStoreOpenFailure { throw CocoaError(.fileReadNoPermission) }
         #endif
@@ -679,9 +747,10 @@ enum AppLaunch {
         #endif
         let store = try DrawStore(configuration: modelConfiguration)
         var randomness = SystemRandomNumberGenerator()
-        let seed = try store.installSeed {
+        let createSeed = {
             configuration.seed ?? (0..<4).map { _ in String(randomness.next(), radix: 16) }.joined(separator: "-")
         }
+        let seed = try store.installSeed(create: createSeed)
         let clock = SessionClock(configuration: configuration)
         var testIndex = 0
         let randomIndex: (Int) -> Int = { upperBound in
@@ -702,6 +771,7 @@ enum AppLaunch {
         store.failsNextReadingDelete = configuration.readingDeleteFailure
         store.failsNextDraftDiscard = configuration.crisisDiscardFailure
         store.failsNextSettingsSave = configuration.settingsSaveFailure
+        store.failsNextDeleteAll = configuration.deleteAllFailure
         if configuration.historyDays > 0 {
             var calendar = Calendar(identifier: .gregorian)
             calendar.timeZone = clock.timeZone
@@ -745,9 +815,10 @@ enum AppLaunch {
         notifications = ReminderNotifications()
         #endif
         let session = try AppSession(clock: clock, seed: seed, store: store,
-                                     library: library, randomIndex: randomIndex, notifications: notifications)
+                                     library: library, randomIndex: randomIndex, notifications: notifications, createSeed: createSeed)
         #if DEBUG
         session.failHistoryRead = configuration.historyReadFailure
+        session.failExport = configuration.exportFailure
         if configuration.openSavedReading { try session.openSavedReadingForTest() }
         #endif
         return session

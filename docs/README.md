@@ -40,6 +40,7 @@ Add future research to `docs/research/`, using descriptive, lower-case hyphenate
 - [Crisis support verification](crisis-support-verification.md): issue #17 detection, draft removal, support states and design evidence.
 - [Morning reminder verification](reminder-verification.md): issue #21 invitation, notification controls, tests and manual-check status.
 - [Settings verification](settings-verification.md): issue #20 preferences, retention, screenshots and design comparison.
+- [Data ownership verification](data-ownership-verification.md): issue #22 export contents, transactional deletion, recovery and design evidence.
 - [History verification](history-verification.md): issue #19 combined archive, calendar, snapshots, scrolling and design evidence.
 - [Ask about someone verification](ask-about-someone-verification.md): issue #18 person details, named-position content, tests and design evidence. The [independent design comparison](ask-about-someone-design-review.md) records its image-only verdict and findings.
 - [Harness principles](harness.md)

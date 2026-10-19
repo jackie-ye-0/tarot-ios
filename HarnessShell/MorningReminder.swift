@@ -90,6 +90,14 @@ final class ReminderNotifications {
         center.removePendingNotificationRequests(withIdentifiers: [Self.identifier])
     }
 
+    func cancelForDataDeletion() {
+        #if DEBUG
+        if fixture != nil { pending = nil; return }
+        #endif
+        center.removeAllPendingNotificationRequests()
+        center.removeAllDeliveredNotifications()
+    }
+
     #if DEBUG
     func setTestPermission(_ permission: Permission) {
         guard fixture != nil else { return }
