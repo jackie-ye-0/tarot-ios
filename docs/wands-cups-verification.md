@@ -2,7 +2,7 @@
 
 Issue #25. First draft, 20 October 2026. Jackie's editorial review is required before release to real users.
 
-Current status: content and test implementation complete; static and host production-code checks pass. The full iOS check, screenshot inspection and independent comparison are pending the simulator window reserved by firstmate. This is not a verified delivery yet.
+Current status: the full check passed on clean `78853e9`, with **132/132 tests passing**, zero failures or skips. The independent comparison found two missing evidence views, P1 and R1, without establishing a layout defect. Their capture-only correction is committed as `85175eb` and passed **63/63** focused tests. Author inspection closed P1 and R1 under firstmate’s authorised evidence-only review path. A full committed-head check remains required because UI test code changed.
 
 ## Content and wording
 
@@ -32,12 +32,60 @@ The deterministic fixture seeds were recalculated for the 50-card pool to retain
 
 The 34 command-contract tests passed with `python3 -m unittest discover -s tests -v`. A temporary macOS executable compiled the unchanged production `ReadingEngine.swift`, `QuestionReading.swift` and `CardIdentity.swift`, then decoded the complete library, composed and round-tripped 336 Wands/Cups readings and round-tripped 56 daily snapshots. All assertions passed. This exercises production decoding and composition on the host, not the iOS app or its registered test suite.
 
-A separate attempt to typecheck the new Swift Testing suite with the host's default `swiftc` stopped at `no such module 'Testing'`. No toolchain change or workaround was attempted. The suite still needs compilation and execution through the Xcode harness after the simulator hold clears.
+A separate attempt to typecheck the new Swift Testing suite with the host's default `swiftc` stopped at `no such module 'Testing'`. No toolchain change or workaround was attempted. The subsequent full Xcode harness run compiled and passed the actual suite, including both parameterised suit cases.
 
-## Design check and remaining evidence
+## Full check and design evidence
 
 No screen, component, layout, colour, font or motion implementation changes. The manifest therefore remains unchanged. The content adds longer Minor Arcana names and new passages to existing layouts.
 
-Before handoff, record the final committed-head `harness doctor` and full `harness check` results, inspect `harness evidence`, open the comparison page and inspect the new reading-text captures, including their actual endings and overlapping largest-text scroll stops. Compare content order, primary action, colours, type, card shape, spacing and wording in the manifest's order. Record every accepted difference and the independent comparison's findings and dispositions here.
+`./scripts/harness doctor` passed, then plain `./scripts/harness check` passed on clean `78853e9c83e59ce286f1192bc88f59cba67c3b4e` in `.harness/runs/20261020T101054.798791Z-check-83b5cefb`. It passed all 34 command-contract tests, the unchanged design-role guard and 132/132 logical iOS tests, with zero failures, skips, expected failures or runtime warnings. Xcode 27.0 used the harness's dedicated iPhone 17e on iOS 26.5. The simulator lock was released at 13:02:49 UTC on 20 October. The later capture-only correction is covered separately below; this is not a claim that another full check ran on that commit.
 
-The static content check is not an iOS build or runtime test. Real-device behaviour, VoiceOver reading order and Jackie's editorial review remain separate release checks.
+Read `summary.json` and `./scripts/harness evidence` after completion. The run exported 745 images and matched all 15 main reference states. Opened its comparison page through `chrome-devtools-axi` and inspected the Reveal, Today, Ask, completed-pick and reading references against all 135 new full-screen content captures, including overlapping largest-text scroll stops. The complete Today endings show Social, Ask, the midnight caption and tabs. The long Minor Arcana names and passages remain readable without horizontal truncation; actions remain reachable. Existing font-loading checks and settled-screen accessibility audits passed without changing categories or exceptions.
+
+The final-evidence packet in the task folder retains the unchanged manifest, reference images, screenshots, comparison page, summaries, logs and independent report. The original reviewed packet is retained separately from the focused capture supplement.
+
+## Independent comparison and dispositions
+
+The fresh-session reviewer inspected all 135 content full-screen captures, 24 associated text crops, five matching references and 16 ordinary/Reduce Motion context captures on 21 October 2026 (Sydney). Its verdict was **pass after P1 and R1 are supplied and checked**. It found no image-established implementation defect. Firstmate authorised an author-inspected focused capture to close those two evidence-only findings, without another independent review.
+
+| Finding | Disposition |
+| --- | --- |
+| P1 | Closed by author inspection of the passing focused run. The largest-text question pick now uses the existing navigation-top helper and asserts that Back, progress and the complete question are visible before capturing. |
+| R1 | Closed by author inspection of the passing focused run. The standard reading now scrolls to the final feedback choice and requires the complete reflection question/helper, feedback prompt and three choices, Done and disclaimer at the captured stop. |
+| P2 | Deferred at firstmate's explicit direction. Knight of Cups wraps to two lines, leaving its orientation and position label lower than the adjacent one-line names in the standard pick. All text is readable and each position remains associated with its card. This ticket writes content; no shared layout change or future-ticket coverage is claimed. |
+
+Every other visible difference is accepted for the reasons below. IDs refer to the retained independent report.
+
+| Findings | Accepted difference and reason |
+| --- | --- |
+| Shared | Native status bars/safe areas and phone viewports alter vertical positions relative to the long web reference documents. Scroll stops cover the content. Native glyph edges, line breaks, icon strokes and grain differ within the manifest's allowed rendering variation. Darker area labels follow the manifest's contrast correction. |
+| V1–V3 | Knight of Wands / Queen of Cups, their keywords and Minor Arcana labels replace the example Star. Staff/pennant and cup/crown/seat art follows the full-deck grammar; the reversed Queen is inverted and explicitly labelled. Longer names remain whole and wrap at largest text. |
+| V4–V5 | Native Share/arrow weights, card glow/shadow and minor spacing differences preserve the centred card and single primary action. The 20-point dawn-action inset follows the later footer rule. |
+| V6 | Largest-text Share gets its own row and the selection sentence follows it; the multiline action/disclaimer move inline after the content as specified. |
+| T1–T2 | The synthetic Sunday date and new card details replace reference values; the gear is specified. Longer names/keywords wrap beside the thumbnail at standard size and stack below it at largest text. |
+| T3–T4 | Longer reflective interpretations, different extras/scores and distinct area lines are the intended content. The order remains interpretation, extras, scores, then area readings; every score retains its numeral. |
+| T5–T7 | Static area rows deliberately omit chevrons. The shorter “Ask the cards” entry is the current foundation's wording. Dark filled selected tabs support contrast, and tab symbols remain manifest placeholders. |
+| T8 | Largest-text extras/scores stack, rows grow and Ask becomes multiline; the complete ending remains readable. |
+| A1–A2 | The actual saved daily card name, Relationship line and score replace the reference's second interpretation, as specified. Shorter context reduces the panel height without changing content order or hierarchy. |
+| A3–A5 | Suggestions are complete drawable questions; widths follow their wording and the 48-point minimum. Full-width status choices and Skip are specified. These fresh fixtures have no recent reading, so the conditional row is absent. |
+| A6–A7 | The named-person row/helper and largest-text selectors, chips and controls wrap or stack with padding. All complete labels and actions are captured; native glyph/tab differences retain the accepted treatments above. |
+| P3–P5 | New faces/identities replace the reference examples, with explicit orientation on every card. The question is the selected reflective suggestion; the named variant uses You and Sam and You/Them/The Connection as specified. |
+| P6–P7 | Native safe-area and completion spacing differ slightly while preserving the disc, completion message and single cream action. Largest text stacks all three cards and places the message/action after them. |
+| R2–R3 | Card-specific passages and question/named-person labels replace reference examples and match the completed pick. Named passages invite asking the other person rather than asserting hidden feelings. |
+| R4–R5 | The longer neutral Relationship lens moves reflection down; the named version includes Sam's introduction. Different reflective questions preserve the dark panel and “Something to sit with” helper. |
+| R6–R7 | Native control weights and wrapping change spacing. Done/disclaimer are pinned at standard size and inline at largest text. Standard feedback choices have equal widths; largest text stacks them. |
+| R8 | A saved note is optional and destructive actions belong in More, so their absence is the specified fresh-reading state. |
+
+The ordinary and Reduce Motion context captures showed coherent final faces, selected/final spread states and reachable actions without an obvious visible regression. Still images do not establish first-frame timing, easing or suppression of all animations; no new motion was added.
+
+## Focused capture follow-up
+
+The first steering message authorised a focused capture for the evidence-only correction after the passing full check. Its follow-up clarified that moved UI-test capture steps require a full committed-head check. That correction arrived after plain `./scripts/harness test` had started, so the focused run is supplementary and will be followed by the required full check.
+
+The temporary scheme selects the affected Wands/Cups reading UI test and retains all engine tests; no audit category is filtered and no product source changes. The original complete scheme was restored byte-for-byte after the run.
+
+Run `.harness/runs/20261020T133117.865244Z-test-4b8a28ed` passed **63/63 selected tests**, with zero failures, skips, expected failures or runtime warnings. This includes both suit cases and the corrected question/named-person flow at both text sizes. It exported 85 images and released the simulator lock at 13:47:39 UTC on 20 October. Its comparison has zero main reference captures because it selects only content variants; it supplements the full run and does not replace it.
+
+Read its summary and `harness evidence`, opened the comparison page, then inspected the four changed opening/ending images directly. The question largest-text opening shows Back, All three drawn and the complete question at the scroll origin. Both standard endings show the entire reflection panel/helper, feedback prompt and three choices above the pinned Done/disclaimer. No layout defect or change was needed. P1/R1 are closed under the authorised author-inspection path; P2 remains deferred. The packet retains this run separately in `final-evidence/focused-capture-follow-up/`. The subsequent full-check result will be recorded after it completes.
+
+The image review does not establish numeric contrast, font loading, touch targets, persistence or animation timing. Automated runtime checks provide their separate evidence. Real-device behaviour, VoiceOver reading order and Jackie's editorial review remain separate release checks.
