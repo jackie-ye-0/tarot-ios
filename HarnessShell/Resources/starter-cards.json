@@ -1,6 +1,6 @@
 {
-  "version": 6,
-  "editorialStatus": "Original first-draft content. All 22 Major Arcana and the shared lenses, suggestions and reflections need Jackie's editorial review before any release to real users. Scores and daily extras are reflection prompts, not predictions.",
+  "version": 7,
+  "editorialStatus": "Original first-draft content. All 22 Major Arcana, 28 Wands and Cups cards, and the shared lenses, suggestions and reflections need Jackie's editorial review before any release to real users. Scores and daily extras are reflection prompts, not predictions.",
   "cards": [
     {
       "id": "star",
@@ -1741,6 +1741,2218 @@
           "you": "Notice whether you are asking this connection to provide a completeness you have not defined.",
           "them": "Ask what feels unfinished to the other person without assuming they share your sense of it.",
           "connection": "Reflect on which open questions deserve a conversation and which can remain open for now."
+        }
+      }
+    },
+    {
+      "id": "ace-of-wands",
+      "name": "Ace of Wands",
+      "arcana": "Minor Arcana",
+      "suit": "Wands",
+      "rank": 1,
+      "upright": {
+        "keywords": [
+          "Spark",
+          "curiosity",
+          "initiative"
+        ],
+        "interpretation": "An idea may be asking for a little room in your day. Notice what draws your interest, and give it one small expression before deciding how far to take it.",
+        "daily": {
+          "colourName": "Ochre",
+          "colourHex": "#c79a3f",
+          "object": "A sharpened pencil",
+          "bestHour": "Before 11 am",
+          "career": {
+            "score": 79,
+            "line": "Try a rough first version of an idea that interests you."
+          },
+          "relationship": {
+            "score": 69,
+            "line": "Share something you would enjoy exploring together."
+          },
+          "social": {
+            "score": 74,
+            "line": "Suggest a simple activity that breaks your usual routine."
+          }
+        },
+        "questionPositions": {
+          "situation": "You may have the beginnings of an idea without a settled plan. Notice which part makes you want to participate.",
+          "action": "Give the idea a short, practical trial with a clear stopping point. You can learn without committing to the whole project.",
+          "outcome": "Reflect on what makes a beginning worth your attention, even when its direction remains open."
+        },
+        "namedPersonPositions": {
+          "you": "You may want to bring fresh energy to this connection. Name what you would like to try without deciding for both of you.",
+          "them": "Ask what interests the other person before assuming they share your enthusiasm. Their answer can be different from yours.",
+          "connection": "Consider a small shared experiment that leaves each of you free to choose how involved to be."
+        }
+      },
+      "reversed": {
+        "keywords": [
+          "Pause",
+          "focus",
+          "readiness"
+        ],
+        "interpretation": "You may have more ideas than room to act on them. Set one aside long enough to notice whether it still interests you without the pressure to begin.",
+        "daily": {
+          "colourName": "Clay",
+          "colourHex": "#b0654a",
+          "object": "A blank index card",
+          "bestHour": "After 2 pm",
+          "career": {
+            "score": 53,
+            "line": "Choose which idea deserves attention and which can wait."
+          },
+          "relationship": {
+            "score": 61,
+            "line": "Say whether you want company or space before making a plan."
+          },
+          "social": {
+            "score": 58,
+            "line": "Leave room in your day for an invitation you can freely decline."
+          }
+        },
+        "questionPositions": {
+          "situation": "A possible beginning may be tangled with pressure to act immediately. Separate your own curiosity from the expectation to produce something.",
+          "action": "Reduce the first step until it fits the time and attention you actually have. A deliberate pause is also a choice.",
+          "outcome": "Consider how you recognise readiness without requiring constant excitement or a perfect moment."
+        },
+        "namedPersonPositions": {
+          "you": "Notice whether you want to begin something here or feel obliged to keep things moving. You can say which is true for you.",
+          "them": "Ask how much room the other person has for something new. A slower response does not explain their reasons on its own.",
+          "connection": "The connection may need a clearer pace before a fresh plan. Discuss what each of you can comfortably offer."
+        }
+      }
+    },
+    {
+      "id": "two-of-wands",
+      "name": "Two of Wands",
+      "arcana": "Minor Arcana",
+      "suit": "Wands",
+      "rank": 2,
+      "upright": {
+        "keywords": [
+          "Direction",
+          "choice",
+          "perspective"
+        ],
+        "interpretation": "You may be ready to look beyond a familiar way of doing things. Compare what draws you towards a new direction with what you value about staying where you are.",
+        "daily": {
+          "colourName": "Blue",
+          "colourHex": "#6f8ca2",
+          "object": "A folded map",
+          "bestHour": "Before noon",
+          "career": {
+            "score": 76,
+            "line": "Write down what you want a possible change in your work to offer."
+          },
+          "relationship": {
+            "score": 66,
+            "line": "Discuss what each of you wants to make room for."
+          },
+          "social": {
+            "score": 63,
+            "line": "Consider a different kind of gathering before filling your calendar."
+          }
+        },
+        "questionPositions": {
+          "situation": "You may be weighing a familiar option against something less known. Notice which questions need information and which need a personal preference.",
+          "action": "Compare two manageable next steps using criteria that matter to you. Leave room to revise your choice as you learn.",
+          "outcome": "Reflect on the direction you want to practise choosing, rather than trying to settle the whole future."
+        },
+        "namedPersonPositions": {
+          "you": "You may be considering how this connection fits alongside your own plans. Be clear about what matters to you in both.",
+          "them": "Invite the other person to describe their priorities without assuming they mirror yours. Listen for differences as well as common ground.",
+          "connection": "Consider where your plans overlap and where separate choices need space. Agreement can be specific without covering everything."
+        }
+      },
+      "reversed": {
+        "keywords": [
+          "Hesitation",
+          "scale",
+          "permission"
+        ],
+        "interpretation": "A choice may feel larger when you try to settle every detail at once. Bring your attention back to the part you can explore today without closing every other door.",
+        "daily": {
+          "colourName": "Slate",
+          "colourHex": "#6b7280",
+          "object": "A small notebook",
+          "bestHour": "After 4 pm",
+          "career": {
+            "score": 51,
+            "line": "Separate a decision you can test from one that needs more thought."
+          },
+          "relationship": {
+            "score": 59,
+            "line": "Name a hesitation instead of letting a vague plan stand in for agreement."
+          },
+          "social": {
+            "score": 55,
+            "line": "Choose one invitation by interest rather than fear of missing out."
+          }
+        },
+        "questionPositions": {
+          "situation": "You may be circling a decision because each option seems to rule out too much. Notice whether you are asking one choice to answer several questions.",
+          "action": "Identify the smallest reversible step and the information it would give you. You can decide only that much for now.",
+          "outcome": "Consider what enough clarity would look like for this particular choice, without needing certainty about everything."
+        },
+        "namedPersonPositions": {
+          "you": "You may be holding back a preference while waiting for a perfect answer. Try saying what you know and what remains undecided.",
+          "them": "Ask whether the other person wants more information, more time or a different option. Do not read hesitation as a verdict.",
+          "connection": "The connection may benefit from separating an immediate choice from broader expectations. Discuss the next step in its own terms."
+        }
+      }
+    },
+    {
+      "id": "three-of-wands",
+      "name": "Three of Wands",
+      "arcana": "Minor Arcana",
+      "suit": "Wands",
+      "rank": 3,
+      "upright": {
+        "keywords": [
+          "Preparation",
+          "reach",
+          "patience"
+        ],
+        "interpretation": "You may have taken a first step and be looking beyond it. Notice what is yours to prepare while allowing other people's responses to arrive in their own time.",
+        "daily": {
+          "colourName": "Sage",
+          "colourHex": "#7d8f6a",
+          "object": "A bookmark",
+          "bestHour": "After 10 am",
+          "career": {
+            "score": 78,
+            "line": "Prepare the next useful piece while waiting for feedback."
+          },
+          "relationship": {
+            "score": 68,
+            "line": "Leave space for a response after making your wishes clear."
+          },
+          "social": {
+            "score": 73,
+            "line": "Reach beyond your usual circle with a thoughtful invitation."
+          }
+        },
+        "questionPositions": {
+          "situation": "Something you have begun may now involve people or conditions beyond your control. Distinguish preparation from trying to manage every response.",
+          "action": "Make one useful preparation and decide when to check in again. Keep the rest of your attention available for today's work.",
+          "outcome": "Reflect on how you want to stay engaged when effort and response happen at different speeds."
+        },
+        "namedPersonPositions": {
+          "you": "You may be extending an invitation or asking for a wider possibility. Notice what you can offer without requiring an immediate answer.",
+          "them": "Let the other person describe their timing and circumstances. An unanswered invitation leaves information missing, rather than supplying it.",
+          "connection": "Consider how to keep a shared plan open while respecting separate responsibilities. A clear check-in can be kinder than constant guessing."
+        }
+      },
+      "reversed": {
+        "keywords": [
+          "Adjustment",
+          "limits",
+          "perspective"
+        ],
+        "interpretation": "A plan may need adjusting to fit what is actually available. Notice where a smaller scope would let you keep the part that matters without forcing the rest.",
+        "daily": {
+          "colourName": "Clay",
+          "colourHex": "#b0654a",
+          "object": "An eraser",
+          "bestHour": "Before 3 pm",
+          "career": {
+            "score": 54,
+            "line": "Revise a task around the information you have now."
+          },
+          "relationship": {
+            "score": 60,
+            "line": "Check an expectation that has never been discussed aloud."
+          },
+          "social": {
+            "score": 57,
+            "line": "Offer a simpler plan if a group arrangement feels unwieldy."
+          }
+        },
+        "questionPositions": {
+          "situation": "You may be measuring the present against a plan made with less information. Notice which assumptions no longer fit the situation.",
+          "action": "Reduce the scope or ask a specific question before adding more effort. Changing the approach need not erase the purpose.",
+          "outcome": "Consider which part of your original intention still matters when the route looks different."
+        },
+        "namedPersonPositions": {
+          "you": "You may feel disappointed by a difference in pace or availability. Describe the specific gap without turning it into a story about the whole connection.",
+          "them": "Ask what has changed for the other person rather than assuming a delay tells you how they feel.",
+          "connection": "The connection may need a more realistic shared plan. Discuss what is possible now and what remains only a hope."
+        }
+      }
+    },
+    {
+      "id": "four-of-wands",
+      "name": "Four of Wands",
+      "arcana": "Minor Arcana",
+      "suit": "Wands",
+      "rank": 4,
+      "upright": {
+        "keywords": [
+          "Welcome",
+          "belonging",
+          "celebration"
+        ],
+        "interpretation": "An ordinary moment may be worth marking before you move on. Notice the people, places or small routines that make you feel welcome, and take time to appreciate one of them.",
+        "daily": {
+          "colourName": "Rose",
+          "colourHex": "#c98e89",
+          "object": "A favourite mug",
+          "bestHour": "After 5 pm",
+          "career": {
+            "score": 71,
+            "line": "Acknowledge a shared effort before starting the next task."
+          },
+          "relationship": {
+            "score": 83,
+            "line": "Make time for a familiar ritual you both enjoy."
+          },
+          "social": {
+            "score": 86,
+            "line": "Offer a welcome that leaves room for people to be themselves."
+          }
+        },
+        "questionPositions": {
+          "situation": "You may have a point of connection or completion that deserves recognition. Notice what makes participation feel comfortable rather than obligatory.",
+          "action": "Mark the moment in a way that fits the people involved. A simple acknowledgement can be enough.",
+          "outcome": "Reflect on what belonging feels like to you and how you help make room for it."
+        },
+        "namedPersonPositions": {
+          "you": "Notice where you feel at ease in this connection and what you would like to appreciate aloud.",
+          "them": "Ask which shared moments the other person values. Their sense of belonging may rest on details you have not noticed.",
+          "connection": "Consider the small rituals that make this connection welcoming. Keep room for each person's way of joining in."
+        }
+      },
+      "reversed": {
+        "keywords": [
+          "Inclusion",
+          "ease",
+          "expectations"
+        ],
+        "interpretation": "A gathering or milestone may carry expectations that do not quite fit you. Notice what would make participation feel more comfortable, and give yourself permission to ask for that.",
+        "daily": {
+          "colourName": "Blue",
+          "colourHex": "#6f8ca2",
+          "object": "A cloth napkin",
+          "bestHour": "Before 6 pm",
+          "career": {
+            "score": 58,
+            "line": "Clarify what a team celebration is meant to acknowledge."
+          },
+          "relationship": {
+            "score": 62,
+            "line": "Describe what helps you feel welcome without comparing experiences."
+          },
+          "social": {
+            "score": 55,
+            "line": "Offer a quieter way to join a group occasion."
+          }
+        },
+        "questionPositions": {
+          "situation": "You may feel out of step with how an occasion is supposed to look. Notice whether the expectations leave room for your actual experience.",
+          "action": "Suggest one adjustment to the format, timing or level of involvement. You do not have to perform enjoyment to take part.",
+          "outcome": "Consider what a sense of welcome requires beyond the appearance of everyone having a good time."
+        },
+        "namedPersonPositions": {
+          "you": "You may want more ease or inclusion here. Name a concrete moment when you felt outside the shared rhythm.",
+          "them": "Ask what helps the other person feel included rather than deciding what a comfortable occasion should mean for them.",
+          "connection": "The connection may need its own way of marking a moment. Discuss which expectations you want to keep and which you can set aside."
+        }
+      }
+    },
+    {
+      "id": "five-of-wands",
+      "name": "Five of Wands",
+      "arcana": "Minor Arcana",
+      "suit": "Wands",
+      "rank": 5,
+      "upright": {
+        "keywords": [
+          "Difference",
+          "practice",
+          "discussion"
+        ],
+        "interpretation": "Different approaches may be competing for your attention today. Notice which disagreement can teach you something, and where a clearer turn to speak would make the exchange more useful.",
+        "daily": {
+          "colourName": "Ochre",
+          "colourHex": "#c79a3f",
+          "object": "A sketch pad",
+          "bestHour": "Before 2 pm",
+          "career": {
+            "score": 65,
+            "line": "Compare competing ideas against the purpose of the task."
+          },
+          "relationship": {
+            "score": 58,
+            "line": "Describe one difference without turning it into a contest."
+          },
+          "social": {
+            "score": 62,
+            "line": "Make room for a quieter voice in a lively discussion."
+          }
+        },
+        "questionPositions": {
+          "situation": "You may be part of an exchange where several priorities are pulling at once. Separate the useful differences from the pressure to be heard.",
+          "action": "Agree on what you are trying to discuss, then take one point at a time. Curiosity can sit alongside a clear position.",
+          "outcome": "Reflect on what you want to learn from disagreement and what would make the exchange respectful."
+        },
+        "namedPersonPositions": {
+          "you": "You may be eager to defend your approach. Notice whether you have left enough room to hear a different one.",
+          "them": "Ask the other person which point matters most to them. Their disagreement may concern something different from the issue you are arguing.",
+          "connection": "Consider whether you are exploring a difference or competing for the final word. A shared purpose can guide the conversation."
+        }
+      },
+      "reversed": {
+        "keywords": [
+          "Listening",
+          "repair",
+          "clarity"
+        ],
+        "interpretation": "Avoiding a disagreement may leave an important preference unspoken. Notice whether a calm, specific conversation would be more useful than either pressing your point or pretending there is no difference.",
+        "daily": {
+          "colourName": "Sage",
+          "colourHex": "#7d8f6a",
+          "object": "A plain coaster",
+          "bestHour": "After 11 am",
+          "career": {
+            "score": 60,
+            "line": "Raise one unresolved practical issue without reopening every debate."
+          },
+          "relationship": {
+            "score": 67,
+            "line": "Say where you disagree while keeping the request clear."
+          },
+          "social": {
+            "score": 64,
+            "line": "Check whether a quiet group has actually reached agreement."
+          }
+        },
+        "questionPositions": {
+          "situation": "You may be smoothing over a difference that still affects how you participate. Notice what remains unresolved beneath an easy surface.",
+          "action": "Name one point you would like to understand and invite a response. You can leave unrelated disagreements for another time.",
+          "outcome": "Consider what respectful disagreement would allow you to say that silence currently leaves out."
+        },
+        "namedPersonPositions": {
+          "you": "You may be keeping the peace by leaving out your own view. Notice what you could express plainly and without accusation.",
+          "them": "Give the other person room to disagree without needing to reassure you first. Ask rather than treating silence as consent.",
+          "connection": "The connection may benefit from a clearer conversation about an unresolved difference. Aim for understanding before trying to sound united."
+        }
+      }
+    },
+    {
+      "id": "six-of-wands",
+      "name": "Six of Wands",
+      "arcana": "Minor Arcana",
+      "suit": "Wands",
+      "rank": 6,
+      "upright": {
+        "keywords": [
+          "Recognition",
+          "confidence",
+          "contribution"
+        ],
+        "interpretation": "An effort may be worth recognising without measuring it against anyone else's. Notice what you contributed and whose help made the work feel possible.",
+        "daily": {
+          "colourName": "Ochre",
+          "colourHex": "#c79a3f",
+          "object": "A handwritten note",
+          "bestHour": "After 1 pm",
+          "career": {
+            "score": 83,
+            "line": "Describe a contribution clearly and credit the people involved."
+          },
+          "relationship": {
+            "score": 72,
+            "line": "Offer specific appreciation rather than a sweeping judgement."
+          },
+          "social": {
+            "score": 77,
+            "line": "Let yourself receive a kind acknowledgement without dismissing it."
+          }
+        },
+        "questionPositions": {
+          "situation": "You may be thinking about how your effort is seen. Notice the difference between recognising useful work and needing universal approval.",
+          "action": "Name what you contributed and acknowledge the support around it. Let the description be specific enough to feel honest.",
+          "outcome": "Reflect on what recognition means to you when it is grounded in effort rather than comparison."
+        },
+        "namedPersonPositions": {
+          "you": "You may want your contribution to be noticed. Try describing what mattered to you instead of waiting for the other person to infer it.",
+          "them": "Ask what the other person would like acknowledged. Their most visible contribution may not be the one that took the most care.",
+          "connection": "Consider how appreciation travels in both directions here. Specific recognition can leave room for both of your experiences."
+        }
+      },
+      "reversed": {
+        "keywords": [
+          "Validation",
+          "perspective",
+          "self-respect"
+        ],
+        "interpretation": "You may be looking outside yourself for a measure of whether your effort counts. Pause to name what you value in it before comparing the response it received with someone else's.",
+        "daily": {
+          "colourName": "Slate",
+          "colourHex": "#6b7280",
+          "object": "A paper clip",
+          "bestHour": "Before noon",
+          "career": {
+            "score": 56,
+            "line": "Assess one piece of work against its purpose rather than its attention."
+          },
+          "relationship": {
+            "score": 60,
+            "line": "Ask for the acknowledgement you need without turning it into a test."
+          },
+          "social": {
+            "score": 54,
+            "line": "Notice when comparison makes it hard to enjoy another person's moment."
+          }
+        },
+        "questionPositions": {
+          "situation": "Recognition may feel absent or different from what you expected. Distinguish the response you received from your own account of the effort.",
+          "action": "Write down what you did well and one thing you would change. Seek specific feedback if it would help you learn.",
+          "outcome": "Reflect on whose approval matters to you, and why, without making it the only measure of your work."
+        },
+        "namedPersonPositions": {
+          "you": "You may feel overlooked in this connection. Name the particular effort you wish had been noticed rather than keeping a silent score.",
+          "them": "Ask how the other person experiences being appreciated. Avoid assuming their confidence means they need no acknowledgement.",
+          "connection": "The connection may need more direct appreciation and fewer comparisons. Discuss what recognition feels meaningful to each of you."
+        }
+      }
+    },
+    {
+      "id": "seven-of-wands",
+      "name": "Seven of Wands",
+      "arcana": "Minor Arcana",
+      "suit": "Wands",
+      "rank": 7,
+      "upright": {
+        "keywords": [
+          "Boundaries",
+          "conviction",
+          "steadiness"
+        ],
+        "interpretation": "You may need to hold a position while hearing views that differ from it. Notice which boundary protects something important and which argument no longer needs your attention.",
+        "daily": {
+          "colourName": "Clay",
+          "colourHex": "#b0654a",
+          "object": "A closed notebook",
+          "bestHour": "Before 4 pm",
+          "career": {
+            "score": 73,
+            "line": "Explain one priority and what you cannot take on alongside it."
+          },
+          "relationship": {
+            "score": 64,
+            "line": "State a boundary without turning it into a judgement of the other person."
+          },
+          "social": {
+            "score": 59,
+            "line": "Choose which discussion deserves your participation."
+          }
+        },
+        "questionPositions": {
+          "situation": "You may be deciding how firmly to hold a position under competing requests. Notice the value your boundary is meant to protect.",
+          "action": "State your limit and its practical consequence in plain words. You can listen without agreeing to change it.",
+          "outcome": "Reflect on how to remain open to useful feedback while keeping a boundary that matters to you."
+        },
+        "namedPersonPositions": {
+          "you": "You may need to make your limits easier to understand. Focus on what you choose to do rather than directing the other person's choices.",
+          "them": "Ask about the other person's boundaries and take the answer seriously. You do not need to infer a hidden reason to respect a limit.",
+          "connection": "Consider whether both people can express a limit without having to win an argument. Respect does not require identical preferences."
+        }
+      },
+      "reversed": {
+        "keywords": [
+          "Discernment",
+          "space",
+          "release"
+        ],
+        "interpretation": "Defending every choice may be taking more attention than the choices themselves. Notice where you can step out of an argument while keeping a clear sense of what matters to you.",
+        "daily": {
+          "colourName": "Blue",
+          "colourHex": "#6f8ca2",
+          "object": "A pencil case",
+          "bestHour": "After 3 pm",
+          "career": {
+            "score": 52,
+            "line": "Stop explaining a settled decision to an audience that does not need it."
+          },
+          "relationship": {
+            "score": 58,
+            "line": "Restate a limit briefly instead of rehearsing every reason."
+          },
+          "social": {
+            "score": 56,
+            "line": "Leave a discussion that no longer feels useful to take part in."
+          }
+        },
+        "questionPositions": {
+          "situation": "You may be treating several demands as if each requires a defence. Notice which ones actually call for your response.",
+          "action": "Choose one priority to protect and let an unnecessary debate end. A shorter explanation can still be clear.",
+          "outcome": "Consider the difference between giving up something important and letting go of a contest you do not need."
+        },
+        "namedPersonPositions": {
+          "you": "You may feel obliged to justify your needs repeatedly. Notice what you can state once and what requires a more practical boundary.",
+          "them": "Ask what the other person wants space from without interpreting a pause as rejection or agreement.",
+          "connection": "The connection may benefit from less point-scoring and clearer limits. Consider which recurring argument you can stop feeding."
+        }
+      }
+    },
+    {
+      "id": "eight-of-wands",
+      "name": "Eight of Wands",
+      "arcana": "Minor Arcana",
+      "suit": "Wands",
+      "rank": 8,
+      "upright": {
+        "keywords": [
+          "Movement",
+          "messages",
+          "focus"
+        ],
+        "interpretation": "Several things may be moving at once, making a clear priority especially useful. Notice what needs a timely response and what can wait until you have given it proper attention.",
+        "daily": {
+          "colourName": "Ochre",
+          "colourHex": "#c79a3f",
+          "object": "An addressed envelope",
+          "bestHour": "Before 1 pm",
+          "career": {
+            "score": 82,
+            "line": "Send the clear message that lets a shared task move forward."
+          },
+          "relationship": {
+            "score": 73,
+            "line": "Check that a quick reply says what you actually mean."
+          },
+          "social": {
+            "score": 76,
+            "line": "Confirm the details of a plan before adding another invitation."
+          }
+        },
+        "questionPositions": {
+          "situation": "You may be handling several messages or decisions in a short space of time. Notice which thread needs your attention first.",
+          "action": "Give one clear response, including any practical details that matter. Speed is useful only when the message remains understandable.",
+          "outcome": "Reflect on the pace that lets you stay responsive without losing the purpose of what you are doing."
+        },
+        "namedPersonPositions": {
+          "you": "You may want to move a conversation along quickly. Notice whether you have left space for the other person's pace.",
+          "them": "Ask when the other person has room to respond. The speed of a message cannot tell you everything about their interest.",
+          "connection": "Consider whether your exchange is clear as well as frequent. Agreeing on the next small step may be enough for now."
+        }
+      },
+      "reversed": {
+        "keywords": [
+          "Pause",
+          "checking",
+          "timing"
+        ],
+        "interpretation": "A pause in communication may leave you tempted to fill in the gaps. Check what you actually know, and let a deliberate response take the place of a hurried assumption.",
+        "daily": {
+          "colourName": "Blue",
+          "colourHex": "#6f8ca2",
+          "object": "A folded letter",
+          "bestHour": "After 2 pm",
+          "career": {
+            "score": 55,
+            "line": "Confirm an unclear instruction before acting on it."
+          },
+          "relationship": {
+            "score": 61,
+            "line": "Ask a direct question instead of reading meaning into a delayed message."
+          },
+          "social": {
+            "score": 57,
+            "line": "Check a time or place rather than relying on an old arrangement."
+          }
+        },
+        "questionPositions": {
+          "situation": "You may be dealing with crossed messages or a pace that does not suit the task. Separate missing information from conclusions about why it is missing.",
+          "action": "Clarify one detail and give the exchange room to settle. Repeating the same message may add activity without adding understanding.",
+          "outcome": "Consider how you want to respond when timing is uncertain and the available information is incomplete."
+        },
+        "namedPersonPositions": {
+          "you": "You may be rushing to resolve a silence. Notice whether a clear question or a little more time would better serve your needs.",
+          "them": "Let the other person explain a delay in their own words. Avoid treating response time as a complete account of their feelings.",
+          "connection": "The connection may need a clearer rhythm for messages and plans. Discuss availability rather than guessing at intentions."
+        }
+      }
+    },
+    {
+      "id": "nine-of-wands",
+      "name": "Nine of Wands",
+      "arcana": "Minor Arcana",
+      "suit": "Wands",
+      "rank": 9,
+      "upright": {
+        "keywords": [
+          "Perseverance",
+          "care",
+          "limits"
+        ],
+        "interpretation": "You may have stayed with something that has asked a lot of you. Notice what helps you continue at a manageable pace, including the limits that let you keep choosing rather than simply enduring.",
+        "daily": {
+          "colourName": "Sage",
+          "colourHex": "#7d8f6a",
+          "object": "A worn bookmark",
+          "bestHour": "Before 5 pm",
+          "career": {
+            "score": 66,
+            "line": "Define what enough progress looks like for the task in front of you."
+          },
+          "relationship": {
+            "score": 62,
+            "line": "Explain a limit before a familiar frustration builds."
+          },
+          "social": {
+            "score": 55,
+            "line": "Choose company that leaves room for a quieter contribution."
+          }
+        },
+        "questionPositions": {
+          "situation": "You may be drawing on experience to stay with a demanding task. Notice where that experience supports you and where it keeps you on guard.",
+          "action": "Set a practical stopping point and name any help you want. Persistence can include adjusting the pace.",
+          "outcome": "Reflect on what makes continuing worthwhile to you, and what would tell you it is time to reconsider."
+        },
+        "namedPersonPositions": {
+          "you": "You may be approaching this connection cautiously because of earlier experiences. Notice which concerns belong to this moment and which need checking.",
+          "them": "Ask how the other person wants to approach a sensitive topic. Let them describe their limits without assigning them a story.",
+          "connection": "Consider how to build trust through consistent, manageable actions while leaving both people room to set boundaries."
+        }
+      },
+      "reversed": {
+        "keywords": [
+          "Reassessment",
+          "rest",
+          "support"
+        ],
+        "interpretation": "Continuing in the same way may no longer feel like a real choice. Pause to notice what you need to change, share or set down before asking more of yourself.",
+        "daily": {
+          "colourName": "Slate",
+          "colourHex": "#6b7280",
+          "object": "A soft cushion",
+          "bestHour": "After 4 pm",
+          "career": {
+            "score": 49,
+            "line": "Revisit a task whose demands have outgrown its purpose."
+          },
+          "relationship": {
+            "score": 58,
+            "line": "Say when you do not have room for another difficult conversation today."
+          },
+          "social": {
+            "score": 53,
+            "line": "Let a trusted friend know what kind of company would suit you."
+          }
+        },
+        "questionPositions": {
+          "situation": "You may be maintaining an effort mainly because you have already given it so much. Notice whether the present reason still fits you.",
+          "action": "Review the commitment as it stands now, including what help or smaller scope would make a difference. Past effort need not make today's choice for you.",
+          "outcome": "Consider what you would choose if you did not have to prove how much you could endure."
+        },
+        "namedPersonPositions": {
+          "you": "You may be carrying caution into every exchange. Notice which boundary would help you feel clearer without requiring constant vigilance.",
+          "them": "Ask what the other person can offer at present and allow an honest limit. Do not make their availability a measure of your worth.",
+          "connection": "The connection may need a pause or a different way of handling recurring strain. Discuss what each of you can realistically sustain."
+        }
+      }
+    },
+    {
+      "id": "ten-of-wands",
+      "name": "Ten of Wands",
+      "arcana": "Minor Arcana",
+      "suit": "Wands",
+      "rank": 10,
+      "upright": {
+        "keywords": [
+          "Responsibility",
+          "load",
+          "priorities"
+        ],
+        "interpretation": "You may be carrying more tasks than one day can reasonably hold. Notice which responsibilities are yours, which can be shared and which no longer need to come with you.",
+        "daily": {
+          "colourName": "Clay",
+          "colourHex": "#b0654a",
+          "object": "A canvas bag",
+          "bestHour": "Before noon",
+          "career": {
+            "score": 57,
+            "line": "Ask who owns each part of a crowded task list."
+          },
+          "relationship": {
+            "score": 60,
+            "line": "Name the practical work that has been left unspoken between you."
+          },
+          "social": {
+            "score": 51,
+            "line": "Decline an extra organising role if your hands are already full."
+          }
+        },
+        "questionPositions": {
+          "situation": "You may have gathered several responsibilities without revisiting their combined weight. Notice what you have agreed to and what you have simply absorbed.",
+          "action": "List the commitments and choose one to clarify, share or remove. Make the request specific enough for someone to respond.",
+          "outcome": "Reflect on what responsible participation means when taking on everything leaves little room to choose."
+        },
+        "namedPersonPositions": {
+          "you": "You may be doing more of the organising or emotional checking than you want. Describe the pattern through concrete examples.",
+          "them": "Ask which responsibilities the other person understands as theirs. A different assumption needs a conversation rather than a silent tally.",
+          "connection": "Consider how responsibilities are shared and whether that arrangement has been discussed. Make room for both contributions to be visible."
+        }
+      },
+      "reversed": {
+        "keywords": [
+          "Unburdening",
+          "delegation",
+          "choice"
+        ],
+        "interpretation": "You may be ready to put down a responsibility you took on without much choice. Notice what can be handed back clearly, without requiring yourself to make everyone comfortable with the change.",
+        "daily": {
+          "colourName": "Sage",
+          "colourHex": "#7d8f6a",
+          "object": "An empty basket",
+          "bestHour": "After 1 pm",
+          "career": {
+            "score": 64,
+            "line": "Hand over a task with its purpose and next step made clear."
+          },
+          "relationship": {
+            "score": 67,
+            "line": "Ask to revisit an arrangement that no longer feels balanced."
+          },
+          "social": {
+            "score": 62,
+            "line": "Leave an optional commitment out of your next plan."
+          }
+        },
+        "questionPositions": {
+          "situation": "You may be recognising that a familiar load is not sustainable in its current form. Notice which part you can actually change.",
+          "action": "Tell the relevant person what you are stepping back from and what remains yours. Clarity matters more than an elaborate apology.",
+          "outcome": "Consider what you want to make room for when obligation stops filling every available space."
+        },
+        "namedPersonPositions": {
+          "you": "You may want to stop carrying the whole connection's practical work. Name the change you need without deciding how the other person must feel about it.",
+          "them": "Ask what the other person is willing to take on rather than assuming an unspoken handover has happened.",
+          "connection": "The connection may benefit from a more explicit division of effort. Check the arrangement together instead of letting old habits decide it."
+        }
+      }
+    },
+    {
+      "id": "page-of-wands",
+      "name": "Page of Wands",
+      "arcana": "Minor Arcana",
+      "suit": "Wands",
+      "rank": 11,
+      "upright": {
+        "keywords": [
+          "Exploration",
+          "play",
+          "learning"
+        ],
+        "interpretation": "Curiosity may be more useful than expertise today. Notice what you would like to try simply for the experience, and let an early attempt be unfinished.",
+        "daily": {
+          "colourName": "Ochre",
+          "colourHex": "#c79a3f",
+          "object": "A coloured pencil",
+          "bestHour": "After 10 am",
+          "career": {
+            "score": 77,
+            "line": "Ask the basic question that opens a new way into a task."
+          },
+          "relationship": {
+            "score": 70,
+            "line": "Share a playful idea without requiring it to become a plan."
+          },
+          "social": {
+            "score": 81,
+            "line": "Join a conversation as a learner rather than an expert."
+          }
+        },
+        "questionPositions": {
+          "situation": "You may be approaching something with enthusiasm and limited experience. Notice what you are curious enough to practise.",
+          "action": "Try a small version and pay attention to what it teaches you. You do not need to present the experiment as a finished skill.",
+          "outcome": "Reflect on how you make room for being new at something without judging every attempt."
+        },
+        "namedPersonPositions": {
+          "you": "You may want to bring playfulness or a fresh question to this connection. Keep the invitation light enough to leave a real choice.",
+          "them": "Ask what the other person would enjoy exploring. Their curiosity may point somewhere you did not expect.",
+          "connection": "Consider a shared activity with room for mistakes and discovery. The experience need not prove anything about the connection."
+        }
+      },
+      "reversed": {
+        "keywords": [
+          "Focus",
+          "practice",
+          "patience"
+        ],
+        "interpretation": "An early attempt may feel less exciting than the idea that came before it. Notice whether a little practice would help, or whether your interest has honestly moved elsewhere.",
+        "daily": {
+          "colourName": "Clay",
+          "colourHex": "#b0654a",
+          "object": "A scrap of paper",
+          "bestHour": "Before 3 pm",
+          "career": {
+            "score": 54,
+            "line": "Choose one skill to practise before collecting another idea."
+          },
+          "relationship": {
+            "score": 61,
+            "line": "Follow up a playful suggestion with a clear sense of your availability."
+          },
+          "social": {
+            "score": 58,
+            "line": "Avoid agreeing to every new plan just because it sounds interesting."
+          }
+        },
+        "questionPositions": {
+          "situation": "You may be moving between possibilities before giving any of them time to become familiar. Notice whether novelty or learning is drawing you.",
+          "action": "Give one experiment a modest amount of attention, then review it. You can stop without turning an unfinished attempt into a judgement of yourself.",
+          "outcome": "Consider how you distinguish a passing interest from something you want to keep practising."
+        },
+        "namedPersonPositions": {
+          "you": "You may be unsure whether to follow through on an earlier suggestion. Say what still appeals and what has changed.",
+          "them": "Ask what level of involvement the other person wants. Enthusiasm in a moment does not settle an ongoing commitment.",
+          "connection": "The connection may need a clearer link between bright ideas and practical plans. Choose one small thing you both want to try."
+        }
+      }
+    },
+    {
+      "id": "knight-of-wands",
+      "name": "Knight of Wands",
+      "arcana": "Minor Arcana",
+      "suit": "Wands",
+      "rank": 12,
+      "upright": {
+        "keywords": [
+          "Energy",
+          "boldness",
+          "engagement"
+        ],
+        "interpretation": "You may feel ready to act on something that has caught your attention. Give that energy a clear direction, and check what you are agreeing to before moving at full speed.",
+        "daily": {
+          "colourName": "Clay",
+          "colourHex": "#b0654a",
+          "object": "A bright scarf",
+          "bestHour": "Before 2 pm",
+          "career": {
+            "score": 81,
+            "line": "Put your energy into one well-defined piece of work."
+          },
+          "relationship": {
+            "score": 73,
+            "line": "Express your interest while leaving space for a different response."
+          },
+          "social": {
+            "score": 79,
+            "line": "Make an invitation with clear details and room to decline."
+          }
+        },
+        "questionPositions": {
+          "situation": "You may be drawn towards immediate action and a change of pace. Notice what purpose the movement is meant to serve.",
+          "action": "Choose a specific step and check the practical details before taking it. Enthusiasm can sit alongside care for other people's pace.",
+          "outcome": "Reflect on the kind of courage that includes following through, not only beginning with energy."
+        },
+        "namedPersonPositions": {
+          "you": "You may be bringing a strong sense of momentum to this connection. Notice whether your invitation leaves the other person room to choose.",
+          "them": "Ask what pace suits the other person instead of treating excitement as a shared agreement.",
+          "connection": "Consider how to balance spontaneity with dependable follow-through. A clear plan can make room for enthusiasm without carrying either person along unwillingly."
+        }
+      },
+      "reversed": {
+        "keywords": [
+          "Restraint",
+          "consistency",
+          "attention"
+        ],
+        "interpretation": "Restlessness may be making every alternative look more appealing than the task in front of you. Pause to notice whether you want a different direction or simply a change in how you are approaching this one.",
+        "daily": {
+          "colourName": "Blue",
+          "colourHex": "#6f8ca2",
+          "object": "A key ring",
+          "bestHour": "After 4 pm",
+          "career": {
+            "score": 51,
+            "line": "Finish or deliberately set aside one task before starting another."
+          },
+          "relationship": {
+            "score": 57,
+            "line": "Check a strong reaction before turning it into a message."
+          },
+          "social": {
+            "score": 54,
+            "line": "Be honest about a plan you no longer want to join."
+          }
+        },
+        "questionPositions": {
+          "situation": "You may be acting quickly to escape an uncomfortable pause. Notice what remains unresolved when you keep changing direction.",
+          "action": "Slow the next decision enough to name your reason for it. Choose one commitment you can follow through on without overpromising.",
+          "outcome": "Consider what a sustainable pace would ask you to do differently when the first burst of interest fades."
+        },
+        "namedPersonPositions": {
+          "you": "You may be moving between eagerness and withdrawal. Describe your availability more clearly rather than expecting the other person to track each change.",
+          "them": "Ask about the other person's intentions without interpreting an energetic moment as an ongoing promise.",
+          "connection": "The connection may need more consistency than intensity. Discuss one modest agreement that each person is willing to keep."
+        }
+      }
+    },
+    {
+      "id": "queen-of-wands",
+      "name": "Queen of Wands",
+      "arcana": "Minor Arcana",
+      "suit": "Wands",
+      "rank": 13,
+      "upright": {
+        "keywords": [
+          "Confidence",
+          "warmth",
+          "expression"
+        ],
+        "interpretation": "You may be ready to take up a little more space as yourself. Notice what you enjoy expressing, and let your confidence make room for other people rather than requiring their approval.",
+        "daily": {
+          "colourName": "Ochre",
+          "colourHex": "#c79a3f",
+          "object": "A patterned ribbon",
+          "bestHour": "After noon",
+          "career": {
+            "score": 80,
+            "line": "Speak about your idea with warmth and a clear point of view."
+          },
+          "relationship": {
+            "score": 78,
+            "line": "Let your preferences be visible without apologising for having them."
+          },
+          "social": {
+            "score": 84,
+            "line": "Welcome someone without taking responsibility for the whole gathering."
+          }
+        },
+        "questionPositions": {
+          "situation": "You may be finding a way to participate that feels both confident and generous. Notice what helps you speak without performing certainty.",
+          "action": "Bring one clear preference into the conversation and invite others to do the same. Warmth does not require you to make yourself smaller.",
+          "outcome": "Reflect on how you recognise confidence that leaves room for other people as well as yourself."
+        },
+        "namedPersonPositions": {
+          "you": "You may want to be seen more fully in this connection. Share something you enjoy without making the response a test of your worth.",
+          "them": "Ask what lets the other person feel comfortable expressing themselves. Their style need not resemble yours to be confident.",
+          "connection": "Consider how both people can take up space here. Mutual encouragement can include different interests and independent choices."
+        }
+      },
+      "reversed": {
+        "keywords": [
+          "Recentring",
+          "privacy",
+          "self-trust"
+        ],
+        "interpretation": "You may feel pulled between being visible and protecting something private. Notice which parts of yourself you want to share today, without treating attention as proof of your value.",
+        "daily": {
+          "colourName": "Slate",
+          "colourHex": "#6b7280",
+          "object": "A pocket mirror",
+          "bestHour": "Before 11 am",
+          "career": {
+            "score": 56,
+            "line": "Prepare your own view before comparing it with the loudest one."
+          },
+          "relationship": {
+            "score": 62,
+            "line": "Say when you want privacy without disguising it as indifference."
+          },
+          "social": {
+            "score": 58,
+            "line": "Choose a setting where you can participate without performing confidence."
+          }
+        },
+        "questionPositions": {
+          "situation": "You may be measuring your place by how much attention you receive. Notice what you value in your contribution before looking for a response.",
+          "action": "Choose how much you want to share and with whom. A quieter form of participation can still be deliberate and clear.",
+          "outcome": "Consider how you want to express yourself when you are not trying to appear impressive or easy to like."
+        },
+        "namedPersonPositions": {
+          "you": "You may be comparing your place in this connection with someone else's. Return to the specific attention or understanding you want to ask for.",
+          "them": "Ask how the other person prefers to give and receive attention. Avoid treating a quieter manner as a lack of care.",
+          "connection": "The connection may need less performance and more honest preferences. Consider what each of you could say without having to sound confident."
+        }
+      }
+    },
+    {
+      "id": "king-of-wands",
+      "name": "King of Wands",
+      "arcana": "Minor Arcana",
+      "suit": "Wands",
+      "rank": 14,
+      "upright": {
+        "keywords": [
+          "Vision",
+          "leadership",
+          "purpose"
+        ],
+        "interpretation": "A clear sense of purpose may help you choose where to put your effort. Notice how you can offer direction while leaving other people room to shape the work with you.",
+        "daily": {
+          "colourName": "Clay",
+          "colourHex": "#b0654a",
+          "object": "A wooden ruler",
+          "bestHour": "Before 1 pm",
+          "career": {
+            "score": 85,
+            "line": "Explain the purpose of a task before asking others to act."
+          },
+          "relationship": {
+            "score": 72,
+            "line": "Share a plan as an invitation to discuss rather than a settled decision."
+          },
+          "social": {
+            "score": 76,
+            "line": "Help a group choose a direction while making space for different voices."
+          }
+        },
+        "questionPositions": {
+          "situation": "You may be holding a broad view of what you want to do. Notice which parts need your direction and which need other people's judgement.",
+          "action": "State the purpose clearly, then ask what others need to contribute. Leave room for a useful approach you did not invent.",
+          "outcome": "Reflect on the kind of leadership you respect when a shared purpose matters more than personal control."
+        },
+        "namedPersonPositions": {
+          "you": "You may have a strong view of how this connection should develop. Say what you hope for while keeping the other person's choices separate.",
+          "them": "Ask what direction the other person wants for themselves. Their priorities are not yours to organise on their behalf.",
+          "connection": "Consider how shared direction can grow from two clear voices. A common plan needs participation as well as enthusiasm."
+        }
+      },
+      "reversed": {
+        "keywords": [
+          "Flexibility",
+          "listening",
+          "proportion"
+        ],
+        "interpretation": "A clear vision may be becoming harder to distinguish from needing things done your way. Notice where listening to a different approach would let you keep the purpose without controlling every detail.",
+        "daily": {
+          "colourName": "Sage",
+          "colourHex": "#7d8f6a",
+          "object": "A loosely tied cord",
+          "bestHour": "After 3 pm",
+          "career": {
+            "score": 55,
+            "line": "Ask for an alternative approach before defending your preferred plan."
+          },
+          "relationship": {
+            "score": 58,
+            "line": "Check whether a shared decision has room for an honest no."
+          },
+          "social": {
+            "score": 54,
+            "line": "Let someone else shape an activity you usually organise."
+          }
+        },
+        "questionPositions": {
+          "situation": "You may be holding tightly to a plan because it carries something important to you. Separate that purpose from the need to direct every step.",
+          "action": "Ask for one different view and consider it on its own terms. You can revise the approach without abandoning what matters.",
+          "outcome": "Reflect on where conviction helps you participate and where it makes collaboration harder."
+        },
+        "namedPersonPositions": {
+          "you": "You may be trying to resolve uncertainty by setting the direction for both of you. Notice which decisions are yours and which need agreement.",
+          "them": "Ask the other person for their view without preparing a rebuttal while they speak. Their preferences do not need to match yours to count.",
+          "connection": "The connection may need a more equal say in shared plans. Consider which decision would benefit from being reopened together."
+        }
+      }
+    },
+    {
+      "id": "ace-of-cups",
+      "name": "Ace of Cups",
+      "arcana": "Minor Arcana",
+      "suit": "Cups",
+      "rank": 1,
+      "upright": {
+        "keywords": [
+          "Openness",
+          "feeling",
+          "kindness"
+        ],
+        "interpretation": "A feeling may be worth noticing before you try to explain it away. Make a little room for what moves you, and choose how much of it you want to express.",
+        "daily": {
+          "colourName": "Blue",
+          "colourHex": "#6f8ca2",
+          "object": "A ceramic cup",
+          "bestHour": "Before 10 am",
+          "career": {
+            "score": 68,
+            "line": "Notice which part of a task you care about beyond getting it finished."
+          },
+          "relationship": {
+            "score": 84,
+            "line": "Offer a simple expression of affection without asking it to prove anything."
+          },
+          "social": {
+            "score": 77,
+            "line": "Receive a kind gesture without feeling obliged to match it immediately."
+          }
+        },
+        "questionPositions": {
+          "situation": "You may be becoming aware of a feeling or wish that has not yet taken clear shape. Notice it without requiring a conclusion.",
+          "action": "Give the feeling a small expression through words, attention or a creative activity. Choose a form that respects your comfort.",
+          "outcome": "Reflect on what openness means when you can feel something without needing to act on all of it."
+        },
+        "namedPersonPositions": {
+          "you": "You may want to share a softer or more personal part of your experience. Choose what feels yours to offer freely.",
+          "them": "Ask how the other person is feeling and allow their answer to stand. This card cannot supply that answer for them.",
+          "connection": "Consider how care is offered and received in small moments. Leave room for each person to express it differently."
+        }
+      },
+      "reversed": {
+        "keywords": [
+          "Privacy",
+          "replenishment",
+          "permission"
+        ],
+        "interpretation": "You may need some private space before putting a feeling into words. Notice what you can give comfortably today, without treating an empty moment as something you have to fill for others.",
+        "daily": {
+          "colourName": "Sage",
+          "colourHex": "#7d8f6a",
+          "object": "An empty jug",
+          "bestHour": "After 4 pm",
+          "career": {
+            "score": 55,
+            "line": "Set aside a short pause before responding to another request."
+          },
+          "relationship": {
+            "score": 62,
+            "line": "Say that you need time to understand a feeling before discussing it."
+          },
+          "social": {
+            "score": 58,
+            "line": "Choose a small act of care you can offer without stretching yourself."
+          }
+        },
+        "questionPositions": {
+          "situation": "You may feel pressure to be available before you have understood your own response. Notice what is still taking shape privately.",
+          "action": "Make space to name the feeling to yourself before deciding whether to share it. You do not owe an immediate explanation.",
+          "outcome": "Consider how you recognise the difference between a freely offered kindness and giving more than you want to."
+        },
+        "namedPersonPositions": {
+          "you": "You may be holding something back while you work out what it means to you. Communicate the need for time without promising an answer you do not have.",
+          "them": "Ask whether the other person wants to talk or would prefer space. Quietness alone does not tell you what they are experiencing.",
+          "connection": "The connection may need room for feelings that are not ready to be shared. Discuss how to respect that space without guessing at its meaning."
+        }
+      }
+    },
+    {
+      "id": "two-of-cups",
+      "name": "Two of Cups",
+      "arcana": "Minor Arcana",
+      "suit": "Cups",
+      "rank": 2,
+      "upright": {
+        "keywords": [
+          "Reciprocity",
+          "meeting",
+          "respect"
+        ],
+        "interpretation": "A conversation may feel more useful when both people have room to shape it. Notice what you want to offer and what you want to understand, without assuming the two must be identical.",
+        "daily": {
+          "colourName": "Rose",
+          "colourHex": "#c98e89",
+          "object": "Two matching coasters",
+          "bestHour": "After 11 am",
+          "career": {
+            "score": 72,
+            "line": "Check that a collaboration makes room for each person's contribution."
+          },
+          "relationship": {
+            "score": 86,
+            "line": "Ask a question whose answer you are willing to hear fully."
+          },
+          "social": {
+            "score": 78,
+            "line": "Make time for a conversation where neither person has to perform."
+          }
+        },
+        "questionPositions": {
+          "situation": "You may be considering how two perspectives meet. Notice the points of agreement while keeping each person's wishes distinct.",
+          "action": "State what you can offer and ask what the other person wants. Make any agreement clear enough for both of you to recognise.",
+          "outcome": "Reflect on what mutual participation looks like beyond simply wanting the same thing."
+        },
+        "namedPersonPositions": {
+          "you": "You may be ready to meet the other person more openly. Name your own preference while leaving theirs genuinely undecided.",
+          "them": "Invite the other person to describe what they want from this exchange. Similarity is something to discover, not presume.",
+          "connection": "Consider whether listening and choosing move in both directions. A shared understanding can include a respectful difference."
+        }
+      },
+      "reversed": {
+        "keywords": [
+          "Realignment",
+          "difference",
+          "honesty"
+        ],
+        "interpretation": "You may be noticing a difference that an easy agreement has hidden. Give it clear words, and allow understanding to matter more than sounding as though you want exactly the same thing.",
+        "daily": {
+          "colourName": "Clay",
+          "colourHex": "#b0654a",
+          "object": "A folded napkin",
+          "bestHour": "Before 5 pm",
+          "career": {
+            "score": 57,
+            "line": "Clarify a responsibility that each person understood differently."
+          },
+          "relationship": {
+            "score": 59,
+            "line": "Say where your preference differs without assigning blame."
+          },
+          "social": {
+            "score": 61,
+            "line": "Check whether an arrangement still suits both people involved."
+          }
+        },
+        "questionPositions": {
+          "situation": "You may be working from an agreement that was never quite shared. Notice which expectations came from conversation and which came from assumption.",
+          "action": "Name one difference and ask how the other person understands it. Do not rush past the answer to restore a pleasant surface.",
+          "outcome": "Consider what honest agreement would require, including the possibility of choosing differently."
+        },
+        "namedPersonPositions": {
+          "you": "You may be agreeing outwardly while feeling something else. Notice what you want to say before resentment takes the place of a request.",
+          "them": "Ask for the other person's actual preference rather than offering only options that suit yours. Leave room for an answer you had not considered.",
+          "connection": "The connection may need clearer terms for how you spend time or share effort. Understanding a difference need not mean erasing it."
+        }
+      }
+    },
+    {
+      "id": "three-of-cups",
+      "name": "Three of Cups",
+      "arcana": "Minor Arcana",
+      "suit": "Cups",
+      "rank": 3,
+      "upright": {
+        "keywords": [
+          "Friendship",
+          "company",
+          "appreciation"
+        ],
+        "interpretation": "Shared enjoyment may deserve a place alongside everything you need to get done. Notice who makes room for you, and consider a simple way to appreciate being part of one another's lives.",
+        "daily": {
+          "colourName": "Sage",
+          "colourHex": "#7d8f6a",
+          "object": "A serving bowl",
+          "bestHour": "After 5 pm",
+          "career": {
+            "score": 74,
+            "line": "Recognise the people who make a shared task easier to do."
+          },
+          "relationship": {
+            "score": 78,
+            "line": "Make room for the friendships that sit alongside your closest connection."
+          },
+          "social": {
+            "score": 88,
+            "line": "Invite someone into an easy moment of company."
+          }
+        },
+        "questionPositions": {
+          "situation": "You may be thinking about the people who help you feel part of something. Notice how support and enjoyment move through that group.",
+          "action": "Offer a simple invitation or a specific thank you. Let the occasion fit the people rather than an image of how it should look.",
+          "outcome": "Reflect on what friendship gives you and how you like to participate in it."
+        },
+        "namedPersonPositions": {
+          "you": "You may want to share appreciation or bring a little lightness to this connection. Notice what you enjoy together without making it an obligation.",
+          "them": "Ask which kinds of company the other person enjoys. Their wider friendships need not compete with the time you share.",
+          "connection": "Consider how this connection sits within a wider circle of people. Make room for shared enjoyment and independent friendships."
+        }
+      },
+      "reversed": {
+        "keywords": [
+          "Inclusion",
+          "discernment",
+          "space"
+        ],
+        "interpretation": "A group rhythm may not leave much room for how you actually want to join in. Notice whether you need a quieter invitation, a clearer boundary or simply a different kind of company today.",
+        "daily": {
+          "colourName": "Slate",
+          "colourHex": "#6b7280",
+          "object": "A place card",
+          "bestHour": "Before 6 pm",
+          "career": {
+            "score": 57,
+            "line": "Check whose contribution is missing from a group conversation."
+          },
+          "relationship": {
+            "score": 63,
+            "line": "Discuss time together without treating other friendships as rivals."
+          },
+          "social": {
+            "score": 56,
+            "line": "Decline a gathering you would attend only from obligation."
+          }
+        },
+        "questionPositions": {
+          "situation": "You may feel caught between belonging to a group and keeping your own preferences. Notice where participation has started to feel like a performance.",
+          "action": "Choose how you want to take part and communicate that choice plainly. You can value people without joining every occasion.",
+          "outcome": "Consider what inclusion means when people have different appetites for company and different ways of showing up."
+        },
+        "namedPersonPositions": {
+          "you": "You may be comparing the attention you receive with what others receive. Name your own wish without turning the wider group into a contest.",
+          "them": "Ask how the other person experiences the group around you. Do not use second-hand impressions in place of their account.",
+          "connection": "The connection may need space away from group expectations. Consider what you want to understand directly between the two of you."
+        }
+      }
+    },
+    {
+      "id": "four-of-cups",
+      "name": "Four of Cups",
+      "arcana": "Minor Arcana",
+      "suit": "Cups",
+      "rank": 4,
+      "upright": {
+        "keywords": [
+          "Reflection",
+          "pause",
+          "attention"
+        ],
+        "interpretation": "A familiar choice may not be holding your attention today. Pause to notice whether you need something different or a quieter moment to recognise what is already being offered.",
+        "daily": {
+          "colourName": "Blue",
+          "colourHex": "#6f8ca2",
+          "object": "A window-side cushion",
+          "bestHour": "After 2 pm",
+          "career": {
+            "score": 52,
+            "line": "Review what has made a familiar task feel distant or dull."
+          },
+          "relationship": {
+            "score": 58,
+            "line": "Notice a small offer of connection before deciding how to respond."
+          },
+          "social": {
+            "score": 54,
+            "line": "Choose whether you want company instead of drifting into a default answer."
+          }
+        },
+        "questionPositions": {
+          "situation": "You may be disengaged from options that once felt relevant. Notice whether the missing piece is interest, space or a clearer sense of purpose.",
+          "action": "Look carefully at one available option without requiring yourself to want it. Then make a deliberate choice rather than leaving it unanswered.",
+          "outcome": "Reflect on how you tell the difference between needing a pause and overlooking something you still value."
+        },
+        "namedPersonPositions": {
+          "you": "You may be less responsive than usual in this connection. Notice what you want to explain so the other person does not have to guess.",
+          "them": "Ask whether the other person wants a different kind of invitation. A quiet response does not reveal its cause on its own.",
+          "connection": "Consider whether familiar ways of reaching out still suit both of you. A direct check may be more useful than repeating the same gesture."
+        }
+      },
+      "reversed": {
+        "keywords": [
+          "Re-engagement",
+          "curiosity",
+          "choice"
+        ],
+        "interpretation": "You may be noticing interest in something you had stopped paying attention to. Explore it without requiring the feeling to last, and let a small choice be enough for today.",
+        "daily": {
+          "colourName": "Sage",
+          "colourHex": "#7d8f6a",
+          "object": "A newly opened book",
+          "bestHour": "Before noon",
+          "career": {
+            "score": 65,
+            "line": "Revisit a task with one specific question you want to answer."
+          },
+          "relationship": {
+            "score": 70,
+            "line": "Respond to an invitation in a way that fits your present interest."
+          },
+          "social": {
+            "score": 67,
+            "line": "Consider a simple plan you would usually dismiss automatically."
+          }
+        },
+        "questionPositions": {
+          "situation": "You may be finding a little room to engage after a period of distance. Notice what feels different without demanding a complete change of outlook.",
+          "action": "Give one option a fresh look and decide on a manageable step. You can remain selective while being open.",
+          "outcome": "Reflect on what helps you participate by choice rather than through habit or pressure."
+        },
+        "namedPersonPositions": {
+          "you": "You may be ready to reconnect with something you value here. Say what kind of contact feels welcome now.",
+          "them": "Ask whether an earlier offer still appeals to the other person. Their answer may have changed, just as yours can.",
+          "connection": "The connection may invite a fresh look at a familiar pattern. Consider one small change that both people would like to try."
+        }
+      }
+    },
+    {
+      "id": "five-of-cups",
+      "name": "Five of Cups",
+      "arcana": "Minor Arcana",
+      "suit": "Cups",
+      "rank": 5,
+      "upright": {
+        "keywords": [
+          "Disappointment",
+          "acknowledgement",
+          "perspective"
+        ],
+        "interpretation": "Something may not have matched what you hoped for. Let yourself name the disappointment, then notice what remains available without asking it to cancel the feeling.",
+        "daily": {
+          "colourName": "Slate",
+          "colourHex": "#6b7280",
+          "object": "A mended cloth",
+          "bestHour": "Before 4 pm",
+          "career": {
+            "score": 51,
+            "line": "Separate a disappointing result from what the attempt taught you."
+          },
+          "relationship": {
+            "score": 57,
+            "line": "Say what did not feel right without making it the whole story."
+          },
+          "social": {
+            "score": 60,
+            "line": "Accept quiet company without feeling obliged to sound cheerful."
+          }
+        },
+        "questionPositions": {
+          "situation": "You may be focusing on the gap between a hope and what actually happened. Notice the specific disappointment before drawing a wider conclusion.",
+          "action": "Name what mattered about the missed expectation, then identify what choices remain. You do not have to force a positive account.",
+          "outcome": "Reflect on how to acknowledge disappointment while leaving room for experiences that do not fit that one feeling."
+        },
+        "namedPersonPositions": {
+          "you": "You may be carrying a disappointment into this exchange. Explain the particular moment rather than expecting the other person to infer it.",
+          "them": "Ask how the other person experienced what happened. Their account may differ without making your own feeling less real.",
+          "connection": "Consider what needs acknowledgement before you discuss a next step. Making room for two accounts can be more useful than deciding whose matters most."
+        }
+      },
+      "reversed": {
+        "keywords": [
+          "Acceptance",
+          "openness",
+          "repair"
+        ],
+        "interpretation": "You may be ready to give a disappointment a little less space in your day. Notice what you want to return to, without requiring yourself to pretend that the experience did not matter.",
+        "daily": {
+          "colourName": "Sage",
+          "colourHex": "#7d8f6a",
+          "object": "A repaired button",
+          "bestHour": "After 10 am",
+          "career": {
+            "score": 63,
+            "line": "Carry one useful lesson into a fresh attempt."
+          },
+          "relationship": {
+            "score": 68,
+            "line": "Consider what an honest repair would involve for you."
+          },
+          "social": {
+            "score": 65,
+            "line": "Reach out when company feels welcome, without forcing a bright mood."
+          }
+        },
+        "questionPositions": {
+          "situation": "You may be reconsidering a situation that has been defined by disappointment. Notice which part still needs attention and which part you are ready to set down.",
+          "action": "Choose one present action that matters to you. It need not rewrite the past or settle every feeling about it.",
+          "outcome": "Reflect on what acceptance means when you can acknowledge an experience without making it the centre of each new choice."
+        },
+        "namedPersonPositions": {
+          "you": "You may be open to a conversation about repair. Be clear about what you need rather than treating readiness as an obligation to resume an old pattern.",
+          "them": "Ask whether the other person wants to revisit the experience. Their readiness needs to come from them, not from your wish for closure.",
+          "connection": "The connection may need a practical account of what repair would mean. Discuss changes in behaviour rather than relying on a reassuring phrase."
+        }
+      }
+    },
+    {
+      "id": "six-of-cups",
+      "name": "Six of Cups",
+      "arcana": "Minor Arcana",
+      "suit": "Cups",
+      "rank": 6,
+      "upright": {
+        "keywords": [
+          "Memory",
+          "familiarity",
+          "kindness"
+        ],
+        "interpretation": "A familiar detail may remind you of something you still value. Notice what feels worth carrying into the present, while allowing yourself and the people around you to have changed.",
+        "daily": {
+          "colourName": "Rose",
+          "colourHex": "#c98e89",
+          "object": "An old postcard",
+          "bestHour": "After 3 pm",
+          "career": {
+            "score": 65,
+            "line": "Revisit an approach that once made a task enjoyable."
+          },
+          "relationship": {
+            "score": 78,
+            "line": "Share a warm memory without asking the present to match it."
+          },
+          "social": {
+            "score": 80,
+            "line": "Offer a small kindness with no need to keep a tally."
+          }
+        },
+        "questionPositions": {
+          "situation": "You may be viewing the present through a familiar memory or pattern. Notice what that memory helps you value and what it leaves out.",
+          "action": "Bring one useful quality from the memory into something you do now. Let the present people and circumstances remain their own.",
+          "outcome": "Reflect on which familiar habits still feel chosen and which you keep simply because they are familiar."
+        },
+        "namedPersonPositions": {
+          "you": "You may be drawn to what has felt easy or known in this connection. Notice how the other person is showing up now, as well as what you remember.",
+          "them": "Ask what the other person remembers and values. A shared past does not guarantee an identical account of it.",
+          "connection": "Consider which traditions still feel welcoming and which need room to change. Familiarity can support a connection without defining every part of it."
+        }
+      },
+      "reversed": {
+        "keywords": [
+          "Updating",
+          "independence",
+          "present"
+        ],
+        "interpretation": "An old role or memory may be shaping a choice that belongs to your present self. Notice what has changed, and allow a familiar way of doing things to be reconsidered.",
+        "daily": {
+          "colourName": "Blue",
+          "colourHex": "#6f8ca2",
+          "object": "A new page in a notebook",
+          "bestHour": "Before 2 pm",
+          "career": {
+            "score": 61,
+            "line": "Question a process kept mainly because it has always been done that way."
+          },
+          "relationship": {
+            "score": 64,
+            "line": "Describe how a current preference differs from an earlier one."
+          },
+          "social": {
+            "score": 60,
+            "line": "Let an old friend discover something new about you."
+          }
+        },
+        "questionPositions": {
+          "situation": "You may be relying on an earlier version of yourself to make a present decision. Notice which assumptions have not kept pace with your experience.",
+          "action": "Name one thing that has changed and adjust the choice around it. You can respect a memory without repeating it.",
+          "outcome": "Reflect on what you want to carry forward and what you are ready to stop treating as a fixed part of yourself."
+        },
+        "namedPersonPositions": {
+          "you": "You may feel expected to play a familiar role here. Explain what no longer fits and what you would like to try instead.",
+          "them": "Ask who the other person is becoming rather than relying only on what you have known of them before.",
+          "connection": "The connection may need room to update its old expectations. Consider how to remain familiar without keeping each other in place."
+        }
+      }
+    },
+    {
+      "id": "seven-of-cups",
+      "name": "Seven of Cups",
+      "arcana": "Minor Arcana",
+      "suit": "Cups",
+      "rank": 7,
+      "upright": {
+        "keywords": [
+          "Possibility",
+          "discernment",
+          "imagination"
+        ],
+        "interpretation": "Several possibilities may be more appealing in imagination than they are clear in practice. Notice what you know about each one, and choose a question that brings one option closer to everyday reality.",
+        "daily": {
+          "colourName": "Blue",
+          "colourHex": "#6f8ca2",
+          "object": "A set of colour swatches",
+          "bestHour": "Before noon",
+          "career": {
+            "score": 62,
+            "line": "Compare the actual demands of an appealing idea with its outline."
+          },
+          "relationship": {
+            "score": 60,
+            "line": "Distinguish what you hope for from what has been discussed."
+          },
+          "social": {
+            "score": 66,
+            "line": "Choose a plan for how it would feel to attend, not only how it sounds."
+          }
+        },
+        "questionPositions": {
+          "situation": "You may be considering several attractive possibilities with uneven information. Notice where imagination is filling gaps that need a practical question.",
+          "action": "Investigate one option in enough detail to understand what choosing it would involve. You do not have to explore them all at once.",
+          "outcome": "Reflect on the values that help you choose when several different stories appeal to you."
+        },
+        "namedPersonPositions": {
+          "you": "You may be imagining several versions of this connection. Notice which parts come from actual exchanges and which remain your own hopes.",
+          "them": "Ask about the other person's intentions rather than choosing the explanation you most want to hear.",
+          "connection": "Consider what is known between you and what has only been imagined. A shared conversation can clarify the difference without settling everything."
+        }
+      },
+      "reversed": {
+        "keywords": [
+          "Clarity",
+          "selection",
+          "grounding"
+        ],
+        "interpretation": "You may be ready to narrow a set of possibilities to something you can actually explore. Notice what you are choosing for, and let the other options remain unchosen without endlessly rehearsing them.",
+        "daily": {
+          "colourName": "Clay",
+          "colourHex": "#b0654a",
+          "object": "A single index card",
+          "bestHour": "After 1 pm",
+          "career": {
+            "score": 70,
+            "line": "Pick one workable approach using the criteria that matter most."
+          },
+          "relationship": {
+            "score": 65,
+            "line": "Say what you want to understand rather than testing several unspoken stories."
+          },
+          "social": {
+            "score": 63,
+            "line": "Choose a manageable invitation and leave space around it."
+          }
+        },
+        "questionPositions": {
+          "situation": "You may be moving from imagining possibilities towards making a specific choice. Notice which information is enough and which questions remain open.",
+          "action": "Select one practical next step and record why it fits. You can review the choice without reopening every alternative immediately.",
+          "outcome": "Reflect on how you want to stay accountable to your own reasons once you have chosen a direction."
+        },
+        "namedPersonPositions": {
+          "you": "You may want a clearer account of what this connection means to you. Begin with your own wishes before asking for someone else's answer.",
+          "them": "Ask a direct question and listen to the answer given. Avoid replacing it with a more appealing possibility.",
+          "connection": "The connection may benefit from clearer language about expectations. Consider which assumption you can turn into an honest question."
+        }
+      }
+    },
+    {
+      "id": "eight-of-cups",
+      "name": "Eight of Cups",
+      "arcana": "Minor Arcana",
+      "suit": "Cups",
+      "rank": 8,
+      "upright": {
+        "keywords": [
+          "Reassessment",
+          "departure",
+          "purpose"
+        ],
+        "interpretation": "Something familiar may no longer fit what you want to give your attention to. Notice what feels missing, and consider a change without needing to declare the whole experience worthless.",
+        "daily": {
+          "colourName": "Slate",
+          "colourHex": "#6b7280",
+          "object": "A walking shoe",
+          "bestHour": "Before 5 pm",
+          "career": {
+            "score": 62,
+            "line": "Review whether a recurring task still serves a useful purpose."
+          },
+          "relationship": {
+            "score": 56,
+            "line": "Name what feels absent before deciding what to do about it."
+          },
+          "social": {
+            "score": 58,
+            "line": "Step back from an optional routine that no longer interests you."
+          }
+        },
+        "questionPositions": {
+          "situation": "You may be questioning a situation that looks adequate but feels disconnected from what matters to you. Notice the particular mismatch.",
+          "action": "Describe what you need more clearly, then consider whether an adjustment or a step back would fit. You do not have to decide everything at once.",
+          "outcome": "Reflect on how you recognise a meaningful change of direction without treating every uncomfortable moment as a reason to leave."
+        },
+        "namedPersonPositions": {
+          "you": "You may need space to understand what feels missing here. Describe that need without using distance as a test of the other person.",
+          "them": "Ask how the other person experiences the connection at present. Do not assume their reasons for staying or stepping back.",
+          "connection": "Consider whether the way you relate still fits both people's needs. An honest conversation can include uncertainty without demanding an immediate decision."
+        }
+      },
+      "reversed": {
+        "keywords": [
+          "Ambivalence",
+          "checking",
+          "choice"
+        ],
+        "interpretation": "You may be moving back and forth over whether something still belongs in your life. Separate familiarity from preference, and notice what information would help you make a more deliberate choice.",
+        "daily": {
+          "colourName": "Blue",
+          "colourHex": "#6f8ca2",
+          "object": "A reusable tag",
+          "bestHour": "After 11 am",
+          "career": {
+            "score": 57,
+            "line": "Identify what keeps you returning to a task you have considered dropping."
+          },
+          "relationship": {
+            "score": 61,
+            "line": "Say what remains undecided without promising a feeling you do not have."
+          },
+          "social": {
+            "score": 55,
+            "line": "Revisit an invitation because you want to, rather than from habit."
+          }
+        },
+        "questionPositions": {
+          "situation": "You may be unsure whether to keep investing attention or step back. Notice whether each option is being judged by the same criteria.",
+          "action": "Write down what would need to change for continued involvement to feel chosen. Ask about what can actually be discussed.",
+          "outcome": "Reflect on what would make staying or leaving a considered choice rather than a way to avoid uncertainty."
+        },
+        "namedPersonPositions": {
+          "you": "You may be returning to a familiar pattern without checking whether you want it now. Name what you hope would be different.",
+          "them": "Ask the other person what they are choosing at present. Their earlier answer cannot settle their current preference.",
+          "connection": "The connection may need a clearer conversation about continued involvement. Consider what each person is freely willing to offer now."
+        }
+      }
+    },
+    {
+      "id": "nine-of-cups",
+      "name": "Nine of Cups",
+      "arcana": "Minor Arcana",
+      "suit": "Cups",
+      "rank": 9,
+      "upright": {
+        "keywords": [
+          "Satisfaction",
+          "enjoyment",
+          "appreciation"
+        ],
+        "interpretation": "You may have something worth enjoying without improving or explaining it. Notice what feels satisfying on your own terms, and let the moment be enough without turning it into a standard for every day.",
+        "daily": {
+          "colourName": "Ochre",
+          "colourHex": "#c79a3f",
+          "object": "A favourite plate",
+          "bestHour": "After 6 pm",
+          "career": {
+            "score": 76,
+            "line": "Acknowledge a piece of work that meets the purpose you set for it."
+          },
+          "relationship": {
+            "score": 79,
+            "line": "Enjoy a comfortable moment without checking what it means about the future."
+          },
+          "social": {
+            "score": 74,
+            "line": "Choose an activity you like without needing everyone to share the taste."
+          }
+        },
+        "questionPositions": {
+          "situation": "You may be considering what satisfaction looks like when it is defined by your own experience. Notice what is already worth appreciating.",
+          "action": "Give your attention to one thing you genuinely enjoy and let it remain ordinary. It does not need to become an achievement.",
+          "outcome": "Reflect on what enough feels like when you are not comparing your experience with someone else's."
+        },
+        "namedPersonPositions": {
+          "you": "You may feel comfortable with what this connection offers in a particular moment. Appreciate that without expecting it to meet every need.",
+          "them": "Ask what the other person enjoys about the time you share. Their answer may reveal a detail different from your own.",
+          "connection": "Consider how shared enjoyment and individual contentment support each other. Neither person needs to supply all of the other's satisfaction."
+        }
+      },
+      "reversed": {
+        "keywords": [
+          "Reconsideration",
+          "substance",
+          "enough"
+        ],
+        "interpretation": "Something that looks satisfying from the outside may not feel that way to you. Notice which part is genuinely enjoyable and which part you have been trying to make yourself want.",
+        "daily": {
+          "colourName": "Clay",
+          "colourHex": "#b0654a",
+          "object": "A plain bowl",
+          "bestHour": "Before 3 pm",
+          "career": {
+            "score": 56,
+            "line": "Check whether a finished task met your real purpose or only looked complete."
+          },
+          "relationship": {
+            "score": 60,
+            "line": "Say what you need without comparing the connection with an ideal picture."
+          },
+          "social": {
+            "score": 57,
+            "line": "Choose company for the experience rather than how it might appear."
+          }
+        },
+        "questionPositions": {
+          "situation": "You may have reached something you expected to enjoy and found your response more complicated. Notice the expectation before judging the feeling.",
+          "action": "Identify one source of satisfaction that fits you now. You do not need to defend an earlier wish by continuing to want it.",
+          "outcome": "Reflect on the difference between an appealing image of contentment and an experience that actually feels enough."
+        },
+        "namedPersonPositions": {
+          "you": "You may be asking this connection to confirm that everything is as it should be. Notice the specific need underneath that wish.",
+          "them": "Ask what feels satisfying or missing for the other person without assuming a pleasant appearance tells the whole story.",
+          "connection": "The connection may need a more honest account of enjoyment and unmet expectations. Consider what can be discussed without assigning either person the job of providing everything."
+        }
+      }
+    },
+    {
+      "id": "ten-of-cups",
+      "name": "Ten of Cups",
+      "arcana": "Minor Arcana",
+      "suit": "Cups",
+      "rank": 10,
+      "upright": {
+        "keywords": [
+          "Belonging",
+          "harmony",
+          "shared care"
+        ],
+        "interpretation": "A sense of belonging may live in small, repeated acts of care. Notice what makes shared time feel welcoming, while leaving room for each person to be more than a role in the picture.",
+        "daily": {
+          "colourName": "Rose",
+          "colourHex": "#c98e89",
+          "object": "A woven blanket",
+          "bestHour": "After 5 pm",
+          "career": {
+            "score": 73,
+            "line": "Support a team routine that makes participation easier for everyone."
+          },
+          "relationship": {
+            "score": 87,
+            "line": "Ask what a good ordinary day together looks like to each of you."
+          },
+          "social": {
+            "score": 84,
+            "line": "Appreciate the people who make room for different ways of belonging."
+          }
+        },
+        "questionPositions": {
+          "situation": "You may be considering a shared picture of what a fulfilling life or community looks like. Notice whose preferences are included in that picture.",
+          "action": "Name one ordinary practice that helps people feel welcome, then ask how it works for others. Let shared care remain practical.",
+          "outcome": "Reflect on what belonging means when people can stay distinct rather than having to complete an ideal picture."
+        },
+        "namedPersonPositions": {
+          "you": "You may value the sense of home or community in this connection. Notice the everyday actions that make that feeling real for you.",
+          "them": "Ask what helps the other person feel at home with you. Their answer may differ from the picture you carry.",
+          "connection": "Consider how care is shared in ordinary moments and whether each person has room to be themselves within it."
+        }
+      },
+      "reversed": {
+        "keywords": [
+          "Honesty",
+          "difference",
+          "redefinition"
+        ],
+        "interpretation": "An ideal picture of togetherness may leave little room for your actual experience. Notice what you would like to say more honestly, and let a difference exist without declaring the whole connection a failure.",
+        "daily": {
+          "colourName": "Slate",
+          "colourHex": "#6b7280",
+          "object": "An unfinished sketch",
+          "bestHour": "Before 4 pm",
+          "career": {
+            "score": 56,
+            "line": "Check whether a team's friendly appearance leaves room for honest feedback."
+          },
+          "relationship": {
+            "score": 61,
+            "line": "Describe an unmet need without comparing your life with someone else's."
+          },
+          "social": {
+            "score": 58,
+            "line": "Make room for different ways of joining a shared occasion."
+          }
+        },
+        "questionPositions": {
+          "situation": "You may be comparing a shared experience with an ideal that no one has fully discussed. Notice whose expectations the picture contains.",
+          "action": "Describe one concrete need or difference and ask how others see it. A useful conversation can be less tidy than a reassuring image.",
+          "outcome": "Reflect on what a more honest version of belonging would include, especially the parts that do not look harmonious."
+        },
+        "namedPersonPositions": {
+          "you": "You may feel pressure to keep this connection looking easy. Notice what needs words even if it interrupts that appearance.",
+          "them": "Ask how the other person experiences your shared expectations. Do not assume they want the same picture of togetherness.",
+          "connection": "The connection may need room for different needs within a shared life or routine. Consider what can be renegotiated without demanding sameness."
+        }
+      }
+    },
+    {
+      "id": "page-of-cups",
+      "name": "Page of Cups",
+      "arcana": "Minor Arcana",
+      "suit": "Cups",
+      "rank": 11,
+      "upright": {
+        "keywords": [
+          "Sensitivity",
+          "wonder",
+          "expression"
+        ],
+        "interpretation": "A small feeling or unexpected idea may be asking for gentle attention. Notice it before deciding whether it is sensible, and choose a simple way to express what interests you.",
+        "daily": {
+          "colourName": "Blue",
+          "colourHex": "#6f8ca2",
+          "object": "A small drawing",
+          "bestHour": "After 10 am",
+          "career": {
+            "score": 66,
+            "line": "Give an imaginative idea a little space before evaluating it."
+          },
+          "relationship": {
+            "score": 80,
+            "line": "Put a tender feeling into plain words you are comfortable sharing."
+          },
+          "social": {
+            "score": 75,
+            "line": "Respond to a small kindness with curiosity rather than suspicion."
+          }
+        },
+        "questionPositions": {
+          "situation": "You may be noticing a feeling or creative possibility that is still unfamiliar. Let it be tentative while you work out what it means to you.",
+          "action": "Give the feeling a small form, such as a sentence or a sketch. You can explore it without making a large declaration.",
+          "outcome": "Reflect on how to take a tender or unusual idea seriously without requiring certainty about it."
+        },
+        "namedPersonPositions": {
+          "you": "You may want to express something personal but not yet have settled words. Start with what you can say honestly and simply.",
+          "them": "Ask a gentle question and let the other person choose how much to share. Curiosity does not entitle you to a private answer.",
+          "connection": "Consider how small expressions of care are received here. A tentative gesture needs room to remain tentative."
+        }
+      },
+      "reversed": {
+        "keywords": [
+          "Naming",
+          "privacy",
+          "perspective"
+        ],
+        "interpretation": "A feeling may be hard to name when you are also judging how it should look. Give yourself space to describe it privately before deciding whether it needs an audience or an action.",
+        "daily": {
+          "colourName": "Clay",
+          "colourHex": "#b0654a",
+          "object": "A closed envelope",
+          "bestHour": "Before 2 pm",
+          "career": {
+            "score": 53,
+            "line": "Separate feedback on an idea from a judgement of your whole contribution."
+          },
+          "relationship": {
+            "score": 60,
+            "line": "Ask for clarification when a message touches a sensitive point."
+          },
+          "social": {
+            "score": 56,
+            "line": "Choose how much personal detail you want to share today."
+          }
+        },
+        "questionPositions": {
+          "situation": "You may be treating a tentative feeling as if it already needs a clear explanation. Notice what you actually know about your response.",
+          "action": "Write a few plain words about the feeling without polishing them for someone else. Then choose whether a conversation would be useful.",
+          "outcome": "Reflect on what helps you express sensitivity without turning every response into a judgement of yourself."
+        },
+        "namedPersonPositions": {
+          "you": "You may be relying on an indirect hint to communicate a need. Notice what you could ask for more clearly while respecting your privacy.",
+          "them": "Ask what the other person meant instead of building a story around an ambiguous message. Leave space for their clarification.",
+          "connection": "The connection may need simpler words around a sensitive topic. Consider what can be said directly and what each person wants to keep private."
+        }
+      }
+    },
+    {
+      "id": "knight-of-cups",
+      "name": "Knight of Cups",
+      "arcana": "Minor Arcana",
+      "suit": "Cups",
+      "rank": 12,
+      "upright": {
+        "keywords": [
+          "Invitation",
+          "imagination",
+          "sincerity"
+        ],
+        "interpretation": "You may want to give a feeling a thoughtful expression. Notice how an invitation, creative act or honest conversation could reflect what matters to you without asking for a particular response.",
+        "daily": {
+          "colourName": "Rose",
+          "colourHex": "#c98e89",
+          "object": "A handwritten card",
+          "bestHour": "After 4 pm",
+          "career": {
+            "score": 70,
+            "line": "Connect an idea to the purpose that makes you care about it."
+          },
+          "relationship": {
+            "score": 83,
+            "line": "Offer a thoughtful invitation with room for an honest answer."
+          },
+          "social": {
+            "score": 76,
+            "line": "Make a small gesture that reflects what you know someone enjoys."
+          }
+        },
+        "questionPositions": {
+          "situation": "You may be drawn to an idea because of how it feels and what it represents. Notice how that feeling could take a practical form.",
+          "action": "Offer a clear, sincere invitation or proposal and leave room for the response. Let the gesture say what you mean without promising more.",
+          "outcome": "Reflect on how you want to bring imagination into everyday actions while staying honest about your intentions."
+        },
+        "namedPersonPositions": {
+          "you": "You may want to communicate care in a more deliberate way. Choose a gesture that fits what you actually know about this connection.",
+          "them": "Ask what kind of invitation the other person would welcome. A thoughtful gesture still leaves them free to prefer something else.",
+          "connection": "Consider how imagination and sincerity show up in the way you reach towards each other. Meaningful gestures need room for an unforced response."
+        }
+      },
+      "reversed": {
+        "keywords": [
+          "Realism",
+          "consistency",
+          "clarification"
+        ],
+        "interpretation": "An appealing story may be drawing your attention away from what has actually been said or done. Notice the difference between an intention and a commitment, including in your own words.",
+        "daily": {
+          "colourName": "Slate",
+          "colourHex": "#6b7280",
+          "object": "A pencilled draft",
+          "bestHour": "Before noon",
+          "career": {
+            "score": 54,
+            "line": "Check the practical detail behind an attractive proposal."
+          },
+          "relationship": {
+            "score": 58,
+            "line": "Ask what a warm promise means in everyday terms."
+          },
+          "social": {
+            "score": 56,
+            "line": "Offer only the plans you are willing to help carry through."
+          }
+        },
+        "questionPositions": {
+          "situation": "You may be responding to the feeling of an idea more than its practical shape. Notice which details remain unspoken.",
+          "action": "Ask a clear question about intention, timing or effort before making an assumption. Apply the same clarity to anything you offer.",
+          "outcome": "Reflect on how you recognise sincerity through consistent actions as well as appealing words."
+        },
+        "namedPersonPositions": {
+          "you": "You may be communicating more certainty than you actually feel. Notice what you want to clarify so your words match your availability.",
+          "them": "Ask what the other person intends rather than deciding that an expressive moment contains a lasting promise.",
+          "connection": "The connection may need a clearer link between gestures and everyday behaviour. Consider which expectation could be made more explicit."
+        }
+      }
+    },
+    {
+      "id": "queen-of-cups",
+      "name": "Queen of Cups",
+      "arcana": "Minor Arcana",
+      "suit": "Cups",
+      "rank": 13,
+      "upright": {
+        "keywords": [
+          "Compassion",
+          "listening",
+          "boundaries"
+        ],
+        "interpretation": "You may have room to listen closely without needing to resolve everything you hear. Notice your own response as well, so that care for someone else does not make your needs disappear.",
+        "daily": {
+          "colourName": "Blue",
+          "colourHex": "#6f8ca2",
+          "object": "A smooth ceramic bowl",
+          "bestHour": "After 2 pm",
+          "career": {
+            "score": 72,
+            "line": "Listen for the concern behind a request before offering an answer."
+          },
+          "relationship": {
+            "score": 84,
+            "line": "Ask whether the other person wants listening or practical help."
+          },
+          "social": {
+            "score": 79,
+            "line": "Offer attentive company within the time and energy you have."
+          }
+        },
+        "questionPositions": {
+          "situation": "You may be paying close attention to the feelings around a situation. Notice what belongs to your own experience and what someone else needs to describe.",
+          "action": "Listen without rushing to interpret, then ask what kind of response would be useful. Keep your own limits in view.",
+          "outcome": "Reflect on how compassion can include both understanding another person and respecting your own boundaries."
+        },
+        "namedPersonPositions": {
+          "you": "You may be bringing a great deal of care to this connection. Notice whether you are also making space to say what you need.",
+          "them": "Ask the other person to describe their experience rather than assuming you can feel it for them. Their own words matter.",
+          "connection": "Consider how listening is shared and whether either person is expected to carry every difficult feeling. Care can remain mutual without being identical."
+        }
+      },
+      "reversed": {
+        "keywords": [
+          "Separation",
+          "self-attention",
+          "limits"
+        ],
+        "interpretation": "You may be attending so closely to other people's responses that your own becomes hard to hear. Pause to name what you feel and what you can offer, without taking responsibility for every feeling around you.",
+        "daily": {
+          "colourName": "Sage",
+          "colourHex": "#7d8f6a",
+          "object": "A small tray",
+          "bestHour": "Before 5 pm",
+          "career": {
+            "score": 54,
+            "line": "Clarify what support you can provide before taking on another concern."
+          },
+          "relationship": {
+            "score": 61,
+            "line": "Say what you need before trying to interpret the other person's mood."
+          },
+          "social": {
+            "score": 57,
+            "line": "Choose a boundary that lets company remain a real choice."
+          }
+        },
+        "questionPositions": {
+          "situation": "You may be finding it difficult to separate care from responsibility for someone else's response. Notice what is actually yours to decide.",
+          "action": "Name your own feeling and one practical limit before offering more help. You can listen without taking over the situation.",
+          "outcome": "Reflect on what caring involvement looks like when you are allowed to have needs of your own."
+        },
+        "namedPersonPositions": {
+          "you": "You may be arranging your choices around the other person's mood. Notice where you want to ask directly instead of anticipating every response.",
+          "them": "Ask what the other person needs without assuming that you must provide it. Let them speak for their own experience.",
+          "connection": "The connection may need clearer boundaries around listening and support. Consider how each person can remain responsible for their own choices."
+        }
+      }
+    },
+    {
+      "id": "king-of-cups",
+      "name": "King of Cups",
+      "arcana": "Minor Arcana",
+      "suit": "Cups",
+      "rank": 14,
+      "upright": {
+        "keywords": [
+          "Composure",
+          "understanding",
+          "balance"
+        ],
+        "interpretation": "A strong feeling can be acknowledged without deciding every action for you. Notice what you want to express, then choose a response that respects both the feeling and the situation in front of you.",
+        "daily": {
+          "colourName": "Blue",
+          "colourHex": "#6f8ca2",
+          "object": "A water jug",
+          "bestHour": "After 11 am",
+          "career": {
+            "score": 79,
+            "line": "Keep a difficult conversation focused while acknowledging its human impact."
+          },
+          "relationship": {
+            "score": 81,
+            "line": "Express a feeling plainly without using it to direct the other person's choice."
+          },
+          "social": {
+            "score": 75,
+            "line": "Help a conversation stay considerate without speaking for everyone."
+          }
+        },
+        "questionPositions": {
+          "situation": "You may be balancing a strong response with the wish to act thoughtfully. Notice what the feeling tells you and what still needs consideration.",
+          "action": "Name the feeling, pause, and choose one clear response. Composure does not require pretending you are unaffected.",
+          "outcome": "Reflect on how you want to respond when your feelings matter but do not provide the whole answer."
+        },
+        "namedPersonPositions": {
+          "you": "You may be trying to stay thoughtful while something affects you deeply. Let the other person know your experience without making them responsible for settling it.",
+          "them": "Ask how the other person feels rather than assuming a calm manner means little is happening for them.",
+          "connection": "Consider how both people can express strong feelings while keeping their choices and boundaries clear. Understanding does not require taking control."
+        }
+      },
+      "reversed": {
+        "keywords": [
+          "Honesty",
+          "pause",
+          "responsibility"
+        ],
+        "interpretation": "Keeping a composed appearance may be making it harder to name what is actually affecting you. Notice the feeling underneath, and give yourself a pause before choosing how to express it.",
+        "daily": {
+          "colourName": "Clay",
+          "colourHex": "#b0654a",
+          "object": "A plain glass",
+          "bestHour": "Before 4 pm",
+          "career": {
+            "score": 55,
+            "line": "State a concern directly instead of letting it shape an indirect response."
+          },
+          "relationship": {
+            "score": 59,
+            "line": "Take responsibility for your words without dismissing the feeling behind them."
+          },
+          "social": {
+            "score": 57,
+            "line": "Step out of a charged exchange long enough to choose your next words."
+          }
+        },
+        "questionPositions": {
+          "situation": "You may be holding a feeling in until it appears indirectly in your choices. Notice what needs acknowledgement before the next response.",
+          "action": "Put the concern into plain words and choose a suitable time to discuss it. A pause can make room for a more considered exchange.",
+          "outcome": "Reflect on how to be honest about a difficult feeling without using it to control the conversation."
+        },
+        "namedPersonPositions": {
+          "you": "You may be hiding how much something matters to you or expressing it in a roundabout way. Notice what you can say directly and responsibly.",
+          "them": "Ask about the other person's experience without treating their manner as proof of a hidden motive. Let their answer guide the discussion.",
+          "connection": "The connection may need clearer language around difficult feelings. Consider how each person can express a concern while respecting the other's freedom to respond."
         }
       }
     }
