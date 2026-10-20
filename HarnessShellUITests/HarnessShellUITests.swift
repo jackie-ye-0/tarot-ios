@@ -2191,6 +2191,9 @@ final class HarnessShellUITests: XCTestCase {
             }
             scrollTo(app.staticTexts["spread-question"], in: app)
             if largest {
+                showNavigationTop(app)
+                assertVisible(app.staticTexts["spread-progress"], in: app)
+                assertVisible(app.staticTexts["spread-question"], in: app)
                 capture(app, "08-three-card-pick-complete--\(suffix)")
                 captureOverlappingContent(app, through: app.buttons["read-spread"], named: "08-three-card-pick-complete--\(suffix)-scroll")
                 capture(app, "08-three-card-pick-complete--\(suffix)-bottom")
@@ -2226,8 +2229,12 @@ final class HarnessShellUITests: XCTestCase {
                 assertVisible(app.buttons["reading-done"], in: app)
                 capture(app, "09-reading--\(suffix)-bottom")
             } else {
-                scrollTo(app.staticTexts["reflection-question"], in: app)
-                try auditAndCapture(app, "09-reading--\(suffix)-bottom", expecting: app.staticTexts["reflection-question"])
+                scrollTo(app.buttons["reading-response-notReally"], in: app)
+                try auditAndCapture(app, "09-reading--\(suffix)-bottom", expecting:
+                    app.staticTexts["reflection-question"], app.staticTexts["Something to sit with"],
+                    app.staticTexts["reading-response-prompt"], app.buttons["reading-response-yes"],
+                    app.buttons["reading-response-somewhat"], app.buttons["reading-response-notReally"],
+                    app.buttons["reading-done"], app.staticTexts["reading-disclaimer"])
             }
             tapWhenSettled(app.buttons["reading-done"])
             XCTAssertTrue(app.staticTexts["today-title"].waitForExistence(timeout: 5))
