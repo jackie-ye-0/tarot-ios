@@ -642,6 +642,15 @@ final class HarnessShellUITests: XCTestCase {
         return previous ?? .null
     }
 
+    // Keep the original single tap; wait for its observable destination before reading it.
+    private func waitForDestination(_ destination: String,
+                                    file: StaticString = #filePath, line: UInt = #line,
+                                    until arrived: @escaping () -> Bool) {
+        let expectation = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in arrived() }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [expectation], timeout: 5), .completed,
+                       "Expected \(destination) after one tap", file: file, line: line)
+    }
+
     private func reveal(_ app: XCUIApplication, position: Int = 3) {
         let card = app.buttons["draw-card-\(position)"]
         XCTAssertTrue(card.waitForExistence(timeout: 5))
@@ -755,6 +764,9 @@ final class HarnessShellUITests: XCTestCase {
         try auditAndCapture(app, "11-settings--reminder-on", expecting: toggle)
         scrollTo(toggle, in: app)
         toggle.tap()
+        waitForDestination("morning reminder switched off") {
+            toggle.value as? String == "0"
+        }
         XCTAssertEqual(toggle.value as? String, "0")
         assertReminderEvidence(app, contains: "requests=0; pending=none")
         app.terminate()
@@ -789,6 +801,9 @@ final class HarnessShellUITests: XCTestCase {
                             expecting: app.staticTexts["today-reminder-denied"])
         scrollTo(app.buttons["open-settings"], in: app)
         app.buttons["open-settings"].tap()
+        waitForDestination("Settings") {
+            app.staticTexts["settings-title"].exists
+        }
         scrollTo(app.switches["morning-reminder"], in: app)
         app.switches["morning-reminder"].tap()
         XCTAssertEqual(app.switches["morning-reminder"].value as? String, "0")
@@ -1202,6 +1217,9 @@ final class HarnessShellUITests: XCTestCase {
         XCTAssertFalse(app.staticTexts["Pronouns"].exists)
         scrollTo(app.switches["visible-relationship"], in: app)
         app.switches["visible-relationship"].tap()
+        waitForDestination("Relationship area switched off") {
+            app.switches["visible-relationship"].value as? String == "0"
+        }
         app.switches["visible-social"].tap()
         XCTAssertFalse(app.switches["visible-career"].isEnabled)
         XCTAssertEqual(app.switches["visible-career"].value as? String, "1")
@@ -1209,6 +1227,9 @@ final class HarnessShellUITests: XCTestCase {
         try auditAndCapture(app, "11-settings--last-area", expecting: app.staticTexts["area-visibility-hint"])
         showNavigationTop(app)
         app.buttons["go-back"].tap()
+        waitForDestination("Today") {
+            app.staticTexts["today-title"].exists
+        }
         XCTAssertEqual(app.buttons["today-card"].label, card)
         XCTAssertFalse(app.descendants(matching: .any)["score-relationship"].firstMatch.exists)
         XCTAssertFalse(app.staticTexts["line-relationship"].exists)
@@ -1221,6 +1242,9 @@ final class HarnessShellUITests: XCTestCase {
         XCTAssertFalse(app.buttons["area-social"].exists)
         try auditAndCapture(app, "05-ask--hidden-areas", expecting: app.buttons["area-career"])
         app.buttons["ask-question-entry"].tap()
+        waitForDestination("question composer") {
+            app.staticTexts["composer-title"].exists
+        }
         XCTAssertFalse(app.buttons["area-relationship"].exists)
         XCTAssertFalse(app.buttons["area-social"].exists)
         try auditAndCapture(app, "06-composer--hidden-areas", expecting: app.buttons["area-career"])
@@ -1272,6 +1296,9 @@ final class HarnessShellUITests: XCTestCase {
         try auditAndCapture(app, "11-settings--relationship", expecting: app.staticTexts["settings-current-status"])
         scrollTo(app.buttons["settings-clear-status"], in: app)
         app.buttons["settings-clear-status"].tap()
+        waitForDestination("relationship status cleared") {
+            app.staticTexts["settings-current-status"].label == "Current status: Not set"
+        }
         XCTAssertTrue(app.buttons["settings-clear-status"].isSelected)
         XCTAssertEqual(app.staticTexts["settings-current-status"].label, "Current status: Not set")
         showNavigationTop(app)
@@ -1289,6 +1316,9 @@ final class HarnessShellUITests: XCTestCase {
             }
             try auditAndCapture(app, "11-settings--\(name)", expecting: app.staticTexts[copy])
             app.buttons["go-back"].tap()
+            waitForDestination("Settings") {
+                app.staticTexts["settings-title"].exists
+            }
         }
         app.terminate()
         app.launchArguments.append("--test-largest-text")
@@ -1386,14 +1416,15 @@ final class HarnessShellUITests: XCTestCase {
             }
             if page == 0 || page == 25 { try auditAndCapture(app, "card-faces--page-\(page + 1)") }
             else { capture(app, "card-faces--page-\(page + 1)") }
+            let nextFirst = ((page + 1) % 26) * 3
+            let nextTitle = "Card faces \(nextFirst + 1)–\(nextFirst + 3) of 78"
             tapWhenSettled(app.buttons["face-proof-next"])
+            waitForDestination(nextTitle) {
+                app.staticTexts["face-proof-title"].label == nextTitle
+            }
         }
         XCTAssertEqual(renderedFaces.count, 156)
-        let wrapped = XCTNSPredicateExpectation(
-            predicate: NSPredicate(format: "label == %@", "Card faces 1–3 of 78"),
-            object: app.staticTexts["face-proof-title"])
-        XCTAssertEqual(XCTWaiter.wait(for: [wrapped], timeout: 5), .completed,
-                       "The single Start again tap must return to the first page")
+        XCTAssertEqual(app.staticTexts["face-proof-title"].label, "Card faces 1–3 of 78")
     }
 
     func testFaceSizesAndLargestTextProof() throws {
@@ -1409,7 +1440,11 @@ final class HarnessShellUITests: XCTestCase {
                 capture(sizes, "card-sizes--sample-\(page + 1)-width-\(width)")
             }
             if page == 0 { try auditAndCapture(sizes, "card-sizes--audit", expecting: sizes.buttons["face-proof-next"]) }
+            let nextName = sampleNames[(page + 1) % sampleNames.count]
             sizes.buttons["face-proof-next"].tap()
+            waitForDestination("Card sizes: \(nextName)") {
+                sizes.staticTexts[nextName].exists
+            }
         }
         sizes.terminate()
         let largest = app(extra: ["--test-card-faces", "--test-largest-text"])
@@ -1423,6 +1458,9 @@ final class HarnessShellUITests: XCTestCase {
         scrollTo(largest.buttons["face-proof-next"], in: largest)
         capture(largest, "card-faces--largest-text-bottom")
         largest.buttons["face-proof-next"].tap()
+        waitForDestination("Card faces 4–6 at largest text") {
+            largest.staticTexts["face-name-3"].exists
+        }
         XCTAssertTrue(largest.staticTexts["face-name-3"].exists)
         largest.terminate()
         let largeSizes = app(extra: ["--test-card-sizes", "--test-largest-text"])
@@ -1435,6 +1473,9 @@ final class HarnessShellUITests: XCTestCase {
         scrollTo(largeSizes.buttons["face-proof-next"], in: largeSizes)
         capture(largeSizes, "card-sizes--largest-text-bottom")
         largeSizes.buttons["face-proof-next"].tap()
+        waitForDestination("Card sizes: Ten of Wands at largest text") {
+            largeSizes.staticTexts["Ten of Wands"].exists
+        }
         XCTAssertTrue(largeSizes.staticTexts["Ten of Wands"].exists)
 
     }
@@ -1574,6 +1615,9 @@ final class HarnessShellUITests: XCTestCase {
         }
         try auditAndCapture(app, "02-draw", expecting: app.staticTexts["draw-title"], app.buttons["draw-card-3"])
         let fanFrame = tapWhenSettled(app.buttons["draw-card-3"])
+        waitForDestination("chosen daily card") {
+            app.buttons["turn-over"].exists
+        }
         XCTAssertTrue(app.buttons["turn-over"].waitForExistence(timeout: 5))
         XCTAssertEqual(app.staticTexts["draw-title"].label, "This one is yours")
         XCTAssertTrue(app.buttons["draw-card-3"].isSelected)
@@ -1581,6 +1625,9 @@ final class HarnessShellUITests: XCTestCase {
                        "Selection must preserve the fan/disc anchor to within pixel rounding")
         try auditAndCapture(app, "02-draw-card-chosen", expecting: app.staticTexts["draw-title"], app.buttons["turn-over"])
         app.buttons["turn-over"].tap()
+        waitForDestination("Reveal card") {
+            app.staticTexts["card-name"].exists
+        }
         XCTAssertTrue(app.staticTexts["card-name"].waitForExistence(timeout: 5))
         XCTAssertEqual(app.staticTexts["card-name"].label, "The Star")
         XCTAssertEqual(app.staticTexts["card-details"].label, "Upright · Major Arcana XVII")
@@ -1593,6 +1640,9 @@ final class HarnessShellUITests: XCTestCase {
         assertVisible(app.buttons["see-meaning"], in: app)
         try auditAndCapture(app, "03-reveal", expecting: app.staticTexts["card-name"], app.buttons["see-meaning"])
         app.buttons["see-meaning"].tap()
+        waitForDestination("Today interpretation") {
+            app.staticTexts["core-interpretation"].exists
+        }
         XCTAssertTrue(app.staticTexts["core-interpretation"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["core-interpretation"].label.contains("Hope may feel more useful"))
         XCTAssertEqual(app.windows.firstMatch.frame.size, CGSize(width: 390, height: 844), "Verify the reference viewport on the selected simulator")
@@ -1609,10 +1659,16 @@ final class HarnessShellUITests: XCTestCase {
         capture(app, "04-today--midnight")
         scrollTo(app.buttons["today-card"], in: app)
         app.buttons["today-card"].tap()
+        waitForDestination("reopened Reveal") {
+            app.buttons["back-to-today"].exists
+        }
         XCTAssertTrue(app.buttons["back-to-today"].waitForExistence(timeout: 5))
         XCTAssertEqual(app.descendants(matching: .any)["revealed-card"].label, "The Star, Upright")
         try auditAndCapture(app, "03-reveal--reopened")
         app.buttons["back-to-today"].tap()
+        waitForDestination("Today") {
+            app.staticTexts["today-title"].exists
+        }
         XCTAssertTrue(app.staticTexts["today-title"].waitForExistence(timeout: 5))
         assertTodayContent(app)
         app.buttons["today-card"].tap()
@@ -1935,6 +1991,9 @@ final class HarnessShellUITests: XCTestCase {
         XCTAssertEqual(app.descendants(matching: .any)["revealed-card"].label, "The Star, Reversed")
         try auditAndCapture(app, "03-reveal--reversed", expecting: app.staticTexts["card-name"], app.buttons["see-meaning"])
         app.buttons["see-meaning"].tap()
+        waitForDestination("Today interpretation for the reversed card") {
+            app.staticTexts["core-interpretation"].exists
+        }
         XCTAssertTrue(app.staticTexts["core-interpretation"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.staticTexts["core-interpretation"].label.contains("Hope may feel more useful"))
         XCTAssertEqual(app.descendants(matching: .any)["daily-colour"].firstMatch.label, "Colour, Blue")
@@ -1955,6 +2014,9 @@ final class HarnessShellUITests: XCTestCase {
         XCTAssertTrue(failed.buttons["storage-retry"].isHittable)
         try auditAndCapture(failed, "storage-open-failure", expecting: failed.staticTexts["storage-error-title"], failed.buttons["storage-retry"])
         failed.buttons["storage-retry"].tap()
+        waitForDestination("Draw after storage retry") {
+            failed.staticTexts["draw-title"].exists
+        }
         XCTAssertTrue(failed.staticTexts["draw-title"].waitForExistence(timeout: 5))
         failed.terminate()
 
@@ -2167,6 +2229,9 @@ final class HarnessShellUITests: XCTestCase {
         for (index, area) in ["career", "relationship", "social"].enumerated() {
             scrollTo(app.buttons["history-filter-\(area)"], in: app)
             app.buttons["history-filter-\(area)"].tap()
+            waitForDestination("History filtered to \(area)") {
+                app.buttons["history-filter-\(area)"].isSelected
+            }
             let row = app.buttons["history-reading-00000000-0000-0000-0000-00000000000\(index + 1)"]
             scrollTo(row, in: app)
             XCTAssertTrue(row.label.contains("\(area.capitalized) question"))
@@ -2176,6 +2241,9 @@ final class HarnessShellUITests: XCTestCase {
         try auditAndCapture(app, "10-history--filtered", expecting: app.buttons["history-filter-social"])
         scrollTo(app.buttons["history-filter-all"], in: app)
         app.buttons["history-filter-all"].tap()
+        waitForDestination("History with all areas selected") {
+            app.buttons["history-filter-all"].isSelected
+        }
         let firstReading = app.buttons["history-reading-00000000-0000-0000-0000-000000000001"]
         scrollTo(firstReading, in: app)
         let daily = app.buttons["history-daily-2026-10-11"]
@@ -2199,6 +2267,9 @@ final class HarnessShellUITests: XCTestCase {
         try auditAndCapture(app, "10-history--bottom", expecting: oldest)
         scrollTo(app.staticTexts["history-title"], in: app)
         app.buttons["history-previous-month"].tap()
+        waitForDestination("History for September 2026") {
+            app.staticTexts["history-month"].label == "September 2026"
+        }
         XCTAssertEqual(app.staticTexts["history-month"].label, "September 2026")
         XCTAssertEqual(app.staticTexts["history-month-count"].label, "0 cards drawn")
         app.buttons["history-next-month"].tap()
@@ -2218,6 +2289,9 @@ final class HarnessShellUITests: XCTestCase {
         XCTAssertNil(visibleTabs(in: app), "Reveal keeps the resting tabs hidden")
         try auditAndCapture(app, "03-reveal--history", expecting: app.buttons["back-to-today"], archiveRevealName)
         app.buttons["back-to-today"].tap()
+        waitForDestination("archived Today for Saturday 10 October 2026") {
+            app.staticTexts["today-title"].exists && app.staticTexts["today-title"].label == "Saturday 10 October 2026"
+        }
         XCTAssertEqual(app.staticTexts["today-title"].label, "Saturday 10 October 2026")
         try XCTUnwrap(visibleTabs(in: app)).buttons["tab-ask"].tap()
         XCTAssertTrue(app.buttons["ask-question-entry"].waitForExistence(timeout: 5))
@@ -2268,6 +2342,9 @@ final class HarnessShellUITests: XCTestCase {
         XCTAssertFalse(app.staticTexts["next-card-arrival"].exists)
         scrollTo(app.buttons["back-to-history"], in: app)
         app.buttons["back-to-history"].tap()
+        waitForDestination("History") {
+            app.staticTexts["history-title"].exists
+        }
         app.buttons["tab-ask"].tap()
         app.buttons["ask-question-entry"].tap()
         app.buttons["suggestion-0"].tap()
@@ -2296,6 +2373,9 @@ final class HarnessShellUITests: XCTestCase {
         assertVisible(app.buttons["reading-done"], in: app)
         capture(app, "09-reading--history-bottom")
         app.buttons["reading-done"].tap()
+        waitForDestination("History with Relationship selected") {
+            app.buttons["history-filter-relationship"].exists && app.buttons["history-filter-relationship"].isSelected
+        }
         XCTAssertTrue(app.buttons["history-filter-relationship"].isSelected)
         app.terminate()
         app.launchArguments += ["--test-revised-content"]
@@ -2356,6 +2436,9 @@ final class HarnessShellUITests: XCTestCase {
         try auditAndCapture(empty, "10-history--empty", expecting: empty.staticTexts["history-message"])
         scrollTo(empty.buttons["history-filter-career"], in: empty)
         empty.buttons["history-filter-career"].tap()
+        waitForDestination("empty Career history") {
+            empty.staticTexts["history-message"].label == "No career readings yet"
+        }
         XCTAssertEqual(empty.staticTexts["history-message"].label, "No career readings yet")
         capture(empty, "10-history--empty-area")
         empty.terminate()
@@ -2363,6 +2446,9 @@ final class HarnessShellUITests: XCTestCase {
         openHistory(failure)
         try auditAndCapture(failure, "10-history--read-error", expecting: failure.buttons["history-retry"])
         failure.buttons["history-retry"].tap()
+        waitForDestination("History calendar after retry") {
+            failure.staticTexts["history-month"].exists
+        }
         XCTAssertTrue(failure.staticTexts["history-month"].waitForExistence(timeout: 5))
         failure.terminate()
         let emptyLarge = app(extra: ["--test-largest-text", "--test-history-read-failure"])
@@ -2578,6 +2664,9 @@ final class HarnessShellUITests: XCTestCase {
         try auditAndCapture(app, "05-ask--named-person-entry", expecting: app.buttons["ask-person-entry"])
         scrollTo(app.buttons["ask-person-entry"], in: app)
         app.buttons["ask-person-entry"].tap()
+        waitForDestination("Ask about someone form") {
+            app.staticTexts["person-title"].exists
+        }
         XCTAssertEqual(app.staticTexts["person-explanation"].label,
                        "No birth details needed for them. Just a name or nickname, so the reading can speak about them.")
         XCTAssertEqual(app.textFields.count, 1)
@@ -2591,6 +2680,9 @@ final class HarnessShellUITests: XCTestCase {
         scrollTo(app.textViews["person-note"], in: app)
         try auditAndCapture(app, "07-about-someone--bottom", expecting: app.textViews["person-note"])
         app.buttons["person-relation-friend"].tap()
+        waitForDestination("Friend relationship selected") {
+            app.buttons["person-relation-friend"].isSelected
+        }
         XCTAssertEqual(app.buttons["submit-person"].label, "Add a name or nickname")
         enterPerson(app, note: "How can we make more time to talk?")
         XCTAssertTrue(app.buttons["submit-person"].isEnabled)
@@ -2616,6 +2708,9 @@ final class HarnessShellUITests: XCTestCase {
             XCTAssertTrue(app.descendants(matching: .any)["spread-slot-\(position)"].firstMatch.label.contains("empty"))
         }
         tapWhenSettled(app.buttons["draw-card-3"])
+        waitForDestination("You card picked and Them prompt") {
+            app.staticTexts["pick-prompt"].label == "Choose a card for them"
+        }
         let first = app.descendants(matching: .any)["spread-slot-you"].firstMatch.label
         XCTAssertFalse(first.contains("empty"), "A card must be picked before checking draft restoration")
         XCTAssertEqual(app.staticTexts["pick-prompt"].label, "Choose a card for them")
@@ -2634,6 +2729,9 @@ final class HarnessShellUITests: XCTestCase {
         }
         try auditAndCapture(app, "08-three-card-pick-complete--named-person-reduce-motion", expecting: app.buttons["read-spread"])
         app.buttons["read-spread"].tap()
+        waitForDestination("saved named-person reading") {
+            app.staticTexts["reading-saved"].exists
+        }
         XCTAssertTrue(app.staticTexts["reading-saved"].waitForExistence(timeout: 5))
         XCTAssertEqual(app.staticTexts["reading-saved"].label, "Relationship · Saved to History")
         try auditAndCapture(app, "09-reading--named-person", expecting: app.staticTexts["reading-question"], app.buttons["reading-done"])
@@ -2892,6 +2990,9 @@ final class HarnessShellUITests: XCTestCase {
         showNavigationTop(app)
         let oldSuggestion = app.buttons["suggestion-0"].label
         app.buttons["area-career"].tap()
+        waitForDestination("Career composer suggestions") {
+            app.buttons["suggestion-0"].label != oldSuggestion
+        }
         XCTAssertNotEqual(app.buttons["suggestion-0"].label, oldSuggestion)
         XCTAssertEqual(field.value as? String, question)
         XCUIDevice.shared.press(.home)
@@ -2967,6 +3068,9 @@ final class HarnessShellUITests: XCTestCase {
         XCTAssertGreaterThanOrEqual(app.buttons["latest-area-reading"].frame.width, 44)
         try auditAndCapture(app, "05-ask--recent-reading", expecting: app.buttons["latest-area-reading"])
         app.buttons["latest-area-reading"].tap()
+        waitForDestination("latest saved reading") {
+            app.staticTexts["reading-question"].exists
+        }
         XCTAssertEqual(identifiers.map { app.staticTexts[$0].label }, original)
         app.buttons["reading-done"].tap()
         app.buttons["tab-ask"].tap()
@@ -3025,6 +3129,9 @@ final class HarnessShellUITests: XCTestCase {
         scrollTo(app.buttons["skip-relationship-status"], in: app)
         try auditAndCapture(app, "05-ask--bottom", expecting: app.buttons["skip-relationship-status"])
         app.buttons["skip-relationship-status"].tap()
+        waitForDestination("Ask with relationship prompt dismissed") {
+            app.staticTexts["ask-title"].exists && !app.staticTexts["relationship-prompt"].exists
+        }
         XCTAssertFalse(app.staticTexts["relationship-prompt"].exists)
         XCTAssertFalse(app.buttons["latest-area-reading"].exists)
         scrollTo(app.staticTexts["ask-title"], in: app)
@@ -3032,6 +3139,9 @@ final class HarnessShellUITests: XCTestCase {
         scrollTo(app.buttons["suggestion-2"], in: app)
         capture(app, "05-ask--status-skipped-no-reading-bottom")
         app.buttons["tab-today"].tap()
+        waitForDestination("Today tab") {
+            app.staticTexts["today-title"].exists
+        }
         XCTAssertTrue(app.staticTexts["today-title"].waitForExistence(timeout: 5))
         app.buttons["tab-ask"].tap()
         scrollTo(app.buttons["ask-question-entry"], in: app)
@@ -3055,6 +3165,9 @@ final class HarnessShellUITests: XCTestCase {
         try auditAndCapture(app, "06-composer--bottom", expecting: finalSuggestion)
         scrollTo(app.buttons["suggestion-0"], in: app)
         app.buttons["suggestion-0"].tap()
+        waitForDestination("composer filled with Where is this going?") {
+            app.descendants(matching: .any)["question-field"].firstMatch.value as? String == "Where is this going?"
+        }
         XCTAssertTrue(app.buttons["submit-question"].isEnabled)
         XCTAssertEqual(app.descendants(matching: .any)["question-field"].firstMatch.value as? String, "Where is this going?")
         showNavigationTop(app)
@@ -3062,6 +3175,9 @@ final class HarnessShellUITests: XCTestCase {
         scrollTo(app.buttons["suggestion-2"], in: app)
         try auditAndCapture(app, "06-composer-question-entered--bottom", expecting: app.buttons["suggestion-2"])
         app.buttons["submit-question"].tap()
+        waitForDestination("three-card pick") {
+            app.staticTexts["spread-question"].exists
+        }
         XCTAssertEqual(app.staticTexts["spread-question"].label, "“Where is this going?”")
         XCTAssertFalse(app.buttons["tab-ask"].exists)
         for position in ["situation", "action", "outcome"] {
@@ -3069,15 +3185,27 @@ final class HarnessShellUITests: XCTestCase {
         }
         try auditAndCapture(app, "08-three-card-pick", expecting: app.staticTexts["spread-question"], app.buttons["draw-card-3"])
         app.buttons["draw-card-3"].tap()
+        waitForDestination("Situation card picked") {
+            app.descendants(matching: .any)["spread-slot-situation"].firstMatch.label == "Situation, The Star, Upright"
+        }
         try auditAndCapture(app, "08-three-card-pick--one-picked", expecting: app.staticTexts["pick-prompt"], app.buttons["spread-shuffle"])
         app.buttons["draw-card-1"].tap()
+        waitForDestination("Action card picked") {
+            app.descendants(matching: .any)["spread-slot-action"].firstMatch.label == "Action, The Sun, Reversed"
+        }
         try auditAndCapture(app, "08-three-card-pick--two-picked", expecting: app.staticTexts["pick-prompt"], app.buttons["spread-shuffle"])
         app.buttons["draw-card-5"].tap()
+        waitForDestination("Outcome card picked") {
+            app.descendants(matching: .any)["spread-slot-outcome"].firstMatch.label == "Outcome, The Fool, Upright"
+        }
         XCTAssertEqual(app.descendants(matching: .any)["spread-slot-situation"].firstMatch.label, "Situation, The Star, Upright")
         XCTAssertEqual(app.descendants(matching: .any)["spread-slot-action"].firstMatch.label, "Action, The Sun, Reversed")
         XCTAssertEqual(app.descendants(matching: .any)["spread-slot-outcome"].firstMatch.label, "Outcome, The Fool, Upright")
         try auditAndCapture(app, "08-three-card-pick-complete", expecting: app.staticTexts["spread-complete-title"], app.buttons["read-spread"])
         app.buttons["read-spread"].tap()
+        waitForDestination("saved question reading") {
+            app.staticTexts["reading-saved"].exists
+        }
         XCTAssertTrue(app.staticTexts["reading-saved"].waitForExistence(timeout: 5))
         XCTAssertEqual(app.staticTexts["reading-saved"].label, "Relationship · Saved to History")
         XCTAssertFalse(app.buttons["tab-ask"].exists)
@@ -3097,6 +3225,9 @@ final class HarnessShellUITests: XCTestCase {
         scrollTo(app.buttons["reading-response-notReally"], in: app)
         try auditAndCapture(app, "09-reading--response", expecting: app.staticTexts["reading-response-prompt"], app.buttons["reading-response-yes"])
         app.buttons["reading-done"].tap()
+        waitForDestination("Today") {
+            app.staticTexts["today-title"].exists
+        }
         XCTAssertTrue(app.staticTexts["today-title"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["tab-today"].exists)
     }
@@ -3136,6 +3267,9 @@ final class HarnessShellUITests: XCTestCase {
     private func openReadingNote(_ app: XCUIApplication) {
         scrollTo(app.buttons["reading-more"], in: app)
         app.buttons["reading-more"].tap()
+        waitForDestination("reading actions menu before note editing") {
+            app.buttons["reading-edit-note"].exists
+        }
         app.buttons["reading-edit-note"].tap()
         XCTAssertTrue(app.staticTexts["note-title"].waitForExistence(timeout: 5))
     }
@@ -3219,6 +3353,9 @@ final class HarnessShellUITests: XCTestCase {
         try auditAndCapture(app, "09-reading--response-selected", expecting: app.buttons["reading-response-somewhat"])
         scrollTo(app.buttons["reading-more"], in: app)
         app.buttons["reading-more"].tap()
+        waitForDestination("reading actions menu") {
+            app.buttons["reading-edit-note"].exists && app.buttons["reading-delete"].exists
+        }
         waitForSettled([app.buttons["reading-edit-note"], app.buttons["reading-delete"]])
         XCTAssertTrue(app.buttons["reading-edit-note"].exists && app.buttons["reading-edit-note"].isHittable)
         XCTAssertTrue(app.buttons["reading-delete"].exists && app.buttons["reading-delete"].isHittable)
@@ -3229,25 +3366,16 @@ final class HarnessShellUITests: XCTestCase {
         try auditAndCapture(app, "09-reading--menu-dismissed", expecting: app.buttons["reading-more"], app.staticTexts["reading-question"])
         scrollTo(app.buttons["reading-more"], in: app)
         app.buttons["reading-more"].tap()
+        waitForDestination("reading actions menu") {
+            app.buttons["reading-edit-note"].exists
+        }
         app.buttons["reading-edit-note"].tap()
         try auditAndCapture(app, "09-reading--note-editor", expecting: app.staticTexts["note-title"], app.buttons["note-save"])
         let field = app.textViews["note-field"]
         XCTAssertTrue((field.value as? String ?? "").isEmpty)
         field.tap()
-        let keyboard = app.keyboards.firstMatch
-        if !keyboard.waitForExistence(timeout: 3) {
-            // Test artefact workaround for the known missed-tap-after-audit pattern.
-            XCTContext.runActivity(named: "Re-tap note field once after missed post-audit tap") { activity in
-                let evidence = XCTAttachment(screenshot: app.screenshot())
-                evidence.name = "note-focus-missed-tap"
-                evidence.lifetime = .keepAlways
-                activity.add(evidence)
-                field.tap()
-            }
-            guard keyboard.waitForExistence(timeout: 3) else {
-                XCTFail("Note field did not acquire keyboard focus after the initial tap and one re-tap")
-                return
-            }
+        waitForDestination("note editor keyboard focus") {
+            app.keyboards.firstMatch.exists && app.buttons["note-keyboard-done"].exists
         }
         field.typeText("I can take a small step.\nThere is time.")
         captureNoteKeyboard(app)
@@ -3304,6 +3432,9 @@ final class HarnessShellUITests: XCTestCase {
         try auditAndCapture(app, "09-reading--delete-cancelled", expecting: app.staticTexts["reading-question"], app.buttons["reading-more"])
         scrollTo(app.buttons["reading-more"], in: app)
         app.buttons["reading-more"].tap()
+        waitForDestination("reading actions menu") {
+            app.buttons["reading-delete"].exists
+        }
         app.buttons["reading-delete"].tap()
         confirmation.buttons["Delete"].tap()
         XCTAssertTrue(app.staticTexts["today-title"].waitForExistence(timeout: 5))
@@ -3606,6 +3737,9 @@ final class HarnessShellUITests: XCTestCase {
             let app = app(extra: fixedSpread + ["--test-hold-shuffle"] + (reduced ? ["--test-reduce-motion"] : []), animations: true)
             reachAsk(app)
             app.buttons["suggestion-0"].tap()
+            waitForDestination("composer opened from suggested question") {
+                app.staticTexts["composer-title"].exists && app.buttons["submit-question"].isEnabled
+            }
             app.buttons["submit-question"].tap()
             for (index, position) in ["situation", "action", "outcome"].enumerated() {
                 XCTAssertEqual(app.staticTexts["spread-progress"].label, "Card \(index + 1) of 3")
@@ -3757,6 +3891,9 @@ final class HarnessShellUITests: XCTestCase {
         scrollTo(app.staticTexts["support-outside-region"], in: app)
         try auditAndCapture(app, "12-support--bottom", expecting: app.staticTexts["support-outside-region"])
         app.buttons["support-today"].tap()
+        waitForDestination("Today from support") {
+            app.staticTexts["today-title"].exists
+        }
         XCTAssertTrue(app.staticTexts["today-title"].waitForExistence(timeout: 5))
         app.buttons["tab-ask"].tap()
         XCTAssertFalse(app.buttons["latest-area-reading"].exists)
