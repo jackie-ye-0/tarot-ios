@@ -4,6 +4,46 @@ import Testing
 import UIKit
 @testable import HarnessShell
 
+struct WandsAndCupsContentTests {
+    @Test(arguments: ["Wands", "Cups"])
+    func completeSuitComposesEveryPositionAndKeepsItsSnapshot(suit: String) throws {
+        let library = try CardLibrary.load()
+        let cards = library.cards.filter { $0.suit == suit }
+        #expect(cards.count == 14)
+        #expect(cards.map(\.identity) == CardIdentity.deck.filter { $0.suit == suit })
+        #expect(Set(cards.map(\.rank)) == Set(1...14))
+        for card in cards {
+            for orientation in [Orientation.upright, .reversed] {
+                let meaning = card.meaning(orientation)
+                #expect(meaning.isComplete)
+                let questionMeanings = try #require(meaning.questionPositions)
+                let namedMeanings = try #require(meaning.namedPersonPositions)
+                let daily = DailyDraw(dateKey: "2026-10-11", position: 3, orientation: orientation,
+                                      card: card, contentVersion: library.version)
+                #expect(try JSONDecoder().decode(DailyDraw.self, from: JSONEncoder().encode(daily)) == daily)
+                for type in [ReadingType.question, .namedPerson] {
+                    let spread = [card] + Array(cards.filter { $0.id != card.id }.prefix(2))
+                    for offset in spread.indices {
+                        let picks = type.positions.enumerated().map {
+                            SpreadPick(position: $0.element, card: spread[($0.offset + offset) % 3], orientation: orientation)
+                        }
+                        let person = type == .namedPerson ? NamedPerson(name: "Sam", relation: .friend) : nil
+                        let reading = try ReadingEngine.compose(
+                            id: UUID(), createdAt: Date(timeIntervalSince1970: 0), area: .relationship,
+                            question: "What matters to me here?", picks: picks, library: library, person: person)
+                        let position = try #require(picks.first { $0.card.id == card.id }).position
+                        let target = try #require(reading.sections.first { $0.position == position })
+                        let expected = type == .question
+                            ? questionMeanings.text(for: position) : namedMeanings.text(for: position)
+                        #expect(target.text == expected)
+                        #expect(try JSONDecoder().decode(QuestionReading.self, from: JSONEncoder().encode(reading)) == reading)
+                    }
+                }
+            }
+        }
+    }
+}
+
 final class ReadingEngineTests: XCTestCase {
     func testNamedPersonValidationAndMissingFieldLabels() {
         XCTAssertFalse(NamedPerson().isComplete)
@@ -418,10 +458,10 @@ final class ReadingEngineTests: XCTestCase {
         let honolulu = try XCTUnwrap(TimeZone(identifier: "Pacific/Honolulu"))
         let sydneyKey = ReadingEngine.dateKey(for: instant, timeZone: sydney)
         let honoluluKey = ReadingEngine.dateKey(for: instant, timeZone: honolulu)
-        let laterDraw = ReadingEngine.dailyDraw(seed: "major-travel-18", dateKey: sydneyKey, position: 2, library: library)
-        let unfilteredEarlierDraw = ReadingEngine.dailyDraw(seed: "major-travel-18", dateKey: honoluluKey,
+        let laterDraw = ReadingEngine.dailyDraw(seed: "wands-cups-travel-44", dateKey: sydneyKey, position: 2, library: library)
+        let unfilteredEarlierDraw = ReadingEngine.dailyDraw(seed: "wands-cups-travel-44", dateKey: honoluluKey,
                                                            position: 5, library: library)
-        let earlierDraw = ReadingEngine.dailyDraw(seed: "major-travel-18", dateKey: honoluluKey, position: 5,
+        let earlierDraw = ReadingEngine.dailyDraw(seed: "wands-cups-travel-44", dateKey: honoluluKey, position: 5,
                                                   library: library, previousDraws: [laterDraw])
 
         XCTAssertEqual(sydneyKey, "2026-10-11")
@@ -466,7 +506,7 @@ final class ReadingEngineTests: XCTestCase {
 
     func testBundledLibraryHasBothCompleteOrientationsAndDistinctIDs() throws {
         let library = try CardLibrary.load()
-        XCTAssertGreaterThanOrEqual(library.cards.count, 22)
+        XCTAssertGreaterThanOrEqual(library.cards.count, 50)
         XCTAssertEqual(Set(library.cards.map(\.id)).count, library.cards.count)
         XCTAssertTrue(library.editorialStatus.contains("first-draft"))
         for card in library.cards {
@@ -667,7 +707,7 @@ final class ReadingEngineTests: XCTestCase {
 
     func testSnapshotRoundTripKeepsOriginalContent() throws {
         let library = try CardLibrary.load()
-        let draw = ReadingEngine.dailyDraw(seed: "major-reference-2003", dateKey: "2026-10-11", position: 5, library: library)
+        let draw = ReadingEngine.dailyDraw(seed: "wands-cups-reference-19369", dateKey: "2026-10-11", position: 5, library: library)
         let snapshot = try JSONEncoder().encode(draw)
         let revised = try amendedLibrary { daily in
             daily["colourName"] = "Clay"
@@ -676,7 +716,7 @@ final class ReadingEngineTests: XCTestCase {
             daily["bestHour"] = "After 6 pm"
             daily["career"] = ["score": 10, "line": "A revised work line."]
         }
-        let next = ReadingEngine.dailyDraw(seed: "major-reference-2003", dateKey: "2026-10-11", position: 5,
+        let next = ReadingEngine.dailyDraw(seed: "wands-cups-reference-19369", dateKey: "2026-10-11", position: 5,
                                           library: try CardLibrary.decode(revised))
         XCTAssertNotEqual(next.meaning.daily, draw.meaning.daily)
         XCTAssertEqual(try JSONDecoder().decode(DailyDraw.self, from: snapshot), draw)

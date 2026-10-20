@@ -243,7 +243,7 @@ final class HarnessShellUITests: XCTestCase {
         return normalised(lines.sorted { $0.y < $1.y }.map(\.text).joined(separator: " "))
     }
 
-    private func app(extra: [String] = [], memory: Bool = true, seed: String = "major-reference-2003", date: String = "2026-10-11T00:00:00Z", animations: Bool = false, audit: Bool = false, welcome: Bool = false, reminderInvitation: Bool = false) -> XCUIApplication {
+    private func app(extra: [String] = [], memory: Bool = true, seed: String = "wands-cups-reference-19369", date: String = "2026-10-11T00:00:00Z", animations: Bool = false, audit: Bool = false, welcome: Bool = false, reminderInvitation: Bool = false) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = ["--test-mode", "--test-date", date,
                                "--test-time-zone", "Australia/Sydney", "--test-seed", seed]
@@ -1991,7 +1991,7 @@ final class HarnessShellUITests: XCTestCase {
 
     func testExpandedMajorDailyContentAndLongestNameAtBothTextSizes() throws {
         for largest in [false, true] {
-            let app = app(extra: largest ? ["--test-largest-text"] : [], seed: "major-priestess-4", audit: true)
+            let app = app(extra: largest ? ["--test-largest-text"] : [], seed: "wands-cups-priestess-22", audit: true)
             let suffix = largest ? "major-content-largest-text" : "major-content"
             scrollTo(app.buttons["draw-card-3"], in: app)
             tapWhenSettled(app.buttons["draw-card-3"])
@@ -2095,8 +2095,155 @@ final class HarnessShellUITests: XCTestCase {
         }
     }
 
+    func testWandsAndCupsDailyContentAtBothTextSizes() throws {
+        let fixtures = [
+            (seed: "wands-content-176", name: "Knight of Wands", orientation: "Upright", colour: "Clay", score: 81,
+             interpretation: "You may feel ready to act on something that has caught your attention. Give that energy a clear direction, and check what you are agreeing to before moving at full speed.",
+             relationship: "Express your interest while leaving space for a different response.", suffix: "wands-content"),
+            (seed: "cups-content-41", name: "Queen of Cups", orientation: "Reversed", colour: "Sage", score: 54,
+             interpretation: "You may be attending so closely to other people's responses that your own becomes hard to hear. Pause to name what you feel and what you can offer, without taking responsibility for every feeling around you.",
+             relationship: "Say what you need before trying to interpret the other person's mood.", suffix: "cups-content")
+        ]
+        for fixture in fixtures {
+            for largest in [false, true] {
+                let app = app(extra: largest ? ["--test-largest-text"] : [], seed: fixture.seed, audit: true)
+                let suffix = fixture.suffix + (largest ? "-largest-text" : "")
+                scrollTo(app.buttons["draw-card-3"], in: app)
+                tapWhenSettled(app.buttons["draw-card-3"])
+                scrollTo(app.buttons["turn-over"], in: app)
+                tapWhenSettled(app.buttons["turn-over"])
+                XCTAssertTrue(app.staticTexts["card-name"].waitForExistence(timeout: 5))
+                XCTAssertEqual(app.staticTexts["card-name"].label, fixture.name)
+                XCTAssertEqual(app.staticTexts["card-details"].label, "\(fixture.orientation) · Minor Arcana")
+                if largest {
+                    capture(app, "03-reveal--\(suffix)")
+                    captureOverlappingContent(app, through: app.staticTexts["reveal-disclaimer"], named: "03-reveal--\(suffix)-scroll")
+                    assertVisible(app.buttons["see-meaning"], in: app)
+                    capture(app, "03-reveal--\(suffix)-bottom")
+                } else {
+                    try auditAndCapture(app, "03-reveal--\(suffix)", expecting: app.staticTexts["card-name"])
+                }
+                scrollTo(app.buttons["see-meaning"], in: app)
+                tapWhenSettled(app.buttons["see-meaning"])
+                XCTAssertTrue(app.staticTexts["today-title"].waitForExistence(timeout: 5))
+                XCTAssertEqual(app.staticTexts["core-interpretation"].label, fixture.interpretation)
+                XCTAssertEqual(app.descendants(matching: .any)["daily-colour"].firstMatch.label, "Colour, \(fixture.colour)")
+                XCTAssertEqual(app.descendants(matching: .any)["score-career"].firstMatch.label, "Career, \(fixture.score) out of 100")
+                XCTAssertEqual(app.staticTexts["line-relationship"].label, fixture.relationship)
+                if largest {
+                    capture(app, "04-today--\(suffix)")
+                    captureOverlappingContent(app, through: app.staticTexts["next-card-arrival"], named: "04-today--\(suffix)-scroll")
+                    capture(app, "04-today--\(suffix)-bottom")
+                    scrollTo(app.buttons["today-ask"], in: app)
+                    assertVisible(app.buttons["today-ask"], in: app)
+                } else {
+                    try auditAndCapture(app, "04-today--\(suffix)", today: true, expecting: app.staticTexts["core-interpretation"])
+                    positionTodayAuditBelowCard(app, revealing: app.staticTexts["line-social"])
+                    try auditAndCapture(app, "04-today--\(suffix)-area-readings", today: true)
+                    try captureTodayEnd(app, named: "04-today--\(suffix)-bottom")
+                    scrollTo(app.buttons["today-ask"], in: app)
+                }
+                tapWhenSettled(app.buttons["today-ask"])
+                XCTAssertTrue(app.staticTexts["ask-title"].waitForExistence(timeout: 5))
+                XCTAssertEqual(app.staticTexts["ask-area-line"].label, fixture.relationship)
+                if largest {
+                    capture(app, "05-ask--\(suffix)")
+                    captureOverlappingContent(app, through: app.buttons["skip-relationship-status"], named: "05-ask--\(suffix)-scroll")
+                    capture(app, "05-ask--\(suffix)-bottom")
+                } else {
+                    try auditAndCapture(app, "05-ask--\(suffix)", expecting: app.staticTexts["ask-area-line"])
+                    scrollTo(app.buttons["skip-relationship-status"], in: app)
+                    try auditAndCapture(app, "05-ask--\(suffix)-bottom", expecting: app.buttons["skip-relationship-status"])
+                }
+                app.terminate()
+            }
+        }
+    }
+
+    func testWandsAndCupsReachQuestionAndNamedPersonReadings() throws {
+        for (named, largest) in [(false, false), (true, false), (false, true), (true, true)] {
+            // Ace of Wands reversed, Knight of Cups upright, King of Wands upright.
+            let app = app(extra: ["--test-random-indices", "22,1,46,0,34,0"] + (largest ? ["--test-largest-text"] : []), audit: true)
+            let suffix = "wands-cups-" + (named ? "named-person" : "question") + (largest ? "-largest-text" : "")
+            reachAsk(app, largest: largest)
+            if named {
+                scrollTo(app.buttons["ask-person-entry"], in: app)
+                tapWhenSettled(app.buttons["ask-person-entry"])
+                enterPerson(app)
+                scrollTo(app.buttons["submit-person"], in: app)
+                tapWhenSettled(app.buttons["submit-person"])
+                for _ in 0..<3 {
+                    scrollTo(app.buttons["draw-card-3"], in: app)
+                    tapWhenSettled(app.buttons["draw-card-3"])
+                }
+            } else {
+                scrollTo(app.buttons["suggestion-0"], in: app)
+                tapWhenSettled(app.buttons["suggestion-0"])
+                scrollTo(app.buttons["submit-question"], in: app)
+                tapWhenSettled(app.buttons["submit-question"])
+                chooseSpread(app, largest: largest)
+            }
+            let positions = named ? ["you", "them", "connection"] : ["situation", "action", "outcome"]
+            let names = ["Ace of Wands", "Knight of Cups", "King of Wands"]
+            for (index, position) in positions.enumerated() {
+                let slot = app.descendants(matching: .any)["spread-slot-\(position)"].firstMatch
+                XCTAssertTrue(slot.label.contains("\(names[index]), \(index == 0 ? "Reversed" : "Upright")"))
+            }
+            scrollTo(app.staticTexts["spread-question"], in: app)
+            if largest {
+                showNavigationTop(app)
+                assertVisible(app.staticTexts["spread-progress"], in: app)
+                assertVisible(app.staticTexts["spread-question"], in: app)
+                capture(app, "08-three-card-pick-complete--\(suffix)")
+                captureOverlappingContent(app, through: app.buttons["read-spread"], named: "08-three-card-pick-complete--\(suffix)-scroll")
+                capture(app, "08-three-card-pick-complete--\(suffix)-bottom")
+            } else {
+                try auditAndCapture(app, "08-three-card-pick-complete--\(suffix)", expecting: app.buttons["read-spread"])
+            }
+            scrollTo(app.buttons["read-spread"], in: app)
+            tapWhenSettled(app.buttons["read-spread"])
+            XCTAssertTrue(app.staticTexts["reading-saved"].waitForExistence(timeout: 5))
+            let expected = named ? [
+                "Notice whether you want to begin something here or feel obliged to keep things moving. You can say which is true for you.",
+                "Ask what kind of invitation the other person would welcome. A thoughtful gesture still leaves them free to prefer something else.",
+                "Consider how shared direction can grow from two clear voices. A common plan needs participation as well as enthusiasm."
+            ] : [
+                "A possible beginning may be tangled with pressure to act immediately. Separate your own curiosity from the expectation to produce something.",
+                "Offer a clear, sincere invitation or proposal and leave room for the response. Let the gesture say what you mean without promising more.",
+                "Reflect on the kind of leadership you respect when a shared purpose matters more than personal control."
+            ]
+            if largest { capture(app, "09-reading--\(suffix)") }
+            else { try auditAndCapture(app, "09-reading--\(suffix)", expecting: app.staticTexts["reading-saved"]) }
+            for (index, position) in positions.enumerated() {
+                let passage = app.staticTexts["reading-\(position)"]
+                XCTAssertEqual(passage.label, expected[index])
+                if !largest {
+                    scrollTo(passage, in: app)
+                    try auditAndCapture(app, "09-reading--\(suffix)-\(position)", expecting: passage)
+                }
+            }
+            if named { XCTAssertTrue(app.staticTexts["reading-lens"].label.contains("Sam")) }
+            XCTAssertTrue(app.staticTexts["reflection-question"].label.hasSuffix("?"))
+            if largest {
+                captureOverlappingContent(app, through: app.staticTexts["reading-disclaimer"], named: "09-reading--\(suffix)-scroll")
+                assertVisible(app.buttons["reading-done"], in: app)
+                capture(app, "09-reading--\(suffix)-bottom")
+            } else {
+                scrollTo(app.buttons["reading-response-notReally"], in: app)
+                try auditAndCapture(app, "09-reading--\(suffix)-bottom", expecting:
+                    app.staticTexts["reflection-question"], app.staticTexts["Something to sit with"],
+                    app.staticTexts["reading-response-prompt"], app.buttons["reading-response-yes"],
+                    app.buttons["reading-response-somewhat"], app.buttons["reading-response-notReally"],
+                    app.buttons["reading-done"], app.staticTexts["reading-disclaimer"])
+            }
+            tapWhenSettled(app.buttons["reading-done"])
+            XCTAssertTrue(app.staticTexts["today-title"].waitForExistence(timeout: 5))
+            app.terminate()
+        }
+    }
+
     func testReversedCardUsesItsOwnMeaning() throws {
-        let app = app(seed: "major-reversed-19", audit: true)
+        let app = app(seed: "wands-cups-reversed-24", audit: true)
         reveal(app)
         XCTAssertEqual(app.staticTexts["card-name"].label, "The Star")
         XCTAssertEqual(app.staticTexts["card-details"].label, "Reversed · Major Arcana XVII")
