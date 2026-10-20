@@ -251,11 +251,14 @@ struct QuestionContent: Codable {
     var isComplete: Bool {
         let areas = ReadingArea.allCases.map { content(for: $0) }
         let suggestions = areas.flatMap(\.suggestions)
+        let lenses = areas.map(\.lens) + [relationship.relationshipLenses.single,
+            relationship.relationshipLenses.inRelationship, relationship.relationshipLenses.complicated]
         return relationship.relationshipLenses.isComplete &&
-            areas.allSatisfy { (3...4).contains($0.suggestions.count) && !$0.lens.isEmpty } &&
-            suggestions.allSatisfy { $0.hasSuffix("?") && $0.count > 1 } &&
-            Set(suggestions).count == suggestions.count &&
-            !reflections.isEmpty && reflections.allSatisfy { $0.hasSuffix("?") && $0.count > 1 }
+            areas.allSatisfy { (3...4).contains($0.suggestions.count) && ContentWording.isFilled($0.lens) } &&
+            suggestions.allSatisfy { $0.hasSuffix("?") && !CrisisContent.normalised($0).isEmpty } &&
+            Set(suggestions.map(CrisisContent.normalised)).count == suggestions.count &&
+            !reflections.isEmpty && reflections.allSatisfy { $0.hasSuffix("?") && !CrisisContent.normalised($0).isEmpty } &&
+            (suggestions + lenses + reflections).allSatisfy(ContentWording.hasNoLuckyWording)
     }
 }
 
