@@ -2,7 +2,7 @@
 
 Issue #25. First draft, 20 October 2026. Jackie's editorial review is required before release to real users.
 
-Current status: the full check passed on clean `78853e9`, with **132/132 tests passing**, zero failures or skips. The independent comparison found two missing evidence views, P1 and R1, without establishing a layout defect. Their capture-only correction is committed as `85175eb` and passed **63/63** focused tests. Author inspection closed P1 and R1 under firstmate’s authorised evidence-only review path. A full committed-head check remains required because UI test code changed.
+Current status: the final full check passed on clean `131ba77`, with **132/132 tests passing**, zero failures or skips. The independent comparison is complete: author-inspected captures close its evidence-only P1 and R1 findings under firstmate’s authorised review path; non-blocking P2 is explicitly deferred. This record update changes documentation only.
 
 ## Content and wording
 
@@ -86,6 +86,14 @@ The temporary scheme selects the affected Wands/Cups reading UI test and retains
 
 Run `.harness/runs/20261020T133117.865244Z-test-4b8a28ed` passed **63/63 selected tests**, with zero failures, skips, expected failures or runtime warnings. This includes both suit cases and the corrected question/named-person flow at both text sizes. It exported 85 images and released the simulator lock at 13:47:39 UTC on 20 October. Its comparison has zero main reference captures because it selects only content variants; it supplements the full run and does not replace it.
 
-Read its summary and `harness evidence`, opened the comparison page, then inspected the four changed opening/ending images directly. The question largest-text opening shows Back, All three drawn and the complete question at the scroll origin. Both standard endings show the entire reflection panel/helper, feedback prompt and three choices above the pinned Done/disclaimer. No layout defect or change was needed. P1/R1 are closed under the authorised author-inspection path; P2 remains deferred. The packet retains this run separately in `final-evidence/focused-capture-follow-up/`. The subsequent full-check result will be recorded after it completes.
+Read its summary and `harness evidence`, opened the comparison page, then inspected the four changed opening/ending images directly. The question largest-text opening shows Back, All three drawn and the complete question at the scroll origin. Both standard endings show the entire reflection panel/helper, feedback prompt and three choices above the pinned Done/disclaimer. No layout defect or change was needed. P1/R1 are closed under the authorised author-inspection path; P2 remains deferred. The packet retains this run separately in `final-evidence/focused-capture-follow-up/`. The final full-check result follows below.
+
+## Final committed-head check
+
+After restoring the complete scheme, `harness doctor` passed and plain `./scripts/harness check` ran on clean `131ba77fca310a2100397cb4e4aa9985879919c2`. Run `.harness/runs/20261020T173820.299423Z-check-65ea24d8` passed **132/132 iOS tests**, all 34 command-contract tests and the unchanged design-role guard, with zero failures, skips, expected failures or runtime warnings. Both Wands/Cups UI tests and both suit unit-test cases passed. The harness released its simulator lock at 20:30:25 UTC on 20 October (07:30 Sydney on 21 October), after exporting **742 screenshots** and matching **15/15** main references.
+
+Read the completed summary and `harness evidence`, opened the final comparison page, and directly inspected six final originals: both largest-text completed-pick openings, both standard reading endings, and both Wands/Cups Today endings. P1 shows Back, All three drawn and the complete question; R1 shows the complete reflection panel, feedback prompt/choices, pinned Done and disclaimer. Both Today endings show the complete area text, Ask entry, midnight caption and tabs. There is no newly observed clipping or overlap. This checks the final corrected states; it does not claim manual reinspection of all 742 images. The earlier complete author inspection and independent comparison cover the unchanged content screens.
+
+The complete final-run evidence is retained at `final-evidence/final-full-check/`, alongside the original reviewed packet and focused follow-up. App content and tests are unchanged after this passing full run; the follow-up commit records these results only. No new independent round is needed under firstmate’s evidence-only closure instruction.
 
 The image review does not establish numeric contrast, font loading, touch targets, persistence or animation timing. Automated runtime checks provide their separate evidence. Real-device behaviour, VoiceOver reading order and Jackie's editorial review remain separate release checks.
