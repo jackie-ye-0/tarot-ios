@@ -2,7 +2,7 @@
 
 Issue #24. First draft, 19 October 2026. Jackie's editorial review is required before any real-user release. Automated checks do not establish that readings are helpful, kind or safe.
 
-Current verification: independent review is complete and T04-E1 is closed. Both ending-audit failures are fixed and passed the requested focused run. Ask Skip and History's native audit timeout failed again and remain verification blockers; the focused run was 2/4, not green. The earlier passing full run below is historical evidence.
+Current verification: independent review is complete and T04-E1 is closed. After rebasing onto the merged test-reliability fix `c207c39`, the requested single four-test recheck passed **4/4**, including Ask, History and both Today endings. Firstmate authorised this focused recheck together with the earlier **125/129 full run** and the prior two ending-audit passes as the verification path before no-mistakes. This is combined evidence from separate runs, not a claim that a new full check passed on the final head.
 
 ## Content and wording review
 
@@ -10,7 +10,7 @@ Current verification: independent review is complete and T04-E1 is closed. Both 
 
 The original six cards were reviewed along with the new sixteen; their Outcome passages now explicitly invite reflection. The Sun's daily text and the Magician's connection text were also revised to remove implied future change. Outcome describes what to consider, not what happens next. Them asks the reader to hear the other person's account rather than claiming to know their thoughts. Death concerns changing habits and roles; The Devil concerns habits and agency; The Tower concerns reassessing assumptions. Traditional catalogue names remain unchanged. Their interpretations contain no mortality, health, medical, financial or lucky-number content. Scores and extras are prompts for reflection, not probabilities or promises.
 
-Reviewed the Career, Social and all four Relationship lenses (the neutral `lens` plus `single`, `inRelationship` and `complicated`), every suggested question and the complete reflection pool. Their wording keeps decisions with the reader and avoids claims about other people's feelings. Changed the future-directed Relationship suggestion “Where is this going?” to “What matters to me here?” and the reflection about worrying how words land to “What would you like to express more clearly?”. Australian/British forms include colour, recognise, judgement, honours and organising. No source text was copied or external content service used. Crisis patterns and provisional support resources are unchanged and retain their separate release sign-off.
+Reviewed the Career, Social and all four Relationship lenses (the neutral `lens` plus `single`, `inRelationship` and `complicated`), every suggested question and the complete reflection pool. Their wording keeps decisions with the reader and avoids claims about other people's feelings. Changed the future-directed Relationship suggestion “Where is this going?” to “What matters to me here?” and the reflection about worrying how words land to “What would you like to express more clearly?”. Australian/British forms include colour, recognise, judgement, honours and organising. No source text was copied or external content service used. Crisis patterns and support resources are outside this content review and inherit their separately reviewed changes from main.
 
 ## Automated coverage
 
@@ -127,3 +127,22 @@ One plain `./scripts/harness test` ran on clean `dabacc4`, with exactly the four
 The run exported 33 screenshots. Both standard endings and High Priestess's largest-text bottom were inspected; the complete Ask entry, midnight caption and tabs remain visible. The two independent-reviewed images remain separately identifiable by their hashes in the review addendum. The simulator lock was released at 14:18:06 UTC on 19 October.
 
 For the Ask failure, main's committed Export/delete verification record reports 124/124 full passes in `20261019T071431.029415Z-check-147b22a5` and `20261019T000249.892921Z-check-74921b18`; the intervening 123/124 run reports only a shuffle failure. These records establish recorded passes of the included Ask design test; their raw logs were not available in the main checkout. This branch's original full-run raw log directly records the same Ask test passing with the new content. The Ask test through the failing assertion, Ask rendering, relationship prompt and Skip state logic are unchanged. The first Relationship suggestion and default test seed did change; the seed retains Star upright and its unchanged daily context. A content-related audit/scroll effect therefore cannot be ruled out. The task packet contains the detailed comparison and committed main verification excerpt; no pure-flake conclusion is claimed.
+
+## Passing recheck after the merged reliability fix
+
+Firstmate's instructions 011–012 authorised rebasing onto `c207c39` and one plain `./scripts/harness test` selecting the same four UI tests. The rebase preserved the new single-tap destination waits and adapted their composer predicate to “What matters to me here?”. The only text conflict was the adjacent spread-question assertion. No product logic, audit category, finding filter or retry was added.
+
+`./scripts/harness doctor` passed. The single recheck ran on clean `f950dc3d39a7be1ebb9e202fde4286cbda43ca3e` in `.harness/runs/20261020T083842.560943Z-test-cfdeeda3`, exiting 0 with **4/4 passed, zero failures, skips, expected failures or runtime warnings**:
+
+| Test | Result | Duration |
+| --- | --- | ---: |
+| `testAskSuggestionsComposerPickReadingAndDesignEvidence` | Passed, including Skip and the complete saved-reading flow | 494.956 s |
+| `testExpandedMajorDailyContentAndLongestNameAtBothTextSizes` | Passed, including the standard ending audit and largest-text flow | 255.385 s |
+| `testHistoryCalendarFiltersAndDesignEvidence` | Passed, including the previously timed-out bottom audit and archived-card flow | 238.329 s |
+| `testReversedCardUsesItsOwnMeaning` | Passed, including the strict ending audit | 107.244 s |
+
+The simulator lock was released at 08:57:44 UTC on 20 October. The full scheme was then restored byte-for-byte; subsequent branch edits only restore that selection and record verification. All four formerly failing tests now pass, while the earlier 125/129 full run supplies the remaining suite evidence. The original 121/121 full pass and the intermediate failed runs remain labelled separately. No latest-head full-suite pass is claimed.
+
+The recheck exported 68 screenshots and seven of fifteen main reference states, as expected for this four-test selection. Opened its comparison page with `chrome-devtools-axi`, read `harness evidence`, and directly inspected both standard Today endings, the High Priestess largest-text ending, Ask after Skip, filled-composer top and bottom, reading top and bottom, and History's bottom. The full final Today row/action/caption/tabs remain clear; the composer bottom exposes the entire final chip above the footer; the reading's lens, reflection, feedback and Done remain readable. Existing independent-review dispositions still cover the distinct fixture wording, native scrolling, darker labels/tabs, shorter Ask entry and pinned/inline footer behaviour. No new visual difference requiring a product change was found.
+
+`final-evidence/post-reliability-recheck/` contains the new manifest copy, references, screenshots, comparison page, raw logs, summaries and exported audit attachments. Root evidence preserves the exact independently approved ending images and their hashes. T04-E1 remains closed; the passing recheck supplements rather than replaces that independent verdict. The retained History comparison found unchanged content, row sizes and element counts across the earlier pass/fail runs. Firstmate reported high machine load during both failures; recovery after timing changes and reduced load does not establish which caused the native timeout.
