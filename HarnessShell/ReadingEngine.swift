@@ -160,8 +160,9 @@ struct CardLibrary: Codable {
 
     static func decode(_ data: Data) throws -> CardLibrary {
         let library = try JSONDecoder().decode(CardLibrary.self, from: data)
-        guard library.version > 0, ContentWording.isFilled(library.editorialStatus), library.cards.count >= 6,
-              Set(library.cards.map(\.id)).count == library.cards.count,
+        guard library.version > 0, ContentWording.isFilled(library.editorialStatus),
+              library.cards.map(\.identity).sorted(by: { $0.id < $1.id })
+                == CardIdentity.deck.sorted(by: { $0.id < $1.id }),
               library.cards.allSatisfy({ card in
                   [card.id, card.name, card.arcana].allSatisfy(ContentWording.isFilled) &&
                   [card.name, card.arcana].allSatisfy(ContentWording.hasNoLuckyWording) &&

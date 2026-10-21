@@ -4,8 +4,8 @@ import Testing
 import UIKit
 @testable import HarnessShell
 
-struct WandsAndCupsContentTests {
-    @Test(arguments: ["Wands", "Cups"])
+struct MinorArcanaContentTests {
+    @Test(arguments: ["Wands", "Cups", "Swords", "Pentacles"])
     func completeSuitComposesEveryPositionAndKeepsItsSnapshot(suit: String) throws {
         let library = try CardLibrary.load()
         let cards = library.cards.filter { $0.suit == suit }
@@ -39,6 +39,70 @@ struct WandsAndCupsContentTests {
                         #expect(try JSONDecoder().decode(QuestionReading.self, from: JSONEncoder().encode(reading)) == reading)
                     }
                 }
+            }
+        }
+    }
+}
+
+struct CompleteDeckContentTests {
+    @Test func loaderRejectsMissingExtraDuplicateAndMismatchedCards() throws {
+        let library = try CardLibrary.load()
+        let original = try #require(JSONSerialization.jsonObject(with: JSONEncoder().encode(library)) as? [String: Any])
+        let cards = try #require(original["cards"] as? [[String: Any]])
+        var invalidDecks = [Array(cards.dropLast()), cards + [cards[0]], Array(cards.dropLast()) + [cards[0]]]
+        for (field, value) in [("id", "placeholder"), ("name", "Starter card"), ("arcana", "Major Arcana"),
+                               ("suit", "Cups"), ("rank", 99)] as [(String, Any)] {
+            var changed = cards
+            changed[77][field] = value
+            invalidDecks.append(changed)
+        }
+        for cards in invalidDecks {
+            var invalid = original
+            invalid["cards"] = cards
+            let data = try JSONSerialization.data(withJSONObject: invalid)
+            #expect(throws: (any Error).self) { try CardLibrary.decode(data) }
+        }
+        // Catalogue validation must not silently reorder the versioned draw pool.
+        var reordered = original
+        reordered["cards"] = Array(cards.reversed())
+        let decoded = try CardLibrary.decode(JSONSerialization.data(withJSONObject: reordered))
+        #expect(decoded.cards == Array(library.cards.reversed()))
+    }
+
+    @Test func dailyDrawCanReachAll156BundledCardOrientations() throws {
+        let library = try CardLibrary.load()
+        let expected = Set(library.cards.flatMap { ["\($0.id):upright", "\($0.id):reversed"] })
+        var reached = Set<String>()
+        for index in 0..<4096 {
+            let draw = ReadingEngine.dailyDraw(seed: "full-deck-\(index)", dateKey: "2026-10-11",
+                                              position: index % 5 + 1, library: library)
+            #expect(draw.meaning.isComplete)
+            reached.insert("\(draw.card.id):\(draw.orientation.rawValue)")
+            if reached == expected { break }
+        }
+        #expect(expected.count == 156)
+        #expect(reached == expected)
+    }
+
+    @Test func spreadCanReachEveryBundledCardAndOrientationWithoutReplacement() throws {
+        let library = try CardLibrary.load()
+        for (index, card) in library.cards.enumerated() {
+            for orientation in [Orientation.upright, .reversed] {
+                var picks: [SpreadPick] = []
+                var values = [index, orientation == .upright ? 0 : 1, 0, 0, 0, 1].makeIterator()
+                for _ in 0..<3 {
+                    let pick = try #require(ReadingEngine.nextPick(after: picks, library: library,
+                        randomIndex: { upperBound in
+                            let value = values.next()!
+                            #expect((0..<upperBound).contains(value))
+                            return value
+                        }))
+                    picks.append(pick)
+                }
+                #expect(picks[0].card == card)
+                #expect(picks[0].orientation == orientation)
+                #expect(Set(picks.map { $0.card.id }).count == 3)
+                #expect(picks.allSatisfy { $0.card.meaning($0.orientation).isComplete })
             }
         }
     }
@@ -383,7 +447,7 @@ final class ReadingEngineTests: XCTestCase {
 
     func testKnownStableHashVector() throws {
         let draw = ReadingEngine.dailyDraw(seed: "reference-1", dateKey: "2026-10-11", position: 3, library: try CardLibrary.load())
-        XCTAssertEqual(draw.card.id, "emperor")
+        XCTAssertEqual(draw.card.id, "page-of-swords")
         XCTAssertEqual(draw.orientation, .upright)
     }
 
@@ -458,10 +522,10 @@ final class ReadingEngineTests: XCTestCase {
         let honolulu = try XCTUnwrap(TimeZone(identifier: "Pacific/Honolulu"))
         let sydneyKey = ReadingEngine.dateKey(for: instant, timeZone: sydney)
         let honoluluKey = ReadingEngine.dateKey(for: instant, timeZone: honolulu)
-        let laterDraw = ReadingEngine.dailyDraw(seed: "wands-cups-travel-44", dateKey: sydneyKey, position: 2, library: library)
-        let unfilteredEarlierDraw = ReadingEngine.dailyDraw(seed: "wands-cups-travel-44", dateKey: honoluluKey,
+        let laterDraw = ReadingEngine.dailyDraw(seed: "deck-travel-8", dateKey: sydneyKey, position: 2, library: library)
+        let unfilteredEarlierDraw = ReadingEngine.dailyDraw(seed: "deck-travel-8", dateKey: honoluluKey,
                                                            position: 5, library: library)
-        let earlierDraw = ReadingEngine.dailyDraw(seed: "wands-cups-travel-44", dateKey: honoluluKey, position: 5,
+        let earlierDraw = ReadingEngine.dailyDraw(seed: "deck-travel-8", dateKey: honoluluKey, position: 5,
                                                   library: library, previousDraws: [laterDraw])
 
         XCTAssertEqual(sydneyKey, "2026-10-11")
@@ -506,7 +570,10 @@ final class ReadingEngineTests: XCTestCase {
 
     func testBundledLibraryHasBothCompleteOrientationsAndDistinctIDs() throws {
         let library = try CardLibrary.load()
-        XCTAssertGreaterThanOrEqual(library.cards.count, 50)
+        XCTAssertEqual(library.cards.count, 78)
+        XCTAssertEqual(library.cards.flatMap { [$0.upright, $0.reversed] }.filter(\.isComplete).count, 156)
+        XCTAssertEqual(library.cards.map(\.identity).sorted { $0.id < $1.id },
+                       CardIdentity.deck.sorted { $0.id < $1.id })
         XCTAssertEqual(Set(library.cards.map(\.id)).count, library.cards.count)
         XCTAssertTrue(library.editorialStatus.contains("first-draft"))
         for card in library.cards {
@@ -707,7 +774,7 @@ final class ReadingEngineTests: XCTestCase {
 
     func testSnapshotRoundTripKeepsOriginalContent() throws {
         let library = try CardLibrary.load()
-        let draw = ReadingEngine.dailyDraw(seed: "wands-cups-reference-19369", dateKey: "2026-10-11", position: 5, library: library)
+        let draw = ReadingEngine.dailyDraw(seed: "deck-reference-583", dateKey: "2026-10-11", position: 5, library: library)
         let snapshot = try JSONEncoder().encode(draw)
         let revised = try amendedLibrary { daily in
             daily["colourName"] = "Clay"
@@ -716,7 +783,7 @@ final class ReadingEngineTests: XCTestCase {
             daily["bestHour"] = "After 6 pm"
             daily["career"] = ["score": 10, "line": "A revised work line."]
         }
-        let next = ReadingEngine.dailyDraw(seed: "wands-cups-reference-19369", dateKey: "2026-10-11", position: 5,
+        let next = ReadingEngine.dailyDraw(seed: "deck-reference-583", dateKey: "2026-10-11", position: 5,
                                           library: try CardLibrary.decode(revised))
         XCTAssertNotEqual(next.meaning.daily, draw.meaning.daily)
         XCTAssertEqual(try JSONDecoder().decode(DailyDraw.self, from: snapshot), draw)
