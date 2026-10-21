@@ -2376,7 +2376,24 @@ final class HarnessShellUITests: XCTestCase {
                 assertVisible(app.buttons["reading-done"], in: app)
                 capture(app, "09-reading--\(suffix)-bottom")
             } else {
-                scrollTo(app.buttons["reading-response-notReally"], in: app)
+                let choices = ["yes", "somewhat", "notReally"].map { app.buttons["reading-response-" + $0] }
+                scrollTo(choices[2], in: app)
+                let earlierFrame = choices[2].frame
+                // A visible accessibility label can precede the complete pill reaching the viewport.
+                dragContent(app, up: true, abovePinnedFooter: true)
+                waitForSettled(choices)
+                let endFrame = choices[2].frame
+                dragContent(app, up: true, abovePinnedFooter: true)
+                waitForSettled(choices)
+                XCTAssertEqual(choices[2].frame, endFrame, "The ending capture must be at maximum scroll")
+                for choice in choices {
+                    assertVisible(choice, in: app, abovePinnedFooter: true)
+                    XCTAssertLessThanOrEqual(choice.frame.maxY + 12, scrollViewport(in: app).maxY)
+                }
+                let evidence = XCTAttachment(string: "Before: \(earlierFrame); maximum scroll: \(endFrame); viewport: \(scrollViewport(in: app))")
+                evidence.name = "reading-ending-scroll-" + suffix
+                evidence.lifetime = .keepAlways
+                add(evidence)
                 try auditAndCapture(app, "09-reading--\(suffix)-bottom", expecting:
                     app.staticTexts["reflection-question"], app.staticTexts["Something to sit with"],
                     app.staticTexts["reading-response-prompt"], app.buttons["reading-response-yes"],
