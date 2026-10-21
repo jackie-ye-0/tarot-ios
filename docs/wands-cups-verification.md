@@ -6,7 +6,7 @@ Current status: the final full check passed on clean `131ba77`, with **132/132 t
 
 ## Content and wording
 
-The single bundled library, `HarnessShell/Resources/starter-cards.json`, is version 7. It contains the original 22 Major Arcana followed by all fourteen Wands and fourteen Cups, Ace through King, with identifiers and metadata matching the artwork catalogue. Both orientations of each new card contain three keywords, a two-sentence core interpretation, three distinct daily area lines and integer scores, a colour name and six-digit hex, an object, a best hour and all six position meanings.
+Issue #25 advanced the single bundled library, `HarnessShell/Resources/starter-cards.json`, to version 7. At that checkpoint it contained the original 22 Major Arcana followed by all fourteen Wands and fourteen Cups, Ace through King, with identifiers and metadata matching the artwork catalogue. Both orientations of each new card contain three keywords, a two-sentence core interpretation, three distinct daily area lines and integer scores, a colour name and six-digit hex, an object, a best hour and all six position meanings. See [architecture](architecture.md) for the library's current version and card inventory.
 
 The new writing is original to this task. Wands explores initiative, direction, collaboration, boundaries, sustained effort and leadership. Cups explores feelings, reciprocity, friendship, disappointment, choice, belonging and care. Reversed meanings invite a different perspective rather than predicting a bad event. Outcome passages ask what to consider; Them passages ask the reader to hear the other person's account rather than claiming to know their thoughts. No new passage gives health, medical, death, financial or lucky-number content. The language is calm, second person and Australian/British English, with no emoji or exclamation marks. Scores and daily extras remain reflection prompts, not probabilities or promises.
 
@@ -16,9 +16,9 @@ The existing Major Arcana, shared area lenses, four Relationship variants, sugge
 
 ## Automated coverage
 
-The existing production loader and whole-library mutation tests apply to every card present, now 50 cards and 100 orientations. They check complete fields, keyword and sentence counts, score bounds, distinct area lines, valid named colours, all six position meanings and the existing lexical wording rule. The rule's documented limits are unchanged.
+At the issue #25 checkpoint, the production loader and whole-library mutation tests applied to all 50 cards and 100 orientations then present. They checked complete fields, keyword and sentence counts, score bounds, distinct area lines, valid named colours, all six position meanings and the existing lexical wording rule. The rule's documented limits are unchanged.
 
-`WandsAndCupsContentTests` checks each complete suit against the artwork catalogue, including ranks 1–14. It composes every new card in both orientations through each question and named-person position and checks the resulting passage. Daily and composed-reading snapshots must survive encoding and decoding unchanged.
+The issue #25 `WandsAndCupsContentTests` checked each complete suit against the artwork catalogue, including ranks 1–14. It composed every new card in both orientations through each question and named-person position and checked the resulting passage. Daily and composed-reading snapshots had to survive encoding and decoding unchanged. Issue #26 extended and renamed this suite; see [Swords and Pentacles verification](swords-pentacles-verification.md) for the current complete-deck coverage.
 
 The UI tests use the established Debug launch arguments and existing scrolling, settled-screen audit and capture helpers:
 
