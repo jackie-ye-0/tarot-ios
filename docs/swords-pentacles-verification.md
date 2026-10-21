@@ -2,7 +2,7 @@
 
 Issue #26. First draft, 21 October 2026. Jackie's editorial review is required before release to real users.
 
-Current status: the full check passed on clean `8e14dba` with 137/137 logical iOS tests passing, zero failures or skips. The author has inspected the new content captures; the independent image comparison is pending. This update records evidence only.
+Current status: the full check passed on clean `8e14dba` with 137/137 logical iOS tests passing, zero failures or skips. The author and independent reviewer have inspected the new content captures. The independent verdict is pass, with no must-fix findings. RN4 is closed by the author-inspected focused follow-up, which passed 66/66 selected tests. A full check of the updated test head remains required.
 
 ## Content and wording
 
@@ -35,7 +35,7 @@ No screen, layout, type, colour, card-art or motion implementation changes; the 
 
 Read the completed `summary.json` and `harness evidence`, opened `design-comparison.html` with `chrome-devtools-axi`, and inspected the five touched references against all 138 new full-screen content captures using contact sheets and direct originals. The run exports 896 images and matches all 15 main reference states. Overlapping largest-text captures show the full new names, passages and actions. No audit categories were filtered.
 
-The specifically requested question-pick largest-text opening shows Back, All three drawn, the complete question and the first card. The standard question-reading ending shows the whole reflection panel/helper, all three feedback choices, pinned Done and disclaimer. Both Today endings show the final Social text, Ask, midnight caption and tabs. The named-person reading ending also shows all labels, but its feedback pills appear to have their lower edges partly occluded by the pinned footer. This is retained for independent assessment rather than claimed as a clean visual result.
+The specifically requested question-pick largest-text opening shows Back, All three drawn, the complete question and the first card. The standard question-reading ending shows the whole reflection panel/helper, all three feedback choices, pinned Done and disclaimer. Both Today endings show the final Social text, Ask, midnight caption and tabs. The named-person reading ending also shows all labels, but its feedback pills appear to have their lower edges partly occluded by the pinned footer. The independent reviewer confirmed this as RN4, a non-blocking evidence correction. The focused follow-up below checks maximum scroll before changing any layout.
 
 The following reference differences are accounted for by the existing manifest or the intended content; independent comparison may identify further findings:
 
@@ -45,8 +45,37 @@ The following reference differences are accounted for by the existing manifest o
 | Today | The fixed Sunday date, new daily prose/extras/scores and Minor faces replace example values. The gear, dark selected tabs, static area rows without chevrons and shorter Ask entry are existing manifest choices. Content scrolls within the phone viewport; largest text stacks the thumbnail, extras and scores. |
 | Ask | The context uses the actual daily card name, area line and score. Suggestions remain full reflective questions; the status options and Skip are full-width. There is no latest-reading row before a reading exists. Larger text stacks the selector and grows the controls while preserving their complete labels. |
 | Completed pick | New identities and explicit orientations replace the example cards. The neutral question and You and Sam variant use the specified position types. Longer names cause unequal label baselines across standard-size columns, as in the already recorded Wands/Cups difference; all names and roles remain readable. Largest text stacks the cards and places the final action inline. |
-| Reading | Original position text, the longer shared Relationship lens and the named-person introduction replace illustrative reference prose. This requires more scrolling. Headings use the existing darker accessible role; Done/disclaimer stay pinned at standard size and move inline at largest text. A fresh reading has no note. The named-person feedback-pill edge observation above remains open for review. |
+| Reading | Original position text, the longer shared Relationship lens and the named-person introduction replace illustrative reference prose. This requires more scrolling. Headings use the existing darker accessible role; Done/disclaimer stay pinned at standard size and move inline at largest text. A fresh reading has no note. The named-person feedback-pill edge observation above is resolved by the focused follow-up below. |
 
-The final evidence packet includes the unchanged manifest, reference images, all exported screenshots, comparison page, run summaries and logs. No new independent round has been claimed yet. Still images do not establish motion timing, numeric contrast or persistence; the passing automated checks provide their separate evidence.
+The final evidence packet includes the unchanged manifest, reference images, all exported screenshots, comparison page, run summaries and logs. The independent review is recorded below. Still images do not establish motion timing, numeric contrast or persistence; the passing automated checks provide their separate evidence.
 
 Real-device behaviour, VoiceOver reading order and Jackie's editorial review remain separate release checks.
+
+
+## Independent comparison and dispositions
+
+Firstmate's fresh-session reviewer inspected 187 supplied images, including all 138 new full-screen content captures, 16 contrast crops, five references, 16 main-screen regression images and all 12 Reduce Motion captures. Verdict: **pass, no must-fix findings**. Largest-text coverage and settled Reduce Motion states passed as image sequences. The report is retained with the task evidence as `independent-design-review.md`; images alone do not establish runtime behaviour, measured contrast, font registration or VoiceOver order.
+
+| Finding IDs | Disposition and reason |
+| --- | --- |
+| C1–C3 | Accepted: real iOS status/safe areas and scrolling replace long web artboards; native text/icon/grain rendering varies; largest text grows, stacks and moves footers inline as the manifest requires. |
+| RS1–RS4, RP1–RP3 | Accepted: the correct suit/rank artwork, explicit reversal, new names/metadata/keywords and long-name wrapping are intended content. Native spacing and heavier Share/arrow glyphs preserve the hierarchy; the separate large-text Share row and inline meaning action are specified. |
+| TS1–TS5, TP1–TP3 | Accepted: fixture date, card identity, reflective prose/extras/scores and longer content replace examples. The gear, horizontal extras hairlines, static area rows without chevrons, darker labels, shorter Ask entry, midnight caption and dark selected tabs follow explicit manifest choices; tab symbols remain placeholders. |
+| AS1–AS4, AP1–AP2 | Accepted: the actual daily name/area line/score replace the illustrative headline. Complete questions and roomier chips, full-width relationship choices with Skip, no recent-reading section before one exists, wrapping named-person helper and dark selected Ask tab are specified. |
+| PQ1–PQ2, PQ4, PN1, PN3 | Accepted: the new spread identities, explicit orientations, neutral question or You and Sam title, named positions, retained disc, native spacing and stacked large-text cards preserve all required elements and the single Read my spread action. |
+| PQ3, PN2 | Deferred to #27 at firstmate's explicit direction. Longer names leave standard-size completed-pick position labels on different baselines; this is the shared polish issue already deferred from #25. #27 covers comparing every finished screen to its reference and fixing or recording differences. No layout change in this content ticket. |
+| RQ1–RQ4, RN1–RN3 | Accepted: actual question/named-person text, separate orientation lines, dedicated reflective positions and the neutral Relationship lens with Sam's introduction replace example prose. More scrolling, darker headings, native header glyphs and changing reflection height retain the section order. Done/disclaimer are pinned at standard size and inline at largest text; large-text cards/feedback stack and the decorative metadata dot is omitted as specified. |
+| RN4 | Closed by author inspection of the focused follow-up, as firstmate authorised. The earlier capture was not at maximum scroll. Both corrected standard endings show complete feedback pills with clear space above Done; only test capture positioning changed. |
+
+No reviewer recheck is required for RN4 after the author inspects its corrected capture, under firstmate's steering instruction. The single independent round is complete; that does not itself establish a pass of the changed test code.
+
+
+## RN4 focused follow-up
+
+`./scripts/harness doctor` passed. Run `.harness/runs/20261021T021612.229129Z-test-20dbb19b` then passed plain `./scripts/harness test` on `dac14ab`, selecting only the Swords/Pentacles reading UI test and retaining all engine tests. Result: **66/66 logical tests passed**, zero failures, skips, expected failures or runtime warnings; 81 exported images. The scheme selection was the only starting worktree difference and was restored byte-for-byte after the run. No audit categories were filtered. The lock was released at 02:39:32 UTC on 21 October.
+
+The kept `reading-ending-scroll-*` records show both standard fixtures moved the final choice from y=654.67 to y=629.00 points, a further 25.67 points of scroll. A second upward drag left its frame unchanged, establishing the settled maximum. All three choices retain their 48-point height; the test also requires their complete frames and a minimum 12-point gap within the unoccluded scroll viewport. No trailing-space or control-size change was necessary in the app.
+
+Read the completed summary and `harness evidence`, opened the comparison page, and inspected both corrected bottom originals plus the question largest-text completed-pick opening. Both endings now show complete pill outlines, the whole reflection panel/helper, feedback prompt, pinned Done and disclaimer. The largest-text opening still shows Back, progress and the full question. RN4 is closed under firstmate's author-capture path with no second independent round. The focused evidence, including raw frame attachments, is retained separately under `final-evidence/rn4-focused-follow-up/`; the initial independently reviewed images are preserved unchanged.
+
+This focused pass is supplementary. The restored full scheme must pass the complete harness check on the final committed test head before no-mistakes.
