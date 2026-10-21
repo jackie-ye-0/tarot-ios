@@ -2,7 +2,7 @@
 
 Issue #26. First draft, 21 October 2026. Jackie's editorial review is required before release to real users.
 
-Current status: implementation complete; full committed-head harness check and independent image comparison pending. The host checks below do not establish iOS verification.
+Current status: the full check passed on clean `8e14dba` with 137/137 logical iOS tests passing, zero failures or skips. The author has inspected the new content captures; the independent image comparison is pending. This update records evidence only.
 
 ## Content and wording
 
@@ -31,6 +31,22 @@ Both daily and spread draws use the complete library without a separate deck or 
 
 ## Design check
 
-No screen, layout, type, colour, card-art or motion implementation changes; the design manifest remains unchanged. New long Minor Arcana names and original passages use the existing layouts. The full run must supply the comparison page and final captures before visual findings can be recorded. Independent comparison is required before the completion handoff.
+No screen, layout, type, colour, card-art or motion implementation changes; the design manifest remains unchanged. New long Minor Arcana names and original passages use the existing layouts. Run `.harness/runs/20261020T213558.334179Z-check-4ea0f29a` passed plain `./scripts/harness check` on clean `8e14dba6bdf6bd3a886359505086c0512d4bee9d`. It passed all 34 command-contract tests, the unchanged design-role guard and **137/137 logical iOS tests**, with zero failures, skips, expected failures or runtime warnings. Parameterised cases account for 173 executions. Xcode 27.0 used the dedicated iPhone 17e on iOS 26.5. The simulator lock was released at 01:04:57 UTC on 21 October.
+
+Read the completed `summary.json` and `harness evidence`, opened `design-comparison.html` with `chrome-devtools-axi`, and inspected the five touched references against all 138 new full-screen content captures using contact sheets and direct originals. The run exports 896 images and matches all 15 main reference states. Overlapping largest-text captures show the full new names, passages and actions. No audit categories were filtered.
+
+The specifically requested question-pick largest-text opening shows Back, All three drawn, the complete question and the first card. The standard question-reading ending shows the whole reflection panel/helper, all three feedback choices, pinned Done and disclaimer. Both Today endings show the final Social text, Ask, midnight caption and tabs. The named-person reading ending also shows all labels, but its feedback pills appear to have their lower edges partly occluded by the pinned footer. This is retained for independent assessment rather than claimed as a clean visual result.
+
+The following reference differences are accounted for by the existing manifest or the intended content; independent comparison may identify further findings:
+
+| Screen | Difference and reason |
+| --- | --- |
+| Reveal | Swords/Pentacles faces, names, orientations and keywords replace the reference Star. Long names wrap. Native status/safe areas, Share glyph, grain, face geometry and vertical spacing differ; the existing shape, colour and type roles and one primary action remain. At largest text Share gets a separate row and the action/disclaimer follow the content. |
+| Today | The fixed Sunday date, new daily prose/extras/scores and Minor faces replace example values. The gear, dark selected tabs, static area rows without chevrons and shorter Ask entry are existing manifest choices. Content scrolls within the phone viewport; largest text stacks the thumbnail, extras and scores. |
+| Ask | The context uses the actual daily card name, area line and score. Suggestions remain full reflective questions; the status options and Skip are full-width. There is no latest-reading row before a reading exists. Larger text stacks the selector and grows the controls while preserving their complete labels. |
+| Completed pick | New identities and explicit orientations replace the example cards. The neutral question and You and Sam variant use the specified position types. Longer names cause unequal label baselines across standard-size columns, as in the already recorded Wands/Cups difference; all names and roles remain readable. Largest text stacks the cards and places the final action inline. |
+| Reading | Original position text, the longer shared Relationship lens and the named-person introduction replace illustrative reference prose. This requires more scrolling. Headings use the existing darker accessible role; Done/disclaimer stay pinned at standard size and move inline at largest text. A fresh reading has no note. The named-person feedback-pill edge observation above remains open for review. |
+
+The final evidence packet includes the unchanged manifest, reference images, all exported screenshots, comparison page, run summaries and logs. No new independent round has been claimed yet. Still images do not establish motion timing, numeric contrast or persistence; the passing automated checks provide their separate evidence.
 
 Real-device behaviour, VoiceOver reading order and Jackie's editorial review remain separate release checks.
