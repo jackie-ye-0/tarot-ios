@@ -2,7 +2,7 @@
 
 Issue #26. First draft, 21 October 2026. Jackie's editorial review is required before release to real users.
 
-Current status: the full check passed on clean `8e14dba` with 137/137 logical iOS tests passing, zero failures or skips. The author and independent reviewer have inspected the new content captures. The independent verdict is pass, with no must-fix findings. RN4 is closed by the author-inspected focused follow-up, which passed 66/66 selected tests. A full check of the updated test head remains required.
+Current status: the full check passed on clean `8e14dba` with 137/137 logical iOS tests passing, zero failures or skips. The author and independent reviewer have inspected the new content captures. The independent verdict is pass, with no must-fix findings. RN4 is closed by the author-inspected focused follow-up, which passed 66/66 selected tests. The final full check on `cc323dd` passed 136/137; its only failure was the unchanged Wands/Cups Reveal-to-Today interaction. The unchanged focused recheck passed 66/66, and firstmate authorised proceeding to no-mistakes. The final run is not claimed as a full pass.
 
 ## Content and wording
 
@@ -78,4 +78,19 @@ The kept `reading-ending-scroll-*` records show both standard fixtures moved the
 
 Read the completed summary and `harness evidence`, opened the comparison page, and inspected both corrected bottom originals plus the question largest-text completed-pick opening. Both endings now show complete pill outlines, the whole reflection panel/helper, feedback prompt, pinned Done and disclaimer. The largest-text opening still shows Back, progress and the full question. RN4 is closed under firstmate's author-capture path with no second independent round. The focused evidence, including raw frame attachments, is retained separately under `final-evidence/rn4-focused-follow-up/`; the initial independently reviewed images are preserved unchanged.
 
-This focused pass is supplementary. The restored full scheme must pass the complete harness check on the final committed test head before no-mistakes.
+This focused pass is supplementary. The subsequent full run is recorded below.
+
+
+## Final full check and isolated navigation failure
+
+Plain `./scripts/harness check` ran on clean `cc323dda94b7289deb21ee38ea926735a3ea7eeb` with the full scheme restored. Run `.harness/runs/20261021T024957.235654Z-check-9bfe806c` passed all 34 command-contract tests and the design-role guard, then recorded **136/137 logical iOS tests passed**, one failure, zero skips or expected failures and no runtime warnings. Both Swords/Pentacles tests passed, including the corrected endings. The run exported 829 screenshots and matched all 15 main references; the lock was released at 06:17:15 UTC on 21 October.
+
+The sole failure is `testWandsAndCupsDailyContentAtBothTextSizes`, line 2128: Today did not appear within five seconds after the first standard Knight of Wands Reveal audit and one meaning-button tap. XCTest's retained event targets (195, 745), the centre of the button's recorded frame. The failure hierarchy remains on the settled Reveal and contains no error alert. The same test and fixture passed in the initial full run; neither its implementation nor app code changed after that pass. Only the Swords/Pentacles ending capture and documentation changed. This supports a transient interaction after the audit, but does not prove its cause. No retry or weaker assertion was added.
+
+Read the completed summary and `harness evidence`, opened the comparison page, and directly inspected both final corrected reading endings and the Pentacles Today ending. All feedback-pill outlines remain complete above Done, and the Today ending retains Social, Ask, midnight caption and tabs. The independent-review verdict and RN4 closure remain valid image findings; they do not make the failed full run green.
+
+Firstmate's steering authorised one unchanged focused recheck of the failed flow. Run `.harness/runs/20261021T063059.536014Z-test-7203c002` passed plain `./scripts/harness test` on `cc323dd`: **66/66 logical tests**, zero failures, skips, expected failures or runtime warnings, with 74 exported images. The temporary scheme selected the Wands/Cups daily UI test while retaining all engine tests; it was restored byte-for-byte afterwards. No app or test implementation changed, and no audit categories were filtered. The simulator lock was released at 06:47:28 UTC on 21 October.
+
+Read the recheck summary and `harness evidence`, opened its comparison page, and inspected the standard Knight of Wands Reveal and both Wands/Cups Today ending originals. The previously failing navigation completed, and the endings show the complete area content, Ask, midnight caption and tabs. Firstmate accepted the earlier failure as a dropped tap and authorised proceeding to no-mistakes. This unchanged pass supports that disposition without establishing the precise cause.
+
+The failed full-run packet is retained separately under `final-evidence/final-full-check/`, including its summary, logs and failure attachments. The passing recheck is retained under `final-evidence/wands-cups-recheck/`. No latest-head full-suite pass is claimed.
